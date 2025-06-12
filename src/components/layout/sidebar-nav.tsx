@@ -1,8 +1,11 @@
 
 "use client";
 
+// Renaming this file to topbar-nav.tsx would be more semantically correct,
+// but for now, we'll just modify it to export navItems and potentially UserMenu if separated.
+// The SidebarNav and SidebarUser components as originally structured for a sidebar are no longer used by the layout.
+
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ListChecks,
@@ -11,20 +14,9 @@ import {
   BotMessageSquare,
   Settings,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import { SidebarMenuButton } from "@/components/ui/sidebar"; // This import is no longer strictly needed here, but kept if SidebarUser was more complex
 
-
-const navItems = [
+export const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/tasks", icon: ListChecks, label: "Task Manager" },
   { href: "/calendar", icon: CalendarDays, label: "Content Calendar" },
@@ -32,38 +24,21 @@ const navItems = [
   { href: "/chatbot", icon: BotMessageSquare, label: "AI Chatbot" },
 ];
 
-export function SidebarNav() {
-  const pathname = usePathname();
-  const { state: sidebarState } = useSidebar();
+// SidebarNav is no longer used by the main layout.
+// export function SidebarNav() { ... } 
 
-  return (
-    <SidebarMenu>
-      {navItems.map((item) => (
-        <SidebarMenuItem key={item.href}>
-          <Link href={item.href}>
-            <SidebarMenuButton
-              isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" )}
-              tooltip={item.label}
-              className="justify-start"
-            >
-              <item.icon className="h-5 w-5" />
-              {sidebarState === "expanded" && <span>{item.label}</span>}
-            </SidebarMenuButton>
-          </Link>
-        </SidebarMenuItem>
-      ))}
-    </SidebarMenu>
-  );
-}
-
+// SidebarUser's content is now integrated into the DropdownMenu in AppLayout.
+// If it were more complex, it could be a separate UserDropdown component.
 export function SidebarUser() {
-  const { state: sidebarState } = useSidebar();
+  // const { state: sidebarState } = useSidebar(); // useSidebar no longer relevant
   return (
     <div className="mt-auto">
        <Link href="#">
+        {/* This button styling is sidebar-specific, not used directly in topbar */}
         <SidebarMenuButton tooltip="Settings" className="justify-start">
           <Settings className="h-5 w-5" />
-          {sidebarState === "expanded" && <span>Settings</span>}
+          {/* {sidebarState === "expanded" && <span>Settings</span>} */}
+          <span>Settings</span>
         </SidebarMenuButton>
       </Link>
     </div>
