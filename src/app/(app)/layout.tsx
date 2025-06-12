@@ -33,9 +33,10 @@ export default function AppLayout({
             {/* This trigger is for closing an open sidebar, or expanding an "icon" collapsed sidebar */}
             <SidebarTrigger
               className={cn(
-                "hidden md:flex", // Hidden on mobile, visible by default on desktop
-                // Hide on desktop if sidebar is collapsed AND in offcanvas mode (external trigger will handle)
-                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:hidden"
+                "hidden", // Base: hidden (mobile)
+                "md:flex", // Base: flex on desktop
+                // If collapsed & offcanvas on desktop, hide this internal trigger
+                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:!hidden"
               )}
             />
           </div>
@@ -49,10 +50,13 @@ export default function AppLayout({
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
+            {/* This trigger is for mobile, AND for desktop when sidebar is offcanvas-collapsed */}
             <SidebarTrigger asChild
               className={cn(
-                "flex md:hidden", // Visible on mobile, hidden by default on desktop
-                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:flex" // Show on desktop if offcanvas & collapsed
+                "flex", // Base: visible (for mobile)
+                "md:hidden", // Base: hidden on desktop
+                // Desktop: IF sidebar is collapsed AND offcanvas, THEN !flex (show)
+                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:!flex"
               )}
             >
               <Button size="icon" variant="outline">
