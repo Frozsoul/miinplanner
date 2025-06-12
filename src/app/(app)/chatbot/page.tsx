@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { suggestMarketingTips, type SuggestMarketingTipsInput } from "@/ai/flows/suggest-marketing-tips";
-import { Bot, User, Send, Loader2, Sparkles } from "lucide-react";
+import { Bot, User, Send, Loader2, Sparkles, BotMessageSquare } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
