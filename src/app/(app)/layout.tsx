@@ -25,7 +25,14 @@ export default function AppLayout({
           <div className="flex items-center justify-between">
             <Logo />
             {/* This trigger is for closing an open sidebar, or expanding an "icon" collapsed sidebar */}
-            <SidebarTrigger className="hidden md:flex data-[state=open]:hidden group-data-[collapsible=icon]:flex" />
+            <SidebarTrigger
+              className={cn(
+                "hidden", // Base: hidden on mobile
+                "md:flex", // Default on desktop: visible
+                // Hide on desktop if sidebar is collapsed AND in offcanvas mode (external trigger will handle)
+                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:hidden"
+              )}
+            />
           </div>
         </SidebarHeader>
         <SidebarContent className="p-2">
@@ -36,12 +43,14 @@ export default function AppLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        {/* This header is now always present, but its contents are conditional */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
             <SidebarTrigger asChild
               className={cn(
-                "md:hidden", // Default to hidden on md+ (mobile-first approach for this rule)
-                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:flex" // Show on md+ IF sidebar is collapsed AND in offcanvas mode
+                "flex", // Default: visible (primarily for mobile)
+                // Desktop states:
+                "peer-data-[state=expanded]:md:hidden", // If sidebar expanded, hide on desktop
+                "peer-data-[state=collapsed]:peer-data-[collapsible=icon]:md:hidden", // If sidebar collapsed to icon, hide on desktop
+                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:flex" // If sidebar collapsed to offcanvas, show on desktop
               )}
             >
               <Button size="icon" variant="outline">
@@ -59,3 +68,4 @@ export default function AppLayout({
     </SidebarProvider>
   );
 }
+
