@@ -20,7 +20,8 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar> {/* Defaults to collapsible="offcanvas" */}
+      {/* Set collapsible to "icon" for desktop to prevent it from fully disappearing */}
+      <Sidebar collapsible="icon">
         <SidebarHeader className={cn(
           "p-4 border-b border-sidebar-border",
           "peer-data-[state=collapsed]:peer-data-[collapsible=icon]:p-2" // Reduced padding in icon mode
@@ -30,13 +31,11 @@ export default function AppLayout({
             "peer-data-[state=collapsed]:peer-data-[collapsible=icon]:justify-center" // Center content in icon mode
           )}>
             <Logo className="peer-data-[state=collapsed]:peer-data-[collapsible=icon]:hidden" />
-            {/* This trigger is for closing an open sidebar, or expanding an "icon" collapsed sidebar */}
+            {/* This trigger is for desktop (closing expanded, or expanding icon-collapsed) */}
             <SidebarTrigger
               className={cn(
-                "hidden", // Base: hidden (mobile)
-                "md:flex", // Base: flex on desktop
-                // If collapsed & offcanvas on desktop, hide this internal trigger
-                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:!hidden"
+                "hidden",    // Hidden on mobile
+                "md:flex"    // Displayed on desktop
               )}
             />
           </div>
@@ -50,13 +49,11 @@ export default function AppLayout({
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
-            {/* This trigger is for mobile, AND for desktop when sidebar is offcanvas-collapsed */}
+            {/* This trigger is ONLY for mobile to toggle the off-canvas sheet */}
             <SidebarTrigger asChild
               className={cn(
-                "flex", // Base: visible (for mobile)
-                "md:hidden", // Base: hidden on desktop
-                // Desktop: IF sidebar is collapsed AND offcanvas, THEN !flex (show)
-                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:!flex"
+                "flex",     // Visible on mobile
+                "md:hidden"  // Hidden on desktop
               )}
             >
               <Button size="icon" variant="outline">
