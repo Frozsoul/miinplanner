@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -39,7 +40,7 @@ export function SidebarNav() {
     <SidebarMenu>
       {navItems.map((item) => (
         <SidebarMenuItem key={item.href}>
-          <Link href={item.href} legacyBehavior passHref>
+          <Link href={item.href}>
             <SidebarMenuButton
               isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" )}
               tooltip={item.label}
@@ -59,7 +60,7 @@ export function SidebarUser() {
   const { state: sidebarState } = useSidebar();
   return (
     <div className="mt-auto">
-       <Link href="#" legacyBehavior passHref>
+       <Link href="#">
         <SidebarMenuButton tooltip="Settings" className="justify-start">
           <Settings className="h-5 w-5" />
           {sidebarState === "expanded" && <span>Settings</span>}
