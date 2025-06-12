@@ -20,45 +20,39 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider defaultOpen>
-      {/* On desktop, sidebar collapses to icon rail. Trigger to expand is IN the icon rail's header. */}
-      {/* On mobile, sidebar is an off-canvas sheet. Trigger is in the main app header. */}
-      <Sidebar collapsible="icon">
+      {/* Sidebar will be off-canvas on all screen sizes */}
+      <Sidebar collapsible="offcanvas">
         <SidebarHeader className={cn(
           "p-4 border-b border-sidebar-border",
-          "peer-data-[state=collapsed]:peer-data-[collapsible=icon]:p-2" // Reduced padding in icon mode
+          "peer-data-[state=collapsed]:hidden" // Hide header content when collapsed
         )}>
           <div className={cn(
-            "flex items-center justify-between",
-            "peer-data-[state=collapsed]:peer-data-[collapsible=icon]:justify-center" // Center content in icon mode
+            "flex items-center justify-between"
           )}>
-            <Logo className="peer-data-[state=collapsed]:peer-data-[collapsible=icon]:hidden" />
-            {/* This trigger is for DESKTOP: 
-                - Closes an expanded sidebar.
-                - Expands an icon-collapsed sidebar.
-                It's located within the sidebar header itself.
-            */}
+            <Logo className="peer-data-[state=collapsed]:hidden" />
+            {/* This internal trigger is now ONLY for closing an expanded sidebar */}
             <SidebarTrigger
               className={cn(
-                "hidden",       // Hidden on mobile (main header trigger used for mobile)
-                "md:!flex"      // Displayed on desktop (md and up), !important to ensure visibility
+                "hidden", // Hidden by default
+                "peer-data-[state=expanded]:flex" // Visible only when sidebar is expanded
               )}
             />
           </div>
         </SidebarHeader>
-        <SidebarContent className="p-2">
+        <SidebarContent className="p-2 peer-data-[state=collapsed]:hidden">
           <SidebarNav />
         </SidebarContent>
-        <SidebarFooter className="p-2 border-t border-sidebar-border">
+        <SidebarFooter className="p-2 border-t border-sidebar-border peer-data-[state=collapsed]:hidden">
           <SidebarUser />
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        {/* This header contains the trigger for MOBILE off-canvas sidebar */}
+        {/* This header contains the primary trigger for ALL screen sizes */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
+            {/* This trigger is for ALL screen sizes to toggle the off-canvas sidebar */}
             <SidebarTrigger asChild
               className={cn(
-                "flex",     // Visible on mobile
-                "md:hidden"  // Hidden on desktop (desktop uses trigger inside sidebar)
+                "flex" // Always visible
               )}
             >
               <Button size="icon" variant="outline">
