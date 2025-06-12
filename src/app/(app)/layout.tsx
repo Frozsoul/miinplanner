@@ -80,7 +80,7 @@ export default function AppLayout({
           </DropdownMenu>
         </div>
       </header>
-      <main className="flex-1 container py-8">
+      <main className="flex-1 w-full py-8 px-4 sm:px-6 lg:px-8"> {/* Removed 'container', added padding */}
         {children}
       </main>
     </div>
