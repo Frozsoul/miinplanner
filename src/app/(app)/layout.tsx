@@ -20,10 +20,14 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider defaultOpen>
+      {/* 
+        The Sidebar component is the 'peer' for Tailwind's peer-[] variants.
+        Its data-state will be 'expanded' or 'collapsed'.
+      */}
       <Sidebar collapsible="offcanvas"> {/* Desktop: off-canvas, Mobile: off-canvas (sheet) */}
         <SidebarHeader className={cn(
           "p-4 border-b border-sidebar-border",
-          "peer-data-[state=collapsed]:hidden" // Hide header content when sidebar is collapsed
+          "peer-data-[state=collapsed]:hidden" // Hide header content when sidebar is collapsed (applies to offcanvas)
         )}>
           <div className={cn(
             "flex items-center justify-between"
@@ -32,7 +36,7 @@ export default function AppLayout({
             {/* This internal trigger is to CLOSE an expanded sidebar */}
             <SidebarTrigger
               className={cn(
-                "flex" // Always flex if SidebarHeader is visible (i.e., sidebar is expanded)
+                "flex" // Visible when SidebarHeader is visible (i.e. sidebar expanded)
               )}
             />
           </div>
@@ -45,12 +49,18 @@ export default function AppLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        {/* This header contains the primary trigger for ALL screen sizes */}
+        {/* This header contains the primary trigger */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
-            {/* This trigger is for ALL screen sizes to toggle the off-canvas sidebar */}
+            {/* 
+              This trigger toggles the off-canvas sidebar.
+              - Always visible on mobile.
+              - On desktop: Visible ONLY if the sidebar (peer) is collapsed. Hidden if sidebar is expanded.
+            */}
             <SidebarTrigger asChild
               className={cn(
-                "flex" // Always visible to toggle the sidebar
+                "flex", // Default visible (for mobile)
+                "peer-data-[state=expanded]:md:hidden", // Hide on desktop if sidebar is expanded
+                "peer-data-[state=collapsed]:md:flex" // Show on desktop if sidebar is collapsed
               )}
             >
               <Button size="icon" variant="outline">
