@@ -262,13 +262,13 @@ Sidebar.displayName = "Sidebar"
 
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
-  ButtonProps // Use ButtonProps which includes asChild and children
+  ButtonProps
 >(({ 
-  className,    // ClassName specifically for THIS trigger's styling
-  onClick,      // onClick for THIS trigger
-  children,     // Children for THIS trigger (used if asChild)
-  asChild = false, // asChild for THIS trigger
-  ...props // Other props like variant, size, etc., passed to SidebarTrigger
+  className, 
+  onClick, 
+  children, 
+  asChild = false, 
+  ...props 
 }, ref) => {
   const { toggleSidebar } = useSidebar();
 
@@ -280,15 +280,14 @@ const SidebarTrigger = React.forwardRef<
       size={props.size ?? (asChild ? undefined : "icon")}
       className={cn(asChild ? undefined : "h-7 w-7", className, props.className)}
       onClick={(event) => {
-        onClick?.(event); // Call the onClick passed to SidebarTrigger
+        onClick?.(event);
         toggleSidebar();
       }}
-      asChild={asChild} // Pass the asChild state to the underlying Button
-      {...props} // Spread other props (like custom variant, size, or any native attrs)
-                 // If asChild is true, props.children will be passed to Button (Slot) here
+      asChild={asChild}
+      {...props} 
     >
-      {asChild ? children : ( // If SidebarTrigger acts as a Slot, render its children.
-        <>                    // Otherwise, render its default content.
+      {asChild ? children : ( 
+        <> 
           <PanelLeft />
           <span className="sr-only">Toggle Sidebar</span>
         </>
