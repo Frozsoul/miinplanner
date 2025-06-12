@@ -11,6 +11,7 @@ import {
 import { SidebarNav, SidebarUser } from "@/components/layout/sidebar-nav";
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function AppLayout({
   children,
@@ -19,10 +20,11 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar>
+      <Sidebar> {/* Defaults to collapsible="offcanvas" */}
         <SidebarHeader className="p-4 border-b border-sidebar-border">
           <div className="flex items-center justify-between">
             <Logo />
+            {/* This trigger is for closing an open sidebar, or expanding an "icon" collapsed sidebar */}
             <SidebarTrigger className="hidden md:flex data-[state=open]:hidden group-data-[collapsible=icon]:flex" />
           </div>
         </SidebarHeader>
@@ -34,9 +36,19 @@ export default function AppLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4 md:hidden">
-            <SidebarTrigger asChild><Button size="icon" variant="outline"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left-open"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 3v18"/></svg></Button></SidebarTrigger>
-             <div className="flex items-center gap-2 ml-auto">
+        {/* This header is now always present, but its contents are conditional */}
+        <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
+            <SidebarTrigger asChild
+              className={cn(
+                "md:hidden", // Default to hidden on md+ (mobile-first approach for this rule)
+                "peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:md:flex" // Show on md+ IF sidebar is collapsed AND in offcanvas mode
+              )}
+            >
+              <Button size="icon" variant="outline">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left-open"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+              </Button>
+            </SidebarTrigger>
+             <div className="flex items-center gap-2 ml-auto md:hidden"> {/* Mobile-only Logo */}
                <Logo />
             </div>
         </header>
