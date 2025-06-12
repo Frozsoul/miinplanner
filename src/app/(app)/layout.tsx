@@ -20,21 +20,19 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider defaultOpen>
-      {/* Sidebar will be off-canvas on all screen sizes */}
-      <Sidebar collapsible="offcanvas">
+      <Sidebar collapsible="offcanvas"> {/* Desktop: off-canvas, Mobile: off-canvas (sheet) */}
         <SidebarHeader className={cn(
           "p-4 border-b border-sidebar-border",
-          "peer-data-[state=collapsed]:hidden" // Hide header content when collapsed
+          "peer-data-[state=collapsed]:hidden" // Hide header content when sidebar is collapsed
         )}>
           <div className={cn(
             "flex items-center justify-between"
           )}>
             <Logo className="peer-data-[state=collapsed]:hidden" />
-            {/* This internal trigger is now ONLY for closing an expanded sidebar */}
+            {/* This internal trigger is to CLOSE an expanded sidebar */}
             <SidebarTrigger
               className={cn(
-                "hidden", // Hidden by default
-                "peer-data-[state=expanded]:flex" // Visible only when sidebar is expanded
+                "flex" // Always flex if SidebarHeader is visible (i.e., sidebar is expanded)
               )}
             />
           </div>
@@ -52,7 +50,7 @@ export default function AppLayout({
             {/* This trigger is for ALL screen sizes to toggle the off-canvas sidebar */}
             <SidebarTrigger asChild
               className={cn(
-                "flex" // Always visible
+                "flex" // Always visible to toggle the sidebar
               )}
             >
               <Button size="icon" variant="outline">
