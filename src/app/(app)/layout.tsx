@@ -20,7 +20,8 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider defaultOpen>
-      {/* Set collapsible to "icon" for desktop to prevent it from fully disappearing */}
+      {/* On desktop, sidebar collapses to icon rail. Trigger to expand is IN the icon rail's header. */}
+      {/* On mobile, sidebar is an off-canvas sheet. Trigger is in the main app header. */}
       <Sidebar collapsible="icon">
         <SidebarHeader className={cn(
           "p-4 border-b border-sidebar-border",
@@ -31,11 +32,15 @@ export default function AppLayout({
             "peer-data-[state=collapsed]:peer-data-[collapsible=icon]:justify-center" // Center content in icon mode
           )}>
             <Logo className="peer-data-[state=collapsed]:peer-data-[collapsible=icon]:hidden" />
-            {/* This trigger is for desktop (closing expanded, or expanding icon-collapsed) */}
+            {/* This trigger is for DESKTOP: 
+                - Closes an expanded sidebar.
+                - Expands an icon-collapsed sidebar.
+                It's located within the sidebar header itself.
+            */}
             <SidebarTrigger
               className={cn(
-                "hidden",    // Hidden on mobile
-                "md:flex"    // Displayed on desktop
+                "hidden",       // Hidden on mobile (main header trigger used for mobile)
+                "md:!flex"      // Displayed on desktop (md and up), !important to ensure visibility
               )}
             />
           </div>
@@ -48,12 +53,12 @@ export default function AppLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
+        {/* This header contains the trigger for MOBILE off-canvas sidebar */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
-            {/* This trigger is ONLY for mobile to toggle the off-canvas sheet */}
             <SidebarTrigger asChild
               className={cn(
                 "flex",     // Visible on mobile
-                "md:hidden"  // Hidden on desktop
+                "md:hidden"  // Hidden on desktop (desktop uses trigger inside sidebar)
               )}
             >
               <Button size="icon" variant="outline">
