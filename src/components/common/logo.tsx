@@ -17,7 +17,6 @@ export function Logo({ className }: LogoProps) {
         x="0px"
         y="0px"
         viewBox="0 0 500 500"
-        enableBackground="new 0 0 500 500"
         xmlSpace="preserve"
         className="h-6 w-auto" // This will control the size
       >
