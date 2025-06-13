@@ -3,11 +3,12 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { 
   getFirestore, 
-  type Firestore, 
-  // initializeFirestore, // No longer using this directly for now
-  // CACHE_SIZE_UNLIMITED, 
-  // persistentLocalCache, 
-  // persistentMultipleTabManager
+  type Firestore,
+  initializeFirestore, // Keep for potential future use with settings
+  // CACHE_SIZE_UNLIMITED, // Example setting
+  // persistentLocalCache, // Example setting
+  // persistentMultipleTabManager // Example setting
+  experimentalForceLongPolling // For debugging connection issues
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -27,8 +28,8 @@ console.log("Firebase Config Used by App:", firebaseConfig);
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.error(
     "CRITICAL FIREBASE CONFIG ERROR: Firebase API Key or Project ID is missing. " +
-    "Please ensure your .env file (e.g., .env.local) is correctly set up with NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID, " +
-    "and that you have restarted your Next.js development server."
+    "Please ensure your .env.local file is correctly set up with NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID, " +
+    "and that the Next.js development server has been restarted to pick up these changes."
   );
 }
 
@@ -41,7 +42,13 @@ if (!getApps().length) {
 
 const auth: Auth = getAuth(app);
 
-// Simplified Firestore initialization
-const db: Firestore = getFirestore(app);
+// Initialize Firestore with standard getFirestore
+// We keep the experimentalForceLongPolling and initializeFirestore imports
+// in case they are needed for future debugging or specific settings.
+const db: Firestore = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  // Other settings like cacheSizeBytes could be added here if needed
+});
+// const db: Firestore = getFirestore(app); // Standard initialization
 
 export { app, auth, db };
