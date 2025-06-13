@@ -1,19 +1,24 @@
 
+import type { Timestamp } from "firebase/firestore";
 
 export interface Task {
-  id: string;
+  id: string; // Firestore document ID
   title: string;
   description?: string;
   priority: 'Low' | 'Medium' | 'High';
-  dueDate?: string; // Store as ISO string for localStorage
+  dueDate?: string; // Stored as ISO string in component state, converted to/from Timestamp for Firestore
   completed: boolean;
+  createdAt?: Timestamp; // Optional: Firestore server timestamp
+  userId?: string; // To associate task with user
 }
 
 export interface Reminder {
-  id: string;
+  id: string; // Firestore document ID
   title: string;
-  remindAt: string; // Store as ISO string
-  triggered: boolean; // Not used yet, but good for future
+  remindAt: string; // Stored as ISO string, converted to/from Timestamp for Firestore
+  triggered: boolean; 
+  createdAt?: Timestamp; // Optional: Firestore server timestamp
+  userId?: string; // To associate reminder with user
 }
 
 export interface ChatMessage {
@@ -38,14 +43,10 @@ export interface LoginFormData {
 }
 
 export interface SignupFormData extends LoginFormData {
-  confirmPassword?: string; // Optional for cases where signup doesn't require it, though typically it does.
+  confirmPassword?: string; 
   // Add other fields like displayName if needed during signup
 }
 
-// You can also define a more specific User type for your app if needed
-// export interface AppUser {
-//   uid: string;
-//   email: string | null;
-//   displayName?: string | null;
-//   // other app-specific fields
-// }
+// For creating tasks/reminders, ID is not needed as Firestore generates it
+export type TaskData = Omit<Task, 'id' | 'createdAt' | 'userId'>;
+export type ReminderData = Omit<Reminder, 'id' | 'createdAt' | 'userId' | 'triggered'>;
