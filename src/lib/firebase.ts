@@ -4,8 +4,8 @@ import { getAuth, type Auth } from "firebase/auth";
 import { 
   getFirestore, 
   type Firestore, 
-  initializeFirestore, 
-  // CACHE_SIZE_UNLIMITED, // We can re-evaluate enabling full offline persistence later
+  // initializeFirestore, // No longer using this directly for now
+  // CACHE_SIZE_UNLIMITED, 
   // persistentLocalCache, 
   // persistentMultipleTabManager
 } from "firebase/firestore";
@@ -41,17 +41,7 @@ if (!getApps().length) {
 
 const auth: Auth = getAuth(app);
 
-// Initialize Firestore with experimentalForceLongPolling
-// For more robust offline persistence, you might also consider:
-// const db = initializeFirestore(app, {
-//   localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
-// });
-// However, let's first try to solve the connection issue.
-const db: Firestore = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  // experimentalAutoDetectLongPolling: true, // This is another option, but explicit force is better for debugging
-});
-
+// Simplified Firestore initialization
+const db: Firestore = getFirestore(app);
 
 export { app, auth, db };
-
