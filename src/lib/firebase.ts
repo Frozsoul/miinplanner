@@ -4,11 +4,11 @@ import { getAuth, type Auth } from "firebase/auth";
 import { 
   getFirestore, 
   type Firestore,
-  initializeFirestore, // Keep for potential future use with settings
-  // CACHE_SIZE_UNLIMITED, // Example setting
-  // persistentLocalCache, // Example setting
-  // persistentMultipleTabManager // Example setting
-  experimentalForceLongPolling // For debugging connection issues
+  // initializeFirestore, // We are using getFirestore
+  // CACHE_SIZE_UNLIMITED, 
+  // persistentLocalCache, 
+  // persistentMultipleTabManager 
+  // experimentalForceLongPolling // Keep for potential future use if direct getFirestore(app, "name") doesn't work
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -21,10 +21,8 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Log the configuration to the browser console for debugging
 console.log("Firebase Config Used by App:", firebaseConfig);
 
-// Critical check for essential config values
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.error(
     "CRITICAL FIREBASE CONFIG ERROR: Firebase API Key or Project ID is missing. " +
@@ -42,13 +40,8 @@ if (!getApps().length) {
 
 const auth: Auth = getAuth(app);
 
-// Initialize Firestore with standard getFirestore
-// We keep the experimentalForceLongPolling and initializeFirestore imports
-// in case they are needed for future debugging or specific settings.
-const db: Firestore = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  // Other settings like cacheSizeBytes could be added here if needed
-});
-// const db: Firestore = getFirestore(app); // Standard initialization
+// Connect to the specifically named "miinplanner" database.
+// If your database is indeed the (default) one, this should be: const db: Firestore = getFirestore(app);
+const db: Firestore = getFirestore(app, "miinplanner");
 
 export { app, auth, db };
