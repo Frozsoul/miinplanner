@@ -4,10 +4,11 @@
 import { useState } from "react";
 import type { Reminder } from "@/types";
 import useLocalStorage from "@/hooks/use-local-storage";
+import { useAuth } from "@/contexts/auth-context"; // Import useAuth
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { DatePicker } from "@/components/tasks/date-picker"; // Re-use date picker
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/tasks/date-picker";
 import { PlusCircle, Trash2, BellRing } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import {
@@ -38,7 +39,10 @@ const ReminderItem = ({ reminder, onDelete }: { reminder: Reminder; onDelete: (i
 };
 
 export default function RemindersPage() {
-  const [reminders, setReminders] = useLocalStorage<Reminder[]>("miinplanner_reminders", []);
+  const { user } = useAuth(); // Get the authenticated user
+  const remindersStorageKey = user ? `miinplanner_reminders_${user.uid}` : "miinplanner_reminders_guest"; // Create user-specific key
+
+  const [reminders, setReminders] = useLocalStorage<Reminder[]>(remindersStorageKey, []);
   const [newReminder, setNewReminder] = useState<{ title: string; remindAt?: Date }>({ title: "" });
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -50,7 +54,7 @@ export default function RemindersPage() {
       remindAt: newReminder.remindAt.toISOString(), 
       triggered: false 
     };
-    setReminders([...reminders, reminderToAdd]);
+    setReminders(prevReminders => [...prevReminders, reminderToAdd]);
     setNewReminder({ title: "" });
     setIsFormOpen(false);
   };
@@ -89,13 +93,13 @@ export default function RemindersPage() {
             </div>
             <DialogFooter>
                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-              <Button onClick={handleAddReminder}>Add Reminder</Button>
+              <Button onClick={handleAddReminder} disabled={!newReminder.title || !newReminder.remindAt}>Add Reminder</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      {sortedReminders.length === 0 ? (
+      {sortedReminders.length === 0 && user ? (
         <Card className="p-8 text-center text-muted-foreground shadow-sm">
           <BellRing className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <p className="font-semibold">No reminders yet.</p>
@@ -111,4 +115,3 @@ export default function RemindersPage() {
     </div>
   );
 }
-

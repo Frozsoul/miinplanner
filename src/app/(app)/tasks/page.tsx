@@ -4,13 +4,14 @@
 import { useState, useEffect } from "react";
 import type { Task } from "@/types";
 import useLocalStorage from "@/hooks/use-local-storage";
+import { useAuth } from "@/contexts/auth-context"; // Import useAuth
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DatePicker } from "@/components/tasks/date-picker"; // We'll create this
+import { DatePicker } from "@/components/tasks/date-picker";
 import { PlusCircle, Trash2, Edit3, Filter } from "lucide-react";
 import {
   Dialog,
@@ -59,7 +60,10 @@ const TaskItem = ({ task, onToggleComplete, onDelete, onEdit }: { task: Task; on
 
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useLocalStorage<Task[]>("miinplanner_tasks", []);
+  const { user } = useAuth(); // Get the authenticated user
+  const tasksStorageKey = user ? `miinplanner_tasks_${user.uid}` : "miinplanner_tasks_guest"; // Create user-specific key, fallback for safety
+  
+  const [tasks, setTasks] = useLocalStorage<Task[]>(tasksStorageKey, []);
   const [newTask, setNewTask] = useState<{ title: string; description: string; priority: 'Low' | 'Medium' | 'High'; dueDate?: Date }>({ title: "", description: "", priority: "Medium" });
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [filterPriority, setFilterPriority] = useState<string>("all");
@@ -75,7 +79,7 @@ export default function TasksPage() {
       dueDate: newTask.dueDate ? newTask.dueDate.toISOString() : undefined,
       completed: false 
     };
-    setTasks([...tasks, taskToAdd]);
+    setTasks(prevTasks => [...prevTasks, taskToAdd]);
     setNewTask({ title: "", description: "", priority: "Medium" });
     setIsFormOpen(false);
   };
@@ -88,7 +92,7 @@ export default function TasksPage() {
   };
 
   const openEditModal = (task: Task) => {
-    setEditingTask({...task, dueDate: task.dueDate ? task.dueDate : undefined }); // Ensure dueDate is string or undefined
+    setEditingTask({...task, dueDate: task.dueDate ? parseISO(task.dueDate) : undefined });
     setIsFormOpen(true);
   };
   
@@ -108,7 +112,9 @@ export default function TasksPage() {
 
   const filteredTasks = tasks
     .filter(task => filterPriority === "all" || task.priority === filterPriority)
-    .filter(task => showCompleted || !task.completed);
+    .filter(task => showCompleted || !task.completed)
+    .sort((a,b) => (a.dueDate && b.dueDate) ? new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime() : a.dueDate ? -1 : b.dueDate ? 1 : 0);
+
 
   return (
     <div className="container mx-auto py-8">
@@ -150,7 +156,7 @@ export default function TasksPage() {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="dueDate" className="text-right">Due Date</Label>
                 <DatePicker 
-                  date={editingTask ? (editingTask.dueDate ? parseISO(editingTask.dueDate) : undefined) : newTask.dueDate} 
+                  date={editingTask ? (editingTask.dueDate ? (typeof editingTask.dueDate === 'string' ? parseISO(editingTask.dueDate) : editingTask.dueDate) : undefined) : newTask.dueDate} 
                   setDate={(date) => editingTask ? setEditingTask({...editingTask, dueDate: date?.toISOString()}) : setNewTask({ ...newTask, dueDate: date })} 
                   className="col-span-3"
                 />
@@ -186,8 +192,12 @@ export default function TasksPage() {
         </div>
       </Card>
 
-      {filteredTasks.length === 0 ? (
-        <p className="text-center text-muted-foreground mt-8">No tasks found. Add a new task to get started!</p>
+      {filteredTasks.length === 0 && user ? (
+        <Card className="p-8 text-center text-muted-foreground shadow-sm">
+          <ListChecks className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <p className="font-semibold">No tasks match your filters, or you haven't added any yet.</p>
+          <p className="text-sm">Click "Add New Task" to get started!</p>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredTasks.map(task => (
@@ -199,3 +209,7 @@ export default function TasksPage() {
   );
 }
 
+// Helper icon, or import from lucide-react if ListChecks is available there
+const ListChecks = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+);
