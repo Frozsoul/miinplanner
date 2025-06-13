@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,8 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { navItems } from "@/components/layout/topbar-nav";
-import { User, Settings } from "lucide-react";
+import { User, Settings, LogOut, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
+import { useEffect } from 'react';
 
 export default function AppLayout({
   children,
@@ -24,6 +26,32 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, logout } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    // This state should ideally be caught by the useEffect redirect,
+    // but as a fallback, prevent rendering the layout.
+    return null; 
+  }
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -51,8 +79,7 @@ export default function AppLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  {/* Placeholder for user image if available */}
-                  {/* <AvatarImage src="/path-to-user-avatar.png" alt="User avatar" /> */}
+                  {/* Future: <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User avatar"} /> */}
                   <AvatarFallback>
                     <User className="h-5 w-5" />
                   </AvatarFallback>
@@ -62,9 +89,9 @@ export default function AppLayout({
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Miin User</p>
+                  <p className="text-sm font-medium leading-none">{user.displayName || "User"}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    user@example.com
+                    {user.email || "No email"}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -75,12 +102,16 @@ export default function AppLayout({
                   <span>Settings</span>
                 </Link>
               </DropdownMenuItem>
-              {/* Add other items like Logout here if needed */}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
-      <main className="flex-1 w-full py-8 px-4 sm:px-6 lg:px-8"> {/* Removed 'container', added padding */}
+      <main className="flex-1 w-full py-8 px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

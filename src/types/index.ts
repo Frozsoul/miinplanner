@@ -1,4 +1,5 @@
 
+
 export interface Task {
   id: string;
   title: string;
@@ -29,3 +30,22 @@ export interface ContentIdea {
   tone?: string;
   targetAudience?: string;
 }
+
+// Authentication Form Data
+export interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+export interface SignupFormData extends LoginFormData {
+  confirmPassword?: string; // Optional for cases where signup doesn't require it, though typically it does.
+  // Add other fields like displayName if needed during signup
+}
+
+// You can also define a more specific User type for your app if needed
+// export interface AppUser {
+//   uid: string;
+//   email: string | null;
+//   displayName?: string | null;
+//   // other app-specific fields
+// }
