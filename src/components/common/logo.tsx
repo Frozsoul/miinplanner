@@ -23,11 +23,9 @@ export function Logo({ className }: LogoProps) {
       >
         <style>{`
           .st0{fill:none;}
-          /* .st1 is for #1C1A1A, not directly used for main logo elements on dark bg */
           .st2{fill:var(--accent);} /* Accent color for DIGITAL */
           .st3{fill:var(--foreground);} /* Main color for MIIN and shapes */
-          /* .st4 font-family removed to inherit from body */
-          .st5{font-size:160px;}
+          .st5{font-size:160px; font-family: inherit;} /* Inherit body font */
         `}</style>
         <g>
           <polygon className="st3" points="781.1,124.8 813.7,147 866.7,115.6 866.7,159.1 900,178.9 900,57.9 	"/>

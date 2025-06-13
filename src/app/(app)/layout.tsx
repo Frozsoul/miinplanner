@@ -14,8 +14,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { navItems } from "@/components/layout/topbar-nav";
-import { User, Settings, LogOut, Loader2 } from "lucide-react";
+import { User, Settings, LogOut, Loader2, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from 'react';
@@ -44,8 +50,6 @@ export default function AppLayout({
   }
 
   if (!user) {
-    // This state should ideally be caught by the useEffect redirect,
-    // but as a fallback, prevent rendering the layout.
     return null; 
   }
 
@@ -57,15 +61,17 @@ export default function AppLayout({
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
-          <Logo className="mr-6" />
-          <nav className="flex items-center space-x-4 lg:space-x-6 mr-auto">
+          <Logo className="mr-4 md:mr-6" />
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-4 lg:space-x-6 mr-auto">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-primary",
-                  pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/")
+                  (pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/"))
                     ? "text-primary"
                     : "text-muted-foreground"
                 )}
@@ -75,11 +81,47 @@ export default function AppLayout({
             ))}
           </nav>
 
+          {/* Mobile Navigation Trigger & Sheet */}
+          <div className="md:hidden mr-auto">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[250px] sm:w-[300px] p-0">
+                <div className="flex flex-col h-full">
+                  <div className="p-4 border-b">
+                    <Logo />
+                  </div>
+                  <nav className="flex flex-col space-y-1 p-4">
+                    {navItems.map((item) => (
+                      <SheetClose asChild key={item.href}>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "block px-3 py-2 rounded-md text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                            (pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/"))
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground"
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </nav>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  {/* Future: <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User avatar"} /> */}
                   <AvatarFallback>
                     <User className="h-5 w-5" />
                   </AvatarFallback>
@@ -97,7 +139,7 @@ export default function AppLayout({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="#"> {/* Update with actual settings page if needed */}
+                <Link href="#"> {/* Consider creating a /settings page */}
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </Link>
