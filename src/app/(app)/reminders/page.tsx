@@ -55,16 +55,18 @@ export default function RemindersPage() {
   const fetchUserReminders = useCallback(async () => {
     if (user?.uid) {
       setIsLoadingReminders(true);
+      console.log(`RemindersPage: Attempting to fetch reminders for userId: ${user.uid}`);
       try {
         const userReminders = await getReminders(user.uid);
         setReminders(userReminders);
       } catch (error) {
-        console.error("Failed to fetch reminders:", error);
+        console.error("RemindersPage: Failed to fetch reminders:", error);
         toast({ title: "Error", description: "Could not fetch reminders.", variant: "destructive" });
       } finally {
         setIsLoadingReminders(false);
       }
     } else {
+      console.log("RemindersPage: fetchUserReminders - No user or user.uid, clearing reminders.");
       setReminders([]);
       setIsLoadingReminders(false);
     }
@@ -79,12 +81,18 @@ export default function RemindersPage() {
   };
 
   const handleAddReminder = async () => {
-    if (!user?.uid || newReminderForm.title.trim() === "" || !newReminderForm.remindAt) {
+    if (!user?.uid) {
+      console.error("RemindersPage: handleAddReminder - User not available.");
+      toast({ title: "Error", description: "User not authenticated. Cannot add reminder.", variant: "destructive"});
+      return;
+    }
+    if (newReminderForm.title.trim() === "" || !newReminderForm.remindAt) {
       toast({ title: "Validation Error", description: "Title and remind date are required.", variant: "destructive"});
       return;
     }
     
     setIsSubmitting(true);
+    console.log(`RemindersPage: Attempting to add reminder for userId: ${user.uid}`);
     const reminderToAdd: ReminderData = { 
       title: newReminderForm.title,
       remindAt: newReminderForm.remindAt.toISOString(), 
@@ -92,12 +100,12 @@ export default function RemindersPage() {
 
     try {
       await addReminder(user.uid, reminderToAdd);
-      fetchUserReminders(); // Refresh list
+      fetchUserReminders(); 
       resetForm();
       setIsFormOpen(false);
       toast({ title: "Success", description: "Reminder added." });
     } catch (error) {
-      console.error("Failed to add reminder:", error);
+      console.error("RemindersPage: Failed to add reminder:", error);
       toast({ title: "Error", description: "Could not add reminder.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -105,14 +113,19 @@ export default function RemindersPage() {
   };
 
   const handleDeleteReminder = async (id: string) => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.error("RemindersPage: handleDeleteReminder - User not available.");
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
     setIsSubmitting(true);
+    console.log(`RemindersPage: Deleting reminder ${id} for userId: ${user.uid}`);
     try {
       await deleteReminder(user.uid, id);
       setReminders(prevReminders => prevReminders.filter(reminder => reminder.id !== id));
       toast({ title: "Success", description: "Reminder deleted." });
     } catch (error) {
-      console.error("Failed to delete reminder:", error);
+      console.error("RemindersPage: Failed to delete reminder:", error);
       toast({ title: "Error", description: "Could not delete reminder.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -192,3 +205,4 @@ export default function RemindersPage() {
     </div>
   );
 }
+

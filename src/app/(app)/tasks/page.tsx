@@ -78,17 +78,19 @@ export default function TasksPage() {
   const fetchUserTasks = useCallback(async () => {
     if (user?.uid) {
       setIsLoadingTasks(true);
+      console.log(`TasksPage: Attempting to fetch tasks for userId: ${user.uid}`);
       try {
         const userTasks = await getTasks(user.uid);
         setTasks(userTasks);
       } catch (error) {
-        console.error("Failed to fetch tasks:", error);
+        console.error("TasksPage: Failed to fetch tasks:", error);
         toast({ title: "Error", description: "Could not fetch tasks.", variant: "destructive" });
       } finally {
         setIsLoadingTasks(false);
       }
     } else {
-      setTasks([]); // Clear tasks if no user
+      console.log("TasksPage: fetchUserTasks - No user or user.uid, clearing tasks.");
+      setTasks([]); 
       setIsLoadingTasks(false);
     }
   }, [user, toast]);
@@ -117,7 +119,11 @@ export default function TasksPage() {
   }
 
   const handleSaveTask = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.error("TasksPage: handleSaveTask - User not available for saving task.");
+      toast({ title: "Error", description: "User not authenticated. Cannot save task.", variant: "destructive" });
+      return;
+    }
     
     const currentData = editingTask ? {
       title: editingTask.title,
@@ -138,13 +144,14 @@ export default function TasksPage() {
     }
 
     setIsSubmitting(true);
+    console.log(`TasksPage: Attempting to save task for userId: ${user.uid}. Editing: ${!!editingTask}`);
     try {
       if (editingTask && editingTask.id) {
         const updatePayload: Partial<TaskData> = {
             title: editingTask.title,
             description: editingTask.description,
             priority: editingTask.priority,
-            dueDate: editingTask.dueDate, // This is already an ISO string or undefined
+            dueDate: editingTask.dueDate, 
         };
         await updateTask(user.uid, editingTask.id, updatePayload);
         toast({ title: "Success", description: "Task updated." });
@@ -154,16 +161,16 @@ export default function TasksPage() {
             description: taskFormState.description,
             priority: taskFormState.priority,
             dueDate: taskFormState.dueDateObj?.toISOString(),
-            completed: false, // completed is part of TaskData
+            completed: false, 
         };
         await addTask(user.uid, newTaskData);
         toast({ title: "Success", description: "Task added." });
       }
-      fetchUserTasks(); // Refresh list
+      fetchUserTasks(); 
       setIsFormOpen(false);
       resetFormState();
     } catch (error) {
-      console.error("Failed to save task:", error);
+      console.error("TasksPage: Failed to save task:", error);
       toast({ title: "Error", description: "Could not save task.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -173,9 +180,9 @@ export default function TasksPage() {
   const openEditModal = (task: Task) => {
     setEditingTask({
         ...task,
-        dueDate: task.dueDate ? task.dueDate : undefined, // Ensure dueDate is string or undefined for form
+        dueDate: task.dueDate ? task.dueDate : undefined, 
     });
-    setTaskFormState({ // Pre-fill general form for consistency, though editingTask is prime
+    setTaskFormState({ 
         title: task.title,
         description: task.description || "",
         priority: task.priority,
@@ -191,26 +198,36 @@ export default function TasksPage() {
   }
 
   const handleToggleComplete = async (id: string, completed: boolean) => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.error("TasksPage: handleToggleComplete - User not available.");
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    console.log(`TasksPage: Toggling task ${id} to completed: ${completed} for userId: ${user.uid}`);
     try {
       await updateTask(user.uid, id, { completed });
       setTasks(prevTasks => prevTasks.map(task => task.id === id ? { ...task, completed } : task));
       toast({ title: "Status Updated", description: `Task marked as ${completed ? 'complete' : 'incomplete'}.`});
     } catch (error) {
-      console.error("Failed to toggle task complete:", error);
+      console.error("TasksPage: Failed to toggle task complete:", error);
       toast({ title: "Error", description: "Could not update task status.", variant: "destructive" });
     }
   };
 
   const handleDeleteTask = async (id: string) => {
-    if (!user?.uid) return;
-    setIsSubmitting(true); // Can use a general submitting or specific deleting state
+    if (!user?.uid) {
+      console.error("TasksPage: handleDeleteTask - User not available.");
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    setIsSubmitting(true); 
+    console.log(`TasksPage: Deleting task ${id} for userId: ${user.uid}`);
     try {
       await deleteTask(user.uid, id);
       setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
       toast({ title: "Success", description: "Task deleted." });
     } catch (error) {
-      console.error("Failed to delete task:", error);
+      console.error("TasksPage: Failed to delete task:", error);
       toast({ title: "Error", description: "Could not delete task.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -223,7 +240,7 @@ export default function TasksPage() {
     .sort((a,b) => {
         const dateA = a.dueDate ? parseISO(a.dueDate).getTime() : Infinity;
         const dateB = b.dueDate ? parseISO(b.dueDate).getTime() : Infinity;
-        if (dateA === Infinity && dateB === Infinity) return 0; // both no due dates
+        if (dateA === Infinity && dateB === Infinity) return 0; 
         return dateA - dateB;
     });
 
@@ -338,3 +355,4 @@ export default function TasksPage() {
     </div>
   );
 }
+
