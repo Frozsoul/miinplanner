@@ -4,11 +4,11 @@ import { getAuth, type Auth } from "firebase/auth";
 import { 
   getFirestore, 
   type Firestore,
-  // initializeFirestore, // We are using getFirestore
-  // CACHE_SIZE_UNLIMITED, 
-  // persistentLocalCache, 
-  // persistentMultipleTabManager 
-  // experimentalForceLongPolling // Keep for potential future use if direct getFirestore(app, "name") doesn't work
+  initializeFirestore, // Keep for potential future use if direct getFirestore(app, "name") doesn't work
+  // CACHE_SIZE_UNLIMITED, // Not currently used
+  // persistentLocalCache, // Not currently used
+  // persistentMultipleTabManager, // Not currently used
+  // experimentalForceLongPolling // Reverted this for now
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -40,8 +40,7 @@ if (!getApps().length) {
 
 const auth: Auth = getAuth(app);
 
-// Connect to the specifically named "miinplanner" database.
-// If your database is indeed the (default) one, this should be: const db: Firestore = getFirestore(app);
+// Explicitly connect to the "miinplanner" database.
 const db: Firestore = getFirestore(app, "miinplanner");
 
 export { app, auth, db };
