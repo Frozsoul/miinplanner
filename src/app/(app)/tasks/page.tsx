@@ -7,6 +7,7 @@ import { TASK_STAGES } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { addTask, deleteTask, getTasks, updateTask } from "@/services/task-service";
 import { prioritizeTasks as aiPrioritizeTasks, type PrioritizeTasksInput } from "@/ai/flows/prioritize-tasks-flow";
+import { parseISO } from 'date-fns'; // Added import
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,7 @@ export default function TasksPage() {
         setTasks(userTasks);
       } catch (error) {
         console.error("TasksPage: Failed to fetch tasks:", error);
+        console.error("Full error object during getTasks:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
         toast({ title: "Error", description: "Could not fetch tasks.", variant: "destructive" });
       } finally {
         setIsLoadingTasks(false);
@@ -86,6 +88,7 @@ export default function TasksPage() {
   };
 
   const openFormModal = (stage?: TaskStage, taskToEdit?: Task) => {
+    console.log(`TasksPage: openFormModal called. Stage: ${stage}, Task to edit: ${taskToEdit?.id}`);
     if (taskToEdit) {
       setEditingTask(taskToEdit);
       setTaskFormState({
@@ -116,6 +119,7 @@ export default function TasksPage() {
     setIsSubmitting(true);
     const tagsArray = taskFormState.tagsString?.split(',').map(tag => tag.trim()).filter(tag => tag) || [];
     
+    console.log(`TasksPage: Attempting to save task for userId: ${user.uid}. Editing: ${!!editingTask?.id}`);
     const taskPayload: TaskData = {
       title: taskFormState.title,
       description: taskFormState.description,
@@ -128,11 +132,9 @@ export default function TasksPage() {
 
     try {
       if (editingTask?.id) {
-        console.log(`TasksPage: Attempting to update task ${editingTask.id} for userId: ${user.uid}`);
         await updateTask(user.uid, editingTask.id, taskPayload);
         toast({ title: "Success", description: "Task updated." });
       } else {
-        console.log(`TasksPage: Attempting to add task for userId: ${user.uid}`);
         await addTask(user.uid, taskPayload);
         toast({ title: "Success", description: "Task added." });
       }
@@ -140,6 +142,7 @@ export default function TasksPage() {
       resetForm();
     } catch (error) {
       console.error("TasksPage: Failed to save task:", error);
+      console.error("Full error object during handleSaveTask:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
       toast({ title: "Error", description: "Could not save task.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -159,6 +162,7 @@ export default function TasksPage() {
       fetchUserTasks(); // Re-fetch to update list
     } catch (error) {
       console.error("TasksPage: Failed to delete task:", error);
+      console.error("Full error object during handleDeleteTask:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
       toast({ title: "Error", description: "Could not delete task.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -213,6 +217,7 @@ export default function TasksPage() {
 
     } catch (error) {
       console.error("TasksPage: AI prioritization failed:", error);
+      console.error("Full error object during AI Prioritization:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
       toast({ title: "AI Error", description: "Could not prioritize tasks using AI.", variant: "destructive" });
     } finally {
       setIsPrioritizingAI(false);
@@ -313,3 +318,4 @@ export default function TasksPage() {
     </div>
   );
 }
+
