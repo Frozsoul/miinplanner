@@ -1,13 +1,18 @@
 
 import type { Timestamp } from "firebase/firestore";
 
+export const TASK_STAGES = ["To Do", "In Progress", "Done", "Review"] as const;
+export type TaskStage = (typeof TASK_STAGES)[number];
+
 export interface Task {
   id: string; // Firestore document ID
   title: string;
   description?: string;
   priority: 'Low' | 'Medium' | 'High';
   dueDate?: string; // Stored as ISO string in component state, converted to/from Timestamp for Firestore
-  completed: boolean;
+  completed: boolean; // Will be primarily relevant for the "Done" stage
+  stage: TaskStage;
+  tags?: string[];
   createdAt?: Timestamp; // Optional: Firestore server timestamp
   userId?: string; // To associate task with user
 }
@@ -44,9 +49,12 @@ export interface LoginFormData {
 
 export interface SignupFormData extends LoginFormData {
   confirmPassword?: string; 
-  // Add other fields like displayName if needed during signup
 }
 
-// For creating tasks/reminders, ID is not needed as Firestore generates it
-export type TaskData = Omit<Task, 'id' | 'createdAt' | 'userId'>;
+// For creating/updating tasks, ID is not needed as Firestore generates it or it's already known
+export type TaskData = Omit<Task, 'id' | 'createdAt' | 'userId' | 'completed'> & { completed?: boolean };
 export type ReminderData = Omit<Reminder, 'id' | 'createdAt' | 'userId' | 'triggered'>;
+
+// AI Prioritization Types
+export type AIPrioritizedTask = Pick<Task, 'id' | 'title' | 'priority' | 'dueDate' | 'tags' | 'description'> & { suggestedPriority?: 'Low' | 'Medium' | 'High'; reasoning?: string };
+
