@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DatePicker } from "@/components/tasks/date-picker";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import { parseISO } from "date-fns";
+import { parseISO, isValid } from "date-fns";
+import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/constants";
+
 
 interface TaskFormProps {
   taskToEdit?: Task | null;
@@ -19,35 +21,45 @@ interface TaskFormProps {
   isSubmitting: boolean;
 }
 
-const ALL_STATUSES: TaskStatus[] = ['To Do', 'In Progress', 'Review', 'Blocked', 'Done'];
-const ALL_PRIORITIES: TaskPriority[] = ['Low', 'Medium', 'High', 'Urgent'];
-
+const initialFormState: TaskData & { dueDateObj?: Date; tagsString?: string } = {
+  title: "",
+  description: "",
+  priority: "Medium",
+  status: "To Do",
+  dueDateObj: undefined,
+  channel: "",
+  assignee: "",
+  tagsString: "",
+  tags: [],
+};
 
 export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFormProps) {
-  const initialFormState: TaskData & { dueDateObj?: Date; tagsString?: string } = {
-    title: "",
-    description: "",
-    priority: "Medium",
-    status: "To Do",
-    dueDateObj: undefined,
-    channel: "",
-    assignee: "",
-    tagsString: "",
-  };
-
   const [formData, setFormData] = useState(initialFormState);
 
   useEffect(() => {
     if (taskToEdit) {
+      let dueDateObject: Date | undefined = undefined;
+      if (taskToEdit.dueDate) {
+        try {
+          const parsed = parseISO(taskToEdit.dueDate);
+          if (isValid(parsed)) {
+            dueDateObject = parsed;
+          }
+        } catch (e) {
+          console.warn("Error parsing taskToEdit.dueDate:", taskToEdit.dueDate, e);
+        }
+      }
+
       setFormData({
         title: taskToEdit.title,
         description: taskToEdit.description || "",
         priority: taskToEdit.priority,
         status: taskToEdit.status,
-        dueDateObj: taskToEdit.dueDate ? parseISO(taskToEdit.dueDate) : undefined,
+        dueDateObj: dueDateObject,
         channel: taskToEdit.channel || "",
         assignee: taskToEdit.assignee || "",
         tagsString: (taskToEdit.tags || []).join(", "),
+        tags: taskToEdit.tags || [],
       });
     } else {
       setFormData(initialFormState);
@@ -90,7 +102,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
           <Select value={formData.status} onValueChange={(value: TaskStatus) => handleChange('status', value)}>
             <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
             <SelectContent>
-              {ALL_STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+              {TASK_STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -99,7 +111,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
           <Select value={formData.priority} onValueChange={(value: TaskPriority) => handleChange('priority', value)}>
             <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
             <SelectContent>
-              {ALL_PRIORITIES.map(p => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
+              {TASK_PRIORITIES.map(p => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

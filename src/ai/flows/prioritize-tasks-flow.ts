@@ -10,33 +10,33 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { TaskPriority, AIPrioritizedTask } from '@/types'; // Updated TaskPriority
+import type { TaskPriority } from '@/types';
 
-// Using a subset of Task fields relevant for prioritization
 const TaskForPrioritizationSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().optional(),
-  priority: z.enum(['Low', 'Medium', 'High', 'Urgent']), // Updated to include 'Urgent'
+  priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).describe("The task's current priority."),
   dueDate: z.string().optional().describe("ISO date string for the due date, if any."),
   tags: z.array(z.string()).optional().describe("Tags associated with the task, e.g., 'SEO', 'Social Media', 'Urgent'.")
 });
+export type TaskForPrioritization = z.infer<typeof TaskForPrioritizationSchema>;
 
 const PrioritizeTasksInputSchema = z.object({
   tasks: z.array(TaskForPrioritizationSchema).describe("An array of tasks to be prioritized."),
-  // campaignGoals: z.string().optional().describe("Overall campaign goals to consider for prioritization."), // Placeholder
+  // campaignGoals: z.string().optional().describe("Overall campaign goals to consider for prioritization."), // Future enhancement
 });
 export type PrioritizeTasksInput = z.infer<typeof PrioritizeTasksInputSchema>;
 
-const PrioritizedTaskOutputSchema = TaskForPrioritizationSchema.extend({
+const AIPrioritizedTaskSchema = TaskForPrioritizationSchema.extend({
   suggestedPriority: z.enum(['Low', 'Medium', 'High', 'Urgent']).optional().describe("The AI's suggested priority for the task."),
   reasoning: z.string().optional().describe("A brief explanation for the suggested priority.")
 });
-export type PrioritizedTaskOutput = z.infer<typeof PrioritizedTaskOutputSchema>;
+export type AIPrioritizedTask = z.infer<typeof AIPrioritizedTaskSchema>;
 
 
 const PrioritizeTasksOutputSchema = z.object({
-  prioritizedTasks: z.array(PrioritizedTaskOutputSchema).describe("An array of tasks with AI-suggested priorities and reasoning. The order of tasks in this array can also represent a suggested new order."),
+  prioritizedTasks: z.array(AIPrioritizedTaskSchema).describe("An array of tasks with AI-suggested priorities and reasoning. The order of tasks in this array can also represent a suggested new order."),
 });
 export type PrioritizeTasksOutput = z.infer<typeof PrioritizeTasksOutputSchema>;
 
@@ -55,7 +55,7 @@ You will be given a list of tasks. Your goal is to analyze these tasks and sugge
 Consider the following factors for prioritization:
 1.  Due Dates: Tasks with earlier due dates are generally more urgent.
 2.  Existing Priority: Take the current user-set priority as a strong hint. Deviate if other factors strongly suggest it. 'Urgent' is the highest priority.
-3.  Tags: Tags like 'Urgent', 'Important', 'Critical' should significantly increase priority. Tags like 'SEO', 'Social Media' indicate task category, which might relate to broader goals (though specific campaign goals are not provided in this version).
+3.  Tags: Tags like 'Urgent', 'Important', 'Critical' should significantly increase priority. Tags like 'SEO', 'Social Media' indicate task category.
 4.  Task Title and Description: Keywords in the title or description might indicate urgency or importance (e.g., "fix critical bug", "launch campaign").
 
 For each task, provide its original details, your 'suggestedPriority', and a concise 'reasoning'.
@@ -81,12 +81,33 @@ const prioritizeTasksFlow = ai.defineFlow(
     outputSchema: PrioritizeTasksOutputSchema,
   },
   async (input) => {
-    // In a more advanced version, you could fetch campaignGoals or userHistory here.
     const {output} = await prompt(input);
     
     if (!output || !output.prioritizedTasks) {
-        return { prioritizedTasks: input.tasks.map(task => ({...task, reasoning: "AI prioritization failed, using original."})) };
+        // Fallback: return original tasks with a default reasoning if AI fails
+        const fallbackTasks = input.tasks.map(task => ({
+            ...task,
+            suggestedPriority: task.priority, // Suggest current priority as fallback
+            reasoning: "AI prioritization process encountered an issue. No change suggested."
+        }));
+        return { prioritizedTasks: fallbackTasks };
     }
-    return output;
+    // Ensure every task from input gets a corresponding output, even if AI omits some
+    const allTasksWithSuggestions = input.tasks.map(originalTask => {
+        const suggestion = output.prioritizedTasks.find(st => st.id === originalTask.id);
+        if (suggestion) {
+            return {
+                ...originalTask,
+                suggestedPriority: suggestion.suggestedPriority || originalTask.priority,
+                reasoning: suggestion.reasoning || "No specific reasoning provided by AI.",
+            };
+        }
+        return {
+            ...originalTask,
+            suggestedPriority: originalTask.priority,
+            reasoning: "This task was not explicitly prioritized by the AI.",
+        };
+    });
+    return { prioritizedTasks: allTasksWithSuggestions };
   }
 );

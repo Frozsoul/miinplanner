@@ -1,43 +1,39 @@
 
 "use client";
-import type { Task } from "@/types";
+import type { Task, TaskPriority, TaskStatus } from "@/types"; // Ensured TaskStatus is imported
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit3, Trash2, Eye } from "lucide-react";
-import { format, parseISO, isValid } from "date-fns"; // Ensure parseISO and isValid are imported
+import { format, parseISO, isValid } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface TaskListProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
-  onView?: (task: Task) => void; 
+  onView?: (task: Task) => void;
 }
 
 export function TaskList({ tasks, onEdit, onDelete, onView }: TaskListProps) {
-  const getPriorityBadgeVariant = (priority: Task['priority']) => {
+  const getPriorityBadgeVariant = (priority: TaskPriority) => {
     switch (priority) {
-      case 'High':
-      case 'Urgent': 
-        return 'destructive';
-      case 'Medium': 
-        return 'secondary'; 
-      case 'Low': 
-        return 'outline';
-      default: 
-        return 'default';
+      case 'High': return 'destructive';
+      case 'Urgent': return 'destructive';
+      case 'Medium': return 'secondary';
+      case 'Low': return 'outline';
+      default: return 'default';
     }
   };
 
-  const getStatusBadgeVariant = (status: Task['status']) => {
+  const getStatusBadgeVariant = (status: TaskStatus) => {
      switch (status) {
-      case 'Done': return 'default'; 
+      case 'Done': return 'default';
       case 'In Progress': return 'secondary';
       case 'To Do': return 'outline';
       case 'Blocked': return 'destructive';
-      case 'Review': return 'default'; // Or another variant for Review
+      case 'Review': return 'default'; // Using 'default' for Review, could be another color
       default: return 'default';
     }
   };
@@ -47,7 +43,7 @@ export function TaskList({ tasks, onEdit, onDelete, onView }: TaskListProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[250px]">Title</TableHead>
+            <TableHead className="w-[30%]">Title</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Due Date</TableHead>
@@ -85,8 +81,8 @@ export function TaskList({ tasks, onEdit, onDelete, onView }: TaskListProps) {
                       <DropdownMenuItem onClick={() => onEdit(task)}><Edit3 className="mr-2 h-4 w-4" />Edit Task</DropdownMenuItem>
                        <AlertDialog>
                         <AlertDialogTrigger asChild>
-                           <DropdownMenuItem 
-                             onSelect={(e) => e.preventDefault()} 
+                           <DropdownMenuItem
+                             onSelect={(e) => e.preventDefault()}
                              className="text-destructive hover:!bg-destructive hover:!text-destructive-foreground focus:!bg-destructive focus:!text-destructive-foreground"
                            >
                              <Trash2 className="mr-2 h-4 w-4" />Delete Task

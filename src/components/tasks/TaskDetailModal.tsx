@@ -1,6 +1,6 @@
 
 "use client";
-import type { Task } from "@/types";
+import type { Task, TaskPriority, TaskStatus } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO, isValid } from "date-fns";
@@ -15,21 +15,21 @@ interface TaskDetailModalProps {
 export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps) {
   if (!task) return null;
 
-  const getPriorityBadgeVariant = (priority: Task['priority']) => {
+  const getPriorityBadgeVariant = (priority: TaskPriority) => {
     switch (priority) {
       case 'High':
-      case 'Urgent': 
+      case 'Urgent':
         return 'destructive';
-      case 'Medium': 
+      case 'Medium':
         return 'secondary';
-      case 'Low': 
+      case 'Low':
         return 'outline';
-      default: 
+      default:
         return 'default';
     }
   };
 
-  const getStatusBadgeVariant = (status: Task['status']) => {
+  const getStatusBadgeVariant = (status: TaskStatus) => {
      switch (status) {
       case 'Done': return 'default';
       case 'In Progress': return 'secondary';
@@ -39,21 +39,30 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
       default: return 'default';
     }
   };
-  
-  const formatDate = (date: any) => { // date can be Timestamp or string
-    if (!date) return "N/A";
+
+  const formatDateSafe = (dateInput: any, dateFormat: string = "PPPpp") => {
+    if (!dateInput) return "N/A";
     try {
-      if (typeof date === 'string' && isValid(parseISO(date))) {
-        return format(parseISO(date), "PPPpp");
+      // If it's a Firestore Timestamp object
+      if (dateInput && typeof dateInput.toDate === 'function') {
+        const jsDate = dateInput.toDate();
+        if (isValid(jsDate)) {
+          return format(jsDate, dateFormat);
+        }
       }
-      if (date && typeof date.toDate === 'function' && isValid(date.toDate())) { // Firestore Timestamp
-        return format(date.toDate(), "PPPpp");
+      // If it's an ISO string
+      if (typeof dateInput === 'string') {
+        const parsedDate = parseISO(dateInput);
+        if (isValid(parsedDate)) {
+          return format(parsedDate, dateFormat);
+        }
       }
-      if (isValid(new Date(date))) {
-         return format(new Date(date), "PPPpp");
+      // If it's already a Date object
+      if (dateInput instanceof Date && isValid(dateInput)) {
+         return format(dateInput, dateFormat);
       }
     } catch (e) {
-        // console.error("Error formatting date:", date, e);
+        console.warn("Error formatting date:", dateInput, e);
     }
     return "Invalid Date";
   };
@@ -65,7 +74,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold">{task.title}</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Created: {formatDate(task.createdAt)} | Last Updated: {formatDate(task.updatedAt)}
+            Created: {formatDateSafe(task.createdAt)} | Last Updated: {formatDateSafe(task.updatedAt)}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4 text-sm">
@@ -85,7 +94,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
               <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority}</Badge>
             </div>
           </div>
-          <p><span className="font-semibold">Due Date:</span> {task.dueDate && isValid(parseISO(task.dueDate)) ? format(parseISO(task.dueDate), "PPP") : "N/A"}</p>
+          <p><span className="font-semibold">Due Date:</span> {formatDateSafe(task.dueDate, "PPP")}</p>
           <p><span className="font-semibold">Assignee:</span> {task.assignee || "N/A"}</p>
           <p><span className="font-semibold">Channel:</span> {task.channel || "N/A"}</p>
           {task.tags && task.tags.length > 0 && (
