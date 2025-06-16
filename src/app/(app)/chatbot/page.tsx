@@ -6,7 +6,7 @@ import type { ChatMessage } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { suggestMarketingTips, type SuggestMarketingTipsInput } from "@/ai/flows/suggest-marketing-tips";
 import { Bot, User, Send, Loader2, Sparkles, BotMessageSquare } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -64,7 +64,7 @@ export default function ChatbotPage() {
 
 
   return (
-    <div className="container mx-auto py-8 h-full flex flex-col">
+    <div className="py-8 h-full flex flex-col">
       <h1 className="text-3xl font-headline font-bold mb-8 text-center">AI Marketing Assistant</h1>
       <Card className="flex-1 flex flex-col shadow-xl">
         <CardHeader>

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
+import type { Task, TaskData } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { addTask, deleteTask, getTasks, updateTask } from "@/services/task-service";
 import { parseISO, isValid } from 'date-fns';
@@ -17,7 +17,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { TaskList } from "@/components/tasks/TaskList"; // Updated to use TaskList
+import { TaskList } from "@/components/tasks/TaskList"; 
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskForm } from "@/components/tasks/TaskForm";
 
@@ -139,7 +139,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 h-full flex flex-col">
+    <div className="py-8 h-full flex flex-col">
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
           <LayoutGrid className="h-7 w-7 text-primary"/> Task Manager

@@ -6,7 +6,8 @@ import { useAppData } from "@/contexts/app-data-context";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import type { Task, SocialMediaPost } from "@/types";
 import { Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useToast } from "@/hooks/use-toast"; 
+import { parseISO, format } from "date-fns";
 
 export default function CalendarPage() {
   const { 
@@ -17,7 +18,7 @@ export default function CalendarPage() {
     isLoadingTasks, 
     isLoadingSocialMediaPosts 
   } = useAppData();
-  const { toast } = useToast(); // Initialize toast
+  const { toast } = useToast(); 
 
   useEffect(() => {
     fetchTasks();
@@ -27,16 +28,14 @@ export default function CalendarPage() {
 
   const handleTaskClick = (task: Task) => {
     console.log("Task clicked:", task);
-    // For now, show a toast. Later, this could open a detail modal.
     toast({
       title: `Task: ${task.title}`,
-      description: `Priority: ${task.priority}, Due: ${task.dueDate ? format(parseISO(task.dueDate), "MMM dd, yyyy") : "N/A"}`,
+      description: `Priority: ${task.priority}, Due: ${task.dueDate && parseISO(task.dueDate) ? format(parseISO(task.dueDate), "MMM dd, yyyy") : "N/A"}`,
     });
   };
 
   const handlePostClick = (post: SocialMediaPost) => {
     console.log("Post clicked:", post);
-    // For now, show a toast. Later, this could navigate or open a modal.
     toast({
       title: `Post for ${post.platform}`,
       description: `Status: ${post.status}, Content: ${post.content.substring(0,30)}...`,
@@ -47,14 +46,14 @@ export default function CalendarPage() {
 
   if (isLoading && tasks.length === 0 && socialMediaPosts.length === 0) {
     return (
-      <div className="container mx-auto py-8 flex justify-center items-center min-h-[calc(100vh-12rem)]">
+      <div className="py-8 flex justify-center items-center min-h-[calc(100vh-12rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="py-8">
       <h1 className="text-3xl font-headline font-bold mb-8">Content Calendar</h1>
       <CalendarView 
         tasks={tasks} 
@@ -65,8 +64,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-
-// Helper function to parse ISO date strings (needed for toast display)
-import { parseISO, format } from "date-fns";
-
-    
