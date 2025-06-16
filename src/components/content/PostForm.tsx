@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { SocialMediaPost, Platform, PostStatus } from "@/types";
 import { SOCIAL_PLATFORMS, POST_STATUSES } from "@/lib/constants";
@@ -36,7 +36,7 @@ export type PostFormData = z.infer<typeof postSchema>;
 
 interface PostFormProps {
   onSubmit: (data: PostFormData) => void;
-  initialData?: SocialMediaPost;
+  initialData?: Partial<SocialMediaPost>; // Allow partial for generated content
   onCancel?: () => void;
 }
 
@@ -47,7 +47,11 @@ export function PostForm({ onSubmit, initialData, onCancel }: PostFormProps) {
       platform: initialData?.platform || "X",
       content: initialData?.content || "",
       status: initialData?.status || "Draft",
-      scheduledDate: initialData?.scheduledDate,
+      scheduledDate: initialData?.scheduledDate && typeof initialData.scheduledDate === 'string' && isValid(parseISO(initialData.scheduledDate))
+        ? parseISO(initialData.scheduledDate)
+        : initialData?.scheduledDate instanceof Date
+        ? initialData.scheduledDate
+        : undefined,
       imageUrl: initialData?.imageUrl || "",
       notes: initialData?.notes || "",
     },
@@ -55,7 +59,6 @@ export function PostForm({ onSubmit, initialData, onCancel }: PostFormProps) {
 
   const handleSubmit = (data: PostFormData) => {
     onSubmit(data);
-    // form.reset(); // Do not reset if editing, handled by Dialog open state
   };
 
   return (
@@ -105,7 +108,7 @@ export function PostForm({ onSubmit, initialData, onCancel }: PostFormProps) {
             <FormItem>
               <FormLabel>Image URL (Optional)</FormLabel>
               <FormControl>
-                <Input type="url" placeholder="https://example.com/image.png" {...field} />
+                <Input type="url" placeholder="https://placehold.co/600x400.png" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -165,7 +168,6 @@ export function PostForm({ onSubmit, initialData, onCancel }: PostFormProps) {
                       disabled={(date) => date < new Date(new Date().setDate(new Date().getDate()-1)) }
                       initialFocus
                     />
-                    {/* Basic time picker - can be improved with dedicated component */}
                     <div className="p-2 border-t">
                       <Input 
                         type="time" 
@@ -203,7 +205,7 @@ export function PostForm({ onSubmit, initialData, onCancel }: PostFormProps) {
 
         <div className="flex justify-end gap-2 pt-4">
           {onCancel && <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>}
-          <Button type="submit">{initialData ? "Update Post" : "Create Post"}</Button>
+          <Button type="submit">{initialData?.id ? "Update Post" : "Create Post"}</Button>
         </div>
       </form>
     </Form>

@@ -1,52 +1,73 @@
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAppData } from "@/contexts/app-data-context";
-import type { SocialMediaPost, SocialMediaPostData, Platform } from "@/types";
+import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
-import { PlusCircle, Edit2, Trash2, Loader2, WandSparkles } from "lucide-react";
-import { GeneratePostForm } from "./GeneratePostForm";
-import { PostCard } from "./PostCard";
-import { PostForm, type PostFormData } from "./PostForm";
+import { GeneratePostForm } from "@/components/content/GeneratePostForm";
+import { PostCard } from "@/components/content/PostCard";
+import { PostForm, type PostFormData } from "@/components/content/PostForm";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle, Share2, Wand2, Filter, Loader2 } from "lucide-react";
+import type { SocialMediaPost, Platform, PostStatus, SocialMediaPostData } from "@/types";
+import { SOCIAL_PLATFORMS, POST_STATUSES } from "@/lib/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function ContentStudioPage() {
   const { 
     socialMediaPosts, 
-    isLoadingSocialMediaPosts, 
     addSocialMediaPost, 
     updateSocialMediaPost, 
-    deleteSocialMediaPost,
+    deleteSocialMediaPost, 
+    isLoadingSocialMediaPosts,
     fetchSocialMediaPosts,
   } = useAppData();
   const { toast } = useToast();
 
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingPost, setEditingPost] = useState<SocialMediaPost | null>(null);
-  const [generatedContentForNewPost, setGeneratedContentForNewPost] = useState<{platform: Platform, content: string} | null>(null);
+  const [editingPost, setEditingPost] = useState<SocialMediaPost | undefined>(undefined);
+  
+  const [generatedContent, setGeneratedContent] = useState<{ platform: Platform, content: string} | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [platformFilter, setPlatformFilter] = useState<Platform | "All">("All");
+  const [statusFilter, setStatusFilter] = useState<PostStatus | "All">("All");
 
   useEffect(() => {
     fetchSocialMediaPosts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleOpenForm = (post?: SocialMediaPost) => {
-    setEditingPost(post || null);
-    setGeneratedContentForNewPost(null); // Clear any pre-filled content
+  const handleEdit = (post: SocialMediaPost) => {
+    setGeneratedContent(null);
+    setEditingPost(post);
     setIsFormOpen(true);
   };
 
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditingPost(null);
-    setGeneratedContentForNewPost(null);
+  const handleDelete = async (postId: string) => {
+    try {
+      await deleteSocialMediaPost(postId);
+      toast({ title: "Success", description: "Post deleted." });
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      toast({ title: "Error", description: "Could not delete post.", variant: "destructive" });
+    }
   };
 
-  const handleSavePost = async (data: PostFormData) => {
-    const postData: SocialMediaPostData = {
+  const handlePostGenerated = (platform: Platform, content: string) => {
+    setGeneratedContent({ platform, content });
+    setIsGeneratorOpen(false); // Close generator
+    setEditingPost(undefined); // Ensure it's a new post
+    setIsFormOpen(true); // Open manual post form with generated content
+  };
+
+  const handleSubmit = async (data: PostFormData) => {
+    const postToSave: SocialMediaPostData = {
       platform: data.platform,
       content: data.content,
       status: data.status,
@@ -57,93 +78,144 @@ export default function ContentStudioPage() {
 
     try {
       if (editingPost) {
-        await updateSocialMediaPost(editingPost.id, postData);
+        await updateSocialMediaPost(editingPost.id, postToSave);
         toast({ title: "Success", description: "Post updated." });
       } else {
-        await addSocialMediaPost(postData);
+        await addSocialMediaPost(postToSave);
         toast({ title: "Success", description: "Post created." });
       }
-      handleCloseForm();
+      setIsFormOpen(false);
+      setEditingPost(undefined);
+      setGeneratedContent(null);
     } catch (error) {
       console.error("Failed to save post:", error);
       toast({ title: "Error", description: "Could not save post.", variant: "destructive" });
     }
   };
-
-  const handleDeletePost = async (postId: string) => {
-    try {
-      await deleteSocialMediaPost(postId);
-      toast({ title: "Success", description: "Post deleted." });
-    } catch (error) {
-      console.error("Failed to delete post:", error);
-      toast({ title: "Error", description: "Could not delete post.", variant: "destructive" });
-    }
-  };
   
-  const handlePostGeneratedByAI = (platform: Platform, content: string) => {
-    setGeneratedContentForNewPost({ platform, content });
-    setEditingPost(null); // Ensure we're in "create new" mode
-    setIsFormOpen(true); // Open the form with the generated content
-  };
+  const filteredPosts = useMemo(() => {
+    return socialMediaPosts.filter(post => {
+      const matchesSearch = post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (post.notes && post.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesPlatform = platformFilter === "All" || post.platform === platformFilter;
+      const matchesStatus = statusFilter === "All" || post.status === statusFilter;
+      return matchesSearch && matchesPlatform && matchesStatus;
+    });
+  }, [socialMediaPosts, searchTerm, platformFilter, statusFilter]);
 
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-headline font-bold">Content Studio</h1>
-        <Button onClick={() => handleOpenForm()}>
-          <PlusCircle className="mr-2 h-5 w-5" /> Create New Post
-        </Button>
-      </div>
+    <div className="container mx-auto py-8 space-y-6">
+      <PageHeader 
+        title="Content Studio"
+        description="Generate, manage, and schedule your social media content."
+        icon={Share2}
+        actionButtons={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setIsGeneratorOpen(true)}>
+              <Wand2 className="mr-2 h-5 w-5" /> AI Generate Post
+            </Button>
+            <Button onClick={() => { setEditingPost(undefined); setGeneratedContent(null); setIsFormOpen(true); }}>
+              <PlusCircle className="mr-2 h-5 w-5" /> Create New Post
+            </Button>
+          </div>
+        }
+      />
 
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><WandSparkles className="text-primary h-6 w-6"/>AI Post Generator</CardTitle>
-          <CardDescription>Generate initial post content using AI, then refine it.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <GeneratePostForm onPostGenerated={handlePostGeneratedByAI} />
+      <Card className="shadow-sm border">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="md:col-span-1">
+              <label htmlFor="search-posts" className="block text-sm font-medium text-muted-foreground mb-1.5">
+                <Filter className="inline h-4 w-4 mr-1"/>
+                Search Posts
+              </label>
+              <Input
+                id="search-posts"
+                placeholder="Keywords, notes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+             <div className="flex flex-col gap-1.5">
+               <label htmlFor="platform-filter" className="text-sm font-medium text-muted-foreground">Platform</label>
+               <Select value={platformFilter} onValueChange={(value) => setPlatformFilter(value as Platform | "All")}>
+                <SelectTrigger id="platform-filter"><SelectValue placeholder="Filter by platform" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Platforms</SelectItem>
+                  {SOCIAL_PLATFORMS.filter(p=>p !== 'General').map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+             <div className="flex flex-col gap-1.5">
+              <label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground">Status</label>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as PostStatus | "All")}>
+                <SelectTrigger id="status-filter"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Statuses</SelectItem>
+                  {POST_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardContent>
       </Card>
       
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Your Posts</h2>
-        {isLoadingSocialMediaPosts && socialMediaPosts.length === 0 && (
-          <div className="flex justify-center items-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2 text-muted-foreground">Loading posts...</p>
-          </div>
-        )}
-        {!isLoadingSocialMediaPosts && socialMediaPosts.length === 0 && (
-          <p className="text-muted-foreground text-center py-10">No posts yet. Create one or generate ideas with AI!</p>
-        )}
-        {socialMediaPosts.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {socialMediaPosts.map((post) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                onEdit={() => handleOpenForm(post)} 
-                onDelete={handleDeletePost} 
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {isLoadingSocialMediaPosts && socialMediaPosts.length === 0 && (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-2 text-muted-foreground">Loading posts...</p>
+        </div>
+      )}
 
-      <Dialog open={isFormOpen} onOpenChange={(isOpen) => {if (!isOpen) handleCloseForm()}}>
-        <DialogContent className="sm:max-w-lg">
+      {!isLoadingSocialMediaPosts && filteredPosts.length === 0 && (
+        <Card className="col-span-full">
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            No posts found matching your criteria. Try adjusting filters or create a new post.
+          </CardContent>
+        </Card>
+      )}
+      
+      {filteredPosts.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredPosts.map((post) => (
+            <PostCard key={post.id} post={post} onEdit={handleEdit} onDelete={handleDelete} />
+          ))}
+        </div>
+      )}
+
+
+      <Dialog open={isGeneratorOpen} onOpenChange={setIsGeneratorOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingPost ? "Edit Post" : "Create New Post"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Wand2 className="text-primary"/>AI Post Generator</DialogTitle>
             <DialogDescription>
-              {editingPost ? "Update the details of your social media post." : "Fill in the details for your new social media post."}
+              Let AI help you craft engaging social media posts.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[70vh] p-1 pr-4"> {/* Added ScrollArea */}
-            <PostForm
-              onSubmit={handleSavePost}
-              initialData={ generatedContentForNewPost ? { ...editingPost, platform: generatedContentForNewPost.platform, content: generatedContentForNewPost.content } as SocialMediaPost : editingPost}
-              onCancel={handleCloseForm}
+          <GeneratePostForm onPostGenerated={handlePostGenerated} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isFormOpen} onOpenChange={(isOpen) => {
+        setIsFormOpen(isOpen);
+        if (!isOpen) {
+          setEditingPost(undefined);
+          setGeneratedContent(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingPost ? "Edit Post" : (generatedContent ? "Finalize Generated Post" : "Create New Post")}</DialogTitle>
+            <DialogDescription>
+              {editingPost ? "Update the details of your social media post." : "Fill in the details for your new post."}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[70vh] p-1 pr-4">
+            <PostForm 
+              onSubmit={handleSubmit} 
+              initialData={editingPost || (generatedContent ? { ...generatedContent, status: 'Draft', platform: generatedContent.platform } as Partial<SocialMediaPost> : undefined)}
+              onCancel={() => { setIsFormOpen(false); setEditingPost(undefined); setGeneratedContent(null); }}
             />
           </ScrollArea>
         </DialogContent>

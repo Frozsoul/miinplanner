@@ -4,7 +4,7 @@ import type { SocialMediaPost } from "@/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { Twitter, Linkedin, Instagram, Edit3, Trash2, Send, CalendarClock, MoreVertical } from "lucide-react";
 import Image from "next/image";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -36,6 +36,25 @@ export function PostCard({ post, onEdit, onDelete, onSchedule }: PostCardProps) 
       default: return 'default';
     }
   };
+
+  const formatDateSafe = (dateInput: any, dateFormat: string = "MMM dd, yyyy HH:mm") => {
+    if (!dateInput) return "N/A";
+    if (typeof dateInput === 'string') {
+      const parsedDate = parseISO(dateInput);
+      if (isValid(parsedDate)) {
+        return format(parsedDate, dateFormat);
+      }
+    } else if (dateInput instanceof Date && isValid(dateInput)) {
+      return format(dateInput, dateFormat);
+    } else if (dateInput && typeof dateInput.toDate === 'function') { // Firestore Timestamp
+        const jsDate = dateInput.toDate();
+        if (isValid(jsDate)) {
+            return format(jsDate, dateFormat);
+        }
+    }
+    return "Invalid Date";
+  };
+
 
   return (
     <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -85,7 +104,7 @@ export function PostCard({ post, onEdit, onDelete, onSchedule }: PostCardProps) 
         <CardDescription>
           Status: <Badge variant={getStatusBadgeVariant(post.status)}>{post.status}</Badge>
           {post.scheduledDate && (post.status === 'Scheduled' || post.status === 'Posted') && (
-            <span className="ml-2 text-xs"> | Scheduled: {format(post.scheduledDate, "MMM dd, yyyy HH:mm")}</span>
+            <span className="ml-2 text-xs"> | Scheduled: {formatDateSafe(post.scheduledDate)}</span>
           )}
         </CardDescription>
       </CardHeader>
@@ -99,8 +118,8 @@ export function PostCard({ post, onEdit, onDelete, onSchedule }: PostCardProps) 
         {post.notes && <p className="text-xs text-muted-foreground mt-2">Notes: {post.notes}</p>}
       </CardContent>
       <CardFooter className="flex justify-between items-center text-xs text-muted-foreground border-t pt-4 mt-auto">
-        <span>Created: {format(post.createdAt, "MMM dd, yyyy")}</span>
-        <span>Updated: {format(post.updatedAt, "MMM dd, yyyy")}</span>
+        <span>Created: {formatDateSafe(post.createdAt, "MMM dd, yyyy")}</span>
+        <span>Updated: {formatDateSafe(post.updatedAt, "MMM dd, yyyy")}</span>
       </CardFooter>
     </Card>
   );
