@@ -17,13 +17,14 @@ export function Logo({ className }: LogoProps) {
         x="0px"
         y="0px"
         viewBox="0 0 500 500"
+        style={{ enableBackground: 'new 0 0 500 500' }}
         xmlSpace="preserve"
-        className="h-6 w-auto" // This will control the size
+        className="h-6 w-auto" 
       >
         <path fill="none" d="M4,196.5"/>
         <g>
-          <polygon fill="var(--foreground)" points="4,262 66.8,304.9 169.1,244.2 169.1,328.1 233.3,366.3 233.3,133 	"/>
-          <polygon fill="var(--accent)" points="496,262 433.2,304.9 330.9,244.2 330.9,328.1 266.7,366.3 266.7,133 	"/>
+          <polygon fill="#1C1A1A" points="4,262 66.8,304.9 169.1,244.2 169.1,328.1 233.3,366.3 233.3,133 	"/>
+          <polygon fill="#FFCE00" points="496,262 433.2,304.9 330.9,244.2 330.9,328.1 266.7,366.3 266.7,133 	"/>
         </g>
       </svg>
     </Link>
