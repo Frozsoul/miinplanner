@@ -15,17 +15,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetClose,
-} from "@/components/ui/sheet";
-import { navItems } from "@/components/layout/topbar-nav"; // Ensure this path is correct
-import { User, Settings, LogOut, Loader2, Menu } from "lucide-react";
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { navItems } from "@/components/layout/nav-items"; // Updated import path
+import { User, Settings, LogOut, Loader2, PanelLeft } from "lucide-react"; // PanelLeft for sidebar trigger
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from 'react';
-import { AppDataProvider } from '@/contexts/app-data-context'; // Import AppDataProvider
+import { AppDataProvider } from '@/contexts/app-data-context';
 
 export default function AppLayout({
   children,
@@ -59,107 +64,100 @@ export default function AppLayout({
   };
 
   return (
-    <AppDataProvider> {/* Wrap the layout content with AppDataProvider */}
-      <div className="flex flex-col min-h-screen">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-14 items-center">
-            <Logo className="p-1 mr-4 md:mr-6" />
+    <AppDataProvider>
+      <SidebarProvider>
+        <div className="flex min-h-screen bg-background">
+          <Sidebar
+            variant="sidebar" 
+            collapsible="icon" 
+            className="border-r"
+          >
+            <SidebarHeader className="p-4 flex items-center justify-center data-[state=collapsed]:justify-center group-data-[collapsible=icon]:py-3.5">
+               <Logo className="h-7 group-data-[collapsible=icon]:h-6 transition-all duration-300" />
+            </SidebarHeader>
+            <SidebarContent>
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/")}
+                      tooltip={item.label}
+                      className="justify-start" // Ensures icon and text are left-aligned
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarContent>
+            {/* SidebarFooter could be added here if needed */}
+          </Sidebar>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-4 lg:space-x-6 ml-auto">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    (pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/"))
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+          <SidebarInset>
+            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="md:hidden"> {/* Mobile Trigger */}
+                 <SidebarTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-8 w-8">
+                        <PanelLeft className="h-4 w-4" />
+                        <span className="sr-only">Toggle Menu</span>
+                    </Button>
+                 </SidebarTrigger>
+              </div>
+              
+              <div className="hidden md:block"> {/* Desktop Trigger - can be removed if rail is preferred */}
+                <SidebarTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-8 w-8">
+                        <PanelLeft className="h-4 w-4" />
+                        <span className="sr-only">Toggle Menu</span>
+                    </Button>
+                 </SidebarTrigger>
+              </div>
 
-            {/* Mobile Navigation Trigger & Sheet */}
-            <div className="md:hidden ml-auto">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[250px] sm:w-[300px] p-0">
-                  <div className="flex flex-col h-full">
-                    <div className="p-4 border-b">
-                      <Logo />
-                    </div>
-                    <nav className="flex flex-col space-y-1 p-4">
-                      {navItems.map((item) => (
-                        <SheetClose asChild key={item.href}>
-                          <Link
-                            href={item.href}
-                            className={cn(
-                              "block px-3 py-2 rounded-md text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                              (pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/"))
-                                ? "bg-accent text-accent-foreground"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {item.label}
-                          </Link>
-                        </SheetClose>
-                      ))}
-                    </nav>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-
-            <div className="ml-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        <User className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.displayName || "User"}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email || "No email"}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="#">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </header>
-        <main className="flex-1 w-full py-8 px-4 sm:px-6 lg:px-8">
-          {children}
-        </main>
-      </div>
+              <div className="ml-auto flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        {/* <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} /> */}
+                        <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.displayName || "User"}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email || "No email"}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="#"> {/* Update this link when settings page exists */}
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </header>
+            <main className="flex-1 overflow-auto p-4 sm:px-6 md:py-6">
+              {children}
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
     </AppDataProvider>
   );
 }
