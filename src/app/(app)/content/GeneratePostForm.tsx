@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SOCIAL_PLATFORMS } from "@/lib/constants";
 import type { Platform } from "@/types";
-import { useAppData } from "@/context/AppDataContext";
+import { useAppData } from "@/contexts/app-data-context"; // Corrected path
 import { Sparkles } from "lucide-react";
 import type { GenerateSocialMediaPostInput } from "@/ai/flows/generate-social-media-post";
 import {
