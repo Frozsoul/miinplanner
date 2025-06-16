@@ -9,7 +9,7 @@ export interface Task {
   title: string;
   description?: string;
   priority: TaskPriority;
-  status: TaskStatus; // Changed from 'stage'
+  status: TaskStatus;
   dueDate?: string; // Stored as ISO string
   channel?: string;
   assignee?: string;
@@ -26,8 +26,6 @@ export interface PrioritizedTaskSuggestion {
   currentPriority: TaskPriority;
   suggestedPriority: TaskPriority;
   reason: string;
-  // Original task data can be useful for context if needed later
-  // originalTask: Omit<Task, 'id' | 'priority'> & { priority: TaskPriority };
 }
 
 export interface Reminder {
@@ -73,12 +71,35 @@ export type TaskForPrioritization = {
   id: string;
   title: string;
   description?: string;
-  priority: 'Low' | 'Medium' | 'High' | 'Urgent'; // Matches flow's enum
+  priority: TaskPriority;
   dueDate?: string;
   tags?: string[];
 };
 
 export type AIPrioritizedTask = TaskForPrioritization & {
-  suggestedPriority?: 'Low' | 'Medium' | 'High' | 'Urgent'; // Matches flow's enum
+  suggestedPriority?: TaskPriority;
   reasoning?: string;
 };
+
+// Content Studio Types
+export type Platform = 'X' | 'LinkedIn' | 'Instagram' | 'General';
+export type PostStatus = 'Draft' | 'Scheduled' | 'Posted' | 'Needs Approval';
+
+export interface SocialMediaPost {
+  id: string; // Firestore document ID
+  userId: string;
+  platform: Platform;
+  content: string;
+  status: PostStatus;
+  scheduledDate?: string; // ISO string
+  imageUrl?: string;
+  notes?: string;
+  createdAt: Timestamp; // Firestore server timestamp
+  updatedAt: Timestamp; // Firestore server timestamp
+  // Optional fields if generated via AI
+  topic?: string;
+  tone?: string;
+}
+
+export type SocialMediaPostData = Omit<SocialMediaPost, 'id' | 'createdAt' | 'updatedAt' | 'userId'>;
+
