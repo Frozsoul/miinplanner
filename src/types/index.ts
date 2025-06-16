@@ -1,28 +1,31 @@
 
 import type { Timestamp } from "firebase/firestore";
 
-export const TASK_STAGES = ["To Do", "In Progress", "Done", "Review"] as const;
-export type TaskStage = (typeof TASK_STAGES)[number];
+export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Blocked' | 'Review'; // Added Review based on original Kanban
+export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Urgent'; // Added Urgent for display
 
 export interface Task {
   id: string; // Firestore document ID
   title: string;
   description?: string;
-  priority: 'Low' | 'Medium' | 'High';
-  dueDate?: string; // Stored as ISO string in component state, converted to/from Timestamp for Firestore
-  completed: boolean; // Will be primarily relevant for the "Done" stage
-  stage: TaskStage;
+  priority: TaskPriority;
+  status: TaskStatus;
+  dueDate?: string; // Stored as ISO string
+  channel?: string;
+  assignee?: string;
   tags?: string[];
-  createdAt?: Timestamp; // Optional: Firestore server timestamp
+  completed: boolean; // Kept for potential direct use, though status='Done' is primary
+  createdAt?: Timestamp; // Firestore server timestamp
+  updatedAt?: Timestamp; // Firestore server timestamp
   userId?: string; // To associate task with user
 }
 
 export interface Reminder {
   id: string; // Firestore document ID
   title: string;
-  remindAt: string; // Stored as ISO string, converted to/from Timestamp for Firestore
+  remindAt: string; // Stored as ISO string
   triggered: boolean; 
-  createdAt?: Timestamp; // Optional: Firestore server timestamp
+  createdAt?: Timestamp; // Firestore server timestamp
   userId?: string; // To associate reminder with user
 }
 
@@ -51,10 +54,12 @@ export interface SignupFormData extends LoginFormData {
   confirmPassword?: string; 
 }
 
-// For creating/updating tasks, ID is not needed as Firestore generates it or it's already known
-export type TaskData = Omit<Task, 'id' | 'createdAt' | 'userId' | 'completed'> & { completed?: boolean };
+// For creating/updating tasks
+export type TaskData = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'completed'> & { completed?: boolean };
 export type ReminderData = Omit<Reminder, 'id' | 'createdAt' | 'userId' | 'triggered'>;
 
-// AI Prioritization Types
-export type AIPrioritizedTask = Pick<Task, 'id' | 'title' | 'priority' | 'dueDate' | 'tags' | 'description'> & { suggestedPriority?: 'Low' | 'Medium' | 'High'; reasoning?: string };
-
+// AI Prioritization Types - ensure fields here match what AI flow expects
+export type AIPrioritizedTask = Pick<Task, 'id' | 'title' | 'priority' | 'dueDate' | 'tags' | 'description'> & { 
+  suggestedPriority?: TaskPriority; 
+  reasoning?: string 
+};

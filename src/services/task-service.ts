@@ -1,6 +1,6 @@
 
 import { db } from '@/lib/firebase';
-import type { Task, TaskData, TaskStage } from '@/types';
+import type { Task, TaskData, TaskStatus, TaskPriority } from '@/types';
 import {
   collection,
   addDoc,
@@ -27,11 +27,14 @@ const fromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>): Task => {
     title: data.title,
     description: data.description || "",
     priority: data.priority || 'Medium',
+    status: data.status || 'To Do',
     dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate().toISOString() : undefined,
-    completed: data.completed || false,
-    stage: data.stage || 'To Do', // Default to "To Do" if not set
+    channel: data.channel || undefined,
+    assignee: data.assignee || undefined,
     tags: data.tags || [],
+    completed: data.completed || (data.status === 'Done'), // Infer completed from status if not present
     createdAt: data.createdAt, // This will be a Firestore Timestamp
+    updatedAt: data.updatedAt, // This will be a Firestore Timestamp
     userId: data.userId,
   };
 };
@@ -44,7 +47,6 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
   }
   try {
     const tasksRef = collection(db, TASK_COLLECTION);
-    // Consider ordering by stage or a custom order field in the future
     const q = query(tasksRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(fromFirestore);
@@ -64,30 +66,31 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     const docData: any = {
       ...taskData,
       userId,
-      completed: taskData.stage === 'Done' ? true : (taskData.completed || false),
+      completed: taskData.status === 'Done' ? true : (taskData.completed || false),
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
       tags: taskData.tags || [],
-      stage: taskData.stage || 'To Do',
+      status: taskData.status || 'To Do',
+      channel: taskData.channel || null,
+      assignee: taskData.assignee || null,
     };
     
     if (!taskData.description) {
-        docData.description = ""; // Ensure empty string if undefined
+        docData.description = ""; 
     }
 
-
     const docRef = await addDoc(tasksRef, docData);
-    // Constructing the task object for return
-    // Note: createdAt will be a server timestamp, not immediately available client-side without a re-fetch
+    // For immediate use, we can return a Task-like object.
+    // Actual createdAt/updatedAt will be server-generated.
     return { 
         id: docRef.id, 
-        ...taskData,
+        ...taskData, // original taskData
         userId,
         completed: docData.completed,
-        stage: docData.stage,
-        tags: docData.tags,
-        // createdAt will be a server timestamp
-    } as Task;
+        // createdAt and updatedAt are Timestamps from server, not immediately available.
+        // For optimistic UI, we can use client-side new Date() if needed, but fromFirestore handles real values.
+    } as Task; // Cast as Task, acknowledging serverTimestamps aren't here yet.
   } catch (error) {
     console.error("Error adding task:", error);
     console.error("Full error object during addTask:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
@@ -95,13 +98,13 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
   }
 };
 
-export const updateTask = async (userId: string, taskId: string, taskUpdate: Partial<TaskData & { completed?: boolean; stage?: TaskStage }>): Promise<void> => {
+export const updateTask = async (userId: string, taskId: string, taskUpdate: Partial<TaskData & { completed?: boolean }>): Promise<void> => {
   if (!userId || !taskId) {
     throw new Error("User ID and Task ID are required to update a task.");
   }
   try {
     const taskRef = doc(db, TASK_COLLECTION, taskId);
-    const updateData: any = { ...taskUpdate };
+    const updateData: any = { ...taskUpdate, updatedAt: serverTimestamp() };
 
     if (taskUpdate.dueDate) {
       updateData.dueDate = Timestamp.fromDate(new Date(taskUpdate.dueDate));
@@ -109,28 +112,28 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
       updateData.dueDate = null; 
     }
     
-    if (taskUpdate.hasOwnProperty('stage')) {
-      updateData.stage = taskUpdate.stage;
-      if (taskUpdate.stage === 'Done') {
+    if (taskUpdate.hasOwnProperty('status')) {
+      updateData.status = taskUpdate.status;
+      if (taskUpdate.status === 'Done') {
         updateData.completed = true;
-      } else if (taskUpdate.completed === undefined && updateData.stage !== 'Done') { 
-        // If completed is not explicitly set and stage is not Done, ensure completed is false
+      } else if (taskUpdate.completed === undefined && updateData.status !== 'Done') { 
         updateData.completed = false;
       }
     } else if (taskUpdate.hasOwnProperty('completed')) {
-      // If only completed is changing, update stage accordingly if it makes sense
-      if (taskUpdate.completed === true) {
-        // Optionally move to 'Done' stage if marked complete, unless stage is also being set
-        // For now, let stage be managed separately or by the AI/user directly
-      }
+       // Handled by completed field in TaskData
     }
     
-    if (taskUpdate.tags) {
-      updateData.tags = taskUpdate.tags;
+    if (taskUpdate.hasOwnProperty('tags')) {
+      updateData.tags = taskUpdate.tags || [];
+    }
+    if (taskUpdate.hasOwnProperty('channel')) {
+      updateData.channel = taskUpdate.channel || null;
+    }
+    if (taskUpdate.hasOwnProperty('assignee')) {
+      updateData.assignee = taskUpdate.assignee || null;
     }
 
-
-    // Ensure we don't try to update userId or createdAt directly if they are part of TaskData
+    // Ensure we don't try to update userId or createdAt directly
     delete updateData.userId;
     delete updateData.createdAt;
     
@@ -155,4 +158,3 @@ export const deleteTask = async (userId: string, taskId: string): Promise<void> 
     throw error;
   }
 };
-

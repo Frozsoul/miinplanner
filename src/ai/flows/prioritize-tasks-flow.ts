@@ -10,34 +10,33 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { Task, AIPrioritizedTask } from '@/types';
+import type { TaskPriority, AIPrioritizedTask } from '@/types'; // Updated TaskPriority
 
 // Using a subset of Task fields relevant for prioritization
 const TaskForPrioritizationSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().optional(),
-  priority: z.enum(['Low', 'Medium', 'High']),
+  priority: z.enum(['Low', 'Medium', 'High', 'Urgent']), // Updated to include 'Urgent'
   dueDate: z.string().optional().describe("ISO date string for the due date, if any."),
   tags: z.array(z.string()).optional().describe("Tags associated with the task, e.g., 'SEO', 'Social Media', 'Urgent'.")
 });
 
 const PrioritizeTasksInputSchema = z.object({
   tasks: z.array(TaskForPrioritizationSchema).describe("An array of tasks to be prioritized."),
-  // Optionally, add campaignGoals or userHistory context here in the future
-  // campaignGoals: z.string().optional().describe("Overall campaign goals to consider for prioritization."),
+  // campaignGoals: z.string().optional().describe("Overall campaign goals to consider for prioritization."), // Placeholder
 });
 export type PrioritizeTasksInput = z.infer<typeof PrioritizeTasksInputSchema>;
 
-const PrioritizedTaskSchema = TaskForPrioritizationSchema.extend({
-  suggestedPriority: z.enum(['Low', 'Medium', 'High']).optional().describe("The AI's suggested priority for the task."),
+const PrioritizedTaskOutputSchema = TaskForPrioritizationSchema.extend({
+  suggestedPriority: z.enum(['Low', 'Medium', 'High', 'Urgent']).optional().describe("The AI's suggested priority for the task."),
   reasoning: z.string().optional().describe("A brief explanation for the suggested priority.")
 });
-export type PrioritizedTask = z.infer<typeof PrioritizedTaskSchema>;
+export type PrioritizedTaskOutput = z.infer<typeof PrioritizedTaskOutputSchema>;
 
 
 const PrioritizeTasksOutputSchema = z.object({
-  prioritizedTasks: z.array(PrioritizedTaskSchema).describe("An array of tasks with AI-suggested priorities and reasoning. The order of tasks in this array can also represent a suggested new order."),
+  prioritizedTasks: z.array(PrioritizedTaskOutputSchema).describe("An array of tasks with AI-suggested priorities and reasoning. The order of tasks in this array can also represent a suggested new order."),
 });
 export type PrioritizeTasksOutput = z.infer<typeof PrioritizeTasksOutputSchema>;
 
@@ -52,10 +51,10 @@ const prompt = ai.definePrompt({
   input: {schema: PrioritizeTasksInputSchema},
   output: {schema: PrioritizeTasksOutputSchema},
   prompt: `You are an expert project manager and task prioritization assistant.
-You will be given a list of tasks. Your goal is to analyze these tasks and suggest a new priority ('Low', 'Medium', 'High') for each, along with a brief reasoning.
+You will be given a list of tasks. Your goal is to analyze these tasks and suggest a new priority ('Low', 'Medium', 'High', 'Urgent') for each, along with a brief reasoning.
 Consider the following factors for prioritization:
 1.  Due Dates: Tasks with earlier due dates are generally more urgent.
-2.  Existing Priority: Take the current user-set priority as a strong hint. Deviate if other factors strongly suggest it.
+2.  Existing Priority: Take the current user-set priority as a strong hint. Deviate if other factors strongly suggest it. 'Urgent' is the highest priority.
 3.  Tags: Tags like 'Urgent', 'Important', 'Critical' should significantly increase priority. Tags like 'SEO', 'Social Media' indicate task category, which might relate to broader goals (though specific campaign goals are not provided in this version).
 4.  Task Title and Description: Keywords in the title or description might indicate urgency or importance (e.g., "fix critical bug", "launch campaign").
 
@@ -86,8 +85,6 @@ const prioritizeTasksFlow = ai.defineFlow(
     const {output} = await prompt(input);
     
     if (!output || !output.prioritizedTasks) {
-        // Fallback: if AI fails to provide output, return original tasks without changes.
-        // This should ideally not happen if the prompt and model are robust.
         return { prioritizedTasks: input.tasks.map(task => ({...task, reasoning: "AI prioritization failed, using original."})) };
     }
     return output;
