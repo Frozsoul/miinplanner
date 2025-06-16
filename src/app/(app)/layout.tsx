@@ -25,9 +25,8 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { navItems } from "@/components/layout/nav-items"; // Updated import path
-import { User, Settings, LogOut, Loader2, PanelLeft } from "lucide-react"; // PanelLeft for sidebar trigger
-import { cn } from "@/lib/utils";
+import { navItems } from "@/components/layout/nav-items";
+import { User, Settings, LogOut, Loader2, PanelLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from 'react';
 import { AppDataProvider } from '@/contexts/app-data-context';
@@ -56,7 +55,7 @@ export default function AppLayout({
   }
 
   if (!user) {
-    return null;
+    return null; // Don't render anything if not logged in (redirect will handle it)
   }
 
   const handleLogout = async () => {
@@ -70,9 +69,10 @@ export default function AppLayout({
           <Sidebar
             variant="sidebar" 
             collapsible="icon" 
-            className="border-r"
+            className="border-r" // Standard border for separation
           >
-            <SidebarHeader className="p-4 flex items-center justify-center data-[state=collapsed]:justify-center group-data-[collapsible=icon]:py-3.5">
+            <SidebarHeader className="p-4 flex items-center justify-center data-[state=collapsed]:justify-center group-data-[collapsible=icon]:py-3.5 h-14">
+               {/* Ensure logo height matches header height or is appropriately sized */}
                <Logo className="h-7 group-data-[collapsible=icon]:h-6 transition-all duration-300" />
             </SidebarHeader>
             <SidebarContent>
@@ -97,9 +97,10 @@ export default function AppLayout({
             {/* SidebarFooter could be added here if needed */}
           </Sidebar>
 
-          <SidebarInset>
+          <SidebarInset> {/* Manages the main content area adapting to sidebar */}
             <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="md:hidden"> {/* Mobile Trigger */}
+              {/* Mobile Trigger - shown on small screens */}
+              <div className="md:hidden">
                  <SidebarTrigger asChild>
                     <Button size="icon" variant="outline" className="h-8 w-8">
                         <PanelLeft className="h-4 w-4" />
@@ -108,7 +109,8 @@ export default function AppLayout({
                  </SidebarTrigger>
               </div>
               
-              <div className="hidden md:block"> {/* Desktop Trigger - can be removed if rail is preferred */}
+              {/* Desktop Trigger - shown on medium and larger screens */}
+              <div className="hidden md:block">
                 <SidebarTrigger asChild>
                     <Button size="icon" variant="outline" className="h-8 w-8">
                         <PanelLeft className="h-4 w-4" />
@@ -117,6 +119,7 @@ export default function AppLayout({
                  </SidebarTrigger>
               </div>
 
+              {/* User menu, pushed to the right */}
               <div className="ml-auto flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -138,7 +141,8 @@ export default function AppLayout({
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="#"> {/* Update this link when settings page exists */}
+                      {/* TODO: Implement settings page and link */}
+                      <Link href="#"> 
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Settings</span>
                       </Link>

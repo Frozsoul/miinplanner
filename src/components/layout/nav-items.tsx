@@ -3,9 +3,8 @@ import {
   LayoutDashboard,
   ListChecks,
   CalendarDays,
-  Bell,
   BotMessageSquare,
-  Wand2, 
+  Wand2,
   FileText,
 } from "lucide-react";
 
@@ -15,6 +14,5 @@ export const navItems = [
   { href: "/prioritization", icon: Wand2, label: "AI Prioritization" },
   { href: "/content", icon: FileText, label: "Content Studio" },
   { href: "/calendar", icon: CalendarDays, label: "Content Calendar" },
-  { href: "/reminders", icon: Bell, label: "Reminders" },
   { href: "/chatbot", icon: BotMessageSquare, label: "AI Chatbot" },
 ];

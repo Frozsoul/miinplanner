@@ -9,16 +9,20 @@ export interface Task {
   title: string;
   description?: string;
   priority: TaskPriority;
-  status: TaskStatus;
+  status: TaskStatus; // Changed from stage
   dueDate?: string; // Stored as ISO string
   channel?: string;
   assignee?: string;
   tags?: string[];
   completed: boolean;
-  createdAt?: Timestamp; // Firestore server timestamp
-  updatedAt?: Timestamp; // Firestore server timestamp
-  userId?: string;
+  createdAt: Timestamp; // Firestore server timestamp
+  updatedAt: Timestamp; // Firestore server timestamp
+  userId: string;
 }
+
+// For creating/updating tasks, omitting server-generated fields and id
+export type TaskData = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'completed'> & { completed?: boolean };
+
 
 export interface PrioritizedTaskSuggestion {
   taskId: string;
@@ -28,14 +32,6 @@ export interface PrioritizedTaskSuggestion {
   reason: string;
 }
 
-export interface Reminder {
-  id: string; // Firestore document ID
-  title: string;
-  remindAt: string; // Stored as ISO string
-  triggered: boolean;
-  createdAt?: Timestamp; // Firestore server timestamp
-  userId?: string;
-}
 
 export interface ChatMessage {
   id:string;
@@ -61,10 +57,6 @@ export interface LoginFormData {
 export interface SignupFormData extends LoginFormData {
   confirmPassword?: string;
 }
-
-// For creating/updating tasks
-export type TaskData = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'completed'> & { completed?: boolean };
-export type ReminderData = Omit<Reminder, 'id' | 'createdAt' | 'userId' | 'triggered'>;
 
 // For AI flow input (matching the flow's Zod schema)
 export type TaskForPrioritization = {
@@ -102,4 +94,3 @@ export interface SocialMediaPost {
 }
 
 export type SocialMediaPostData = Omit<SocialMediaPost, 'id' | 'createdAt' | 'updatedAt' | 'userId'>;
-
