@@ -1,99 +1,149 @@
-"use client"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import Image from "next/image";
-import { BarChart, Users, Activity, CalendarClock } from "lucide-react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
-import { Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis, YAxis, Legend } from "recharts"
+"use client";
+import { useAppData } from "@/contexts/app-data-context";
+import { PageHeader } from "@/components/PageHeader";
+import { QuickAddTask } from "@/components/dashboard/QuickAddTask";
+import { SummaryCard } from "@/components/dashboard/SummaryCard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListChecks, CheckCircle, Clock, Users, BarChart3, CalendarClock, Send, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { format, parseISO, isValid } from "date-fns";
+import { useEffect } from "react";
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-]
-
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "hsl(var(--chart-1))",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies import("@/components/ui/chart").ChartConfig;
-
+const LayoutDashboardIcon = BarChart3;
 
 export default function DashboardPage() {
+  const { 
+    tasks, 
+    socialMediaPosts, 
+    fetchTasks, 
+    fetchSocialMediaPosts,
+    isLoadingTasks,
+    isLoadingSocialMediaPosts
+  } = useAppData();
+
+  useEffect(() => {
+    fetchTasks();
+    fetchSocialMediaPosts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const tasksToDo = tasks.filter(task => task.status === 'To Do').length;
+  const tasksInProgress = tasks.filter(task => task.status === 'In Progress').length;
+  const tasksDone = tasks.filter(task => task.status === 'Done').length;
+  
+  const upcomingTasks = tasks
+    .filter(task => {
+        if (!task.dueDate) return false;
+        try {
+            const dueDate = parseISO(task.dueDate);
+            return isValid(dueDate) && dueDate >= new Date() && task.status !== 'Done';
+        } catch {
+            return false;
+        }
+    })
+    .sort((a, b) => {
+        const dateA = a.dueDate ? parseISO(a.dueDate).getTime() : 0;
+        const dateB = b.dueDate ? parseISO(b.dueDate).getTime() : 0;
+        return dateA - dateB;
+    })
+    .slice(0, 5);
+
+  const scheduledPosts = socialMediaPosts
+    .filter(post => {
+        if (!post.scheduledDate) return false;
+        try {
+            const scheduledDate = parseISO(post.scheduledDate);
+            return isValid(scheduledDate) && scheduledDate >= new Date() && post.status === 'Scheduled';
+        } catch {
+            return false;
+        }
+    })
+    .sort((a,b) => {
+        const dateA = a.scheduledDate ? parseISO(a.scheduledDate).getTime() : 0;
+        const dateB = b.scheduledDate ? parseISO(b.scheduledDate).getTime() : 0;
+        return dateA - dateB;
+    })
+    .slice(0,5);
+
+  if (isLoadingTasks || isLoadingSocialMediaPosts) {
+    return (
+      <div className="container mx-auto py-8 flex justify-center items-center min-h-[calc(100vh-12rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-headline font-bold mb-8">Dashboard</h1>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Task Overview</CardTitle>
-            <ListChecks className="h-4 w-4 text-muted-foreground" />
+    <div className="space-y-6">
+      <PageHeader 
+        title="Dashboard" 
+        description="Welcome back! Here's an overview of your MiinPlanner workspace."
+        icon={LayoutDashboardIcon}
+        actionButtons={<QuickAddTask />} 
+      />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard title="Total Tasks" value={tasks.length} icon={ListChecks} description="All tasks in system" />
+        <SummaryCard title="Tasks To Do" value={tasksToDo} icon={Clock} description="Pending tasks" className="bg-destructive/80 text-destructive-foreground" />
+        <SummaryCard title="In Progress" value={tasksInProgress} icon={Users} description="Currently active tasks" className="bg-accent/80 text-accent-foreground" />
+        <SummaryCard title="Completed" value={tasksDone} icon={CheckCircle} description="Finished tasks" className="bg-primary/90 text-primary-foreground" />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><CalendarClock className="h-5 w-5 text-primary"/>Upcoming Deadlines</CardTitle>
+            <CardDescription>Tasks that are due soon.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12/20 Tasks</div>
-            <p className="text-xs text-muted-foreground">
-              +1 since last week
-            </p>
-            <Progress value={60} className="mt-4 h-2" />
+            {upcomingTasks.length > 0 ? (
+              <ul className="space-y-3">
+                {upcomingTasks.map(task => (
+                  <li key={task.id} className="flex justify-between items-center p-3 rounded-md border hover:bg-muted/50 transition-colors">
+                    <div>
+                      <Link href={`/tasks#${task.id}`} className="font-medium hover:underline">{task.title}</Link>
+                      <p className="text-sm text-muted-foreground">
+                        Due: {task.dueDate && isValid(parseISO(task.dueDate)) ? format(parseISO(task.dueDate), "MMM dd, yyyy") : "N/A"} - Priority: {task.priority}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" asChild><Link href={`/tasks#${task.id}`}>View</Link></Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No upcoming deadlines. Great job!</p>
+            )}
           </CardContent>
-           <CardFooter>
-             <Image src="https://placehold.co/600x200.png" alt="Task progress visual" width={600} height={200} className="rounded-md object-cover w-full" data-ai-hint="checklist task" />
-           </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Content Schedule</CardTitle>
-            <CalendarClock className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Send className="h-5 w-5 text-primary"/>Scheduled Posts</CardTitle>
+            <CardDescription>Content ready to go live.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5 Upcoming Posts</div>
-            <p className="text-xs text-muted-foreground">
-              2 scheduled for this week
-            </p>
-             <Image src="https://placehold.co/600x200.png" alt="Content schedule visual" width={600} height={200} className="rounded-md object-cover w-full mt-4" data-ai-hint="calendar schedule" />
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2 lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Key Metrics</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-              <RechartsBarChart accessibilityLayer data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                  tickFormatter={(value) => value.slice(0, 3)}
-                />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Legend content={<ChartLegendContent />} />
-                <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-                <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
-              </RechartsBarChart>
-            </ChartContainer>
+             {scheduledPosts.length > 0 ? (
+              <ul className="space-y-3">
+                {scheduledPosts.map(post => (
+                  <li key={post.id} className="flex justify-between items-center p-3 rounded-md border hover:bg-muted/50 transition-colors">
+                    <div>
+                      <p className="font-medium">{post.platform}: {post.content.substring(0,50)}...</p>
+                      <p className="text-sm text-muted-foreground">
+                        Scheduled: {post.scheduledDate && isValid(parseISO(post.scheduledDate)) ? format(parseISO(post.scheduledDate), "MMM dd, yyyy HH:mm") : "N/A"}
+                      </p>
+                    </div>
+                     <Button variant="outline" size="sm" asChild><Link href={`/content#${post.id}`}>View</Link></Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No posts scheduled for the near future.</p>
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-
-const ListChecks = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-)
