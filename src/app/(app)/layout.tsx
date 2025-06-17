@@ -65,7 +65,7 @@ export default function AppLayout({
   return (
     <AppDataProvider>
       <SidebarProvider>
-        <div className="flex min-h-screen bg-background">
+        <div className="flex min-h-screen w-full bg-background"> {/* ADDED w-full HERE */}
           <Sidebar
             variant="sidebar" 
             collapsible="icon" 
