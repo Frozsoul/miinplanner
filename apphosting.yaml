@@ -23,12 +23,23 @@ runConfig:
 #   cpu: 1
 #   memoryMiB: 512
 
-# Optional: Environment variables available at runtime.
-# NEXT_PUBLIC_ variables from your .env files are typically bundled by Next.js
-# during the build process. Variables defined here are for server-side runtime.
-# env:
-#   - variable: EXAMPLE_RUNTIME_VAR
-#     value: "runtime_value_from_yaml"
+# Environment variables available at runtime.
+# NEXT_PUBLIC_ variables are bundled by Next.js for client-side access.
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyCxwaQejx1u2oleqoqwXcGYIdN_mZ6js4U"
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "miinplanner-aed00.firebaseapp.com"
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "miinplanner-aed00"
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "miinplanner-aed00.appspot.com"
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "1079342014799"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:1079342014799:web:ba4886022183bf4cc9653a"
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "G-KVR78N13KK"
 
 # Optional: For using secrets from Google Secret Manager at runtime.
 # secretEnv:
