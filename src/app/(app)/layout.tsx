@@ -149,7 +149,7 @@ export default function AppLayout({
                 </DropdownMenu>
               </div>
             </header>
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 w-full overflow-auto">
               {children}
             </main>
           </SidebarInset>
