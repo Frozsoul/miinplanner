@@ -105,7 +105,7 @@ export default function ContentStudioPage() {
 
 
   return (
-    <div className="py-8 space-y-6">
+    <div className="px-4 sm:px-6 md:py-6 space-y-6">
       <PageHeader 
         title="Content Studio"
         description="Generate, manage, and schedule your social media content."

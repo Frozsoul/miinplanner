@@ -64,7 +64,7 @@ export default function ChatbotPage() {
 
 
   return (
-    <div className="py-8 h-full flex flex-col">
+    <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
       <h1 className="text-3xl font-headline font-bold mb-8 text-center">AI Marketing Assistant</h1>
       <Card className="flex-1 flex flex-col shadow-xl">
         <CardHeader>

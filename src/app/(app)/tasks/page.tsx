@@ -4,9 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Task, TaskData } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
-import { addTask, deleteTask, getTasks, updateTask } from "@/services/task-service";
-import { parseISO, isValid } from 'date-fns';
-
+import { useAppData } from "@/contexts/app-data-context";
 import { Button } from "@/components/ui/button";
 import { Loader2, PlusCircle, LayoutGrid } from "lucide-react";
 import {
@@ -20,44 +18,30 @@ import { useToast } from "@/hooks/use-toast";
 import { TaskList } from "@/components/tasks/TaskList"; 
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskForm } from "@/components/tasks/TaskForm";
+import { parseISO } from 'date-fns';
 
 export default function TasksPage() {
   const { user } = useAuth();
+  const { 
+    tasks, 
+    fetchTasks, 
+    addTask: addTaskContext, 
+    updateTask: updateTaskContext, 
+    deleteTask: deleteTaskContext, 
+    isLoadingTasks 
+  } = useAppData();
   const { toast } = useToast();
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const fetchUserTasks = useCallback(async () => {
-    if (user?.uid) {
-      setIsLoadingTasks(true);
-      console.log(`TasksPage: Attempting to fetch tasks for userId: ${user.uid}`);
-      try {
-        const userTasks = await getTasks(user.uid);
-        setTasks(userTasks);
-      } catch (error) {
-        console.error("TasksPage: Failed to fetch tasks:", error);
-        toast({ title: "Error fetching tasks", description: (error as Error).message || "Could not fetch tasks.", variant: "destructive" });
-      } finally {
-        setIsLoadingTasks(false);
-      }
-    } else {
-      console.log("TasksPage: fetchUserTasks - No user or user.uid, clearing tasks.");
-      setTasks([]);
-      setIsLoadingTasks(false);
-    }
-  }, [user, toast]);
-
   useEffect(() => {
-    fetchUserTasks();
-  }, [fetchUserTasks]);
+    fetchTasks();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openFormModal = (taskToEdit?: Task) => {
     setEditingTask(taskToEdit || null);
@@ -90,17 +74,15 @@ export default function TasksPage() {
     }
 
     setIsSubmitting(true);
-    console.log(`TasksPage: Attempting to save task for userId: ${user.uid}. Editing: ${!!editingTask?.id}`);
-
     try {
       if (editingTask?.id) {
-        await updateTask(user.uid, editingTask.id, taskData);
+        await updateTaskContext(editingTask.id, taskData);
         toast({ title: "Success", description: "Task updated." });
       } else {
-        await addTask(user.uid, taskData);
+        await addTaskContext(taskData);
         toast({ title: "Success", description: "Task added." });
       }
-      fetchUserTasks();
+      // fetchTasks(); // AppDataContext handles fetching after add/update
       closeFormModal();
     } catch (error) {
       console.error("TasksPage: Failed to save task:", error);
@@ -116,11 +98,10 @@ export default function TasksPage() {
       return;
     }
     setIsSubmitting(true);
-    console.log(`TasksPage: Deleting task ${taskId} for userId: ${user.uid}`);
     try {
-      await deleteTask(user.uid, taskId);
+      await deleteTaskContext(taskId);
+      // fetchTasks(); // AppDataContext handles fetching after delete
       toast({ title: "Success", description: "Task deleted." });
-      fetchUserTasks();
     } catch (error) {
       console.error("TasksPage: Failed to delete task:", error);
       toast({ title: "Error deleting task", description: (error as Error).message || "Could not delete task.", variant: "destructive" });
@@ -132,14 +113,14 @@ export default function TasksPage() {
 
   if (isLoadingTasks && tasks.length === 0) {
     return (
-      <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center bg-background">
+      <div className="px-4 sm:px-6 md:py-6 flex min-h-[calc(100vh-10rem)] items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="py-8 h-full flex flex-col">
+    <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
           <LayoutGrid className="h-7 w-7 text-primary"/> Task Manager

@@ -69,10 +69,9 @@ export default function AppLayout({
           <Sidebar
             variant="sidebar" 
             collapsible="icon" 
-            className="border-r" // Standard border for separation
+            className="border-r" 
           >
             <SidebarHeader className="p-4 flex items-center justify-center data-[state=collapsed]:justify-center group-data-[collapsible=icon]:py-3.5 h-14">
-               {/* Ensure logo height matches header height or is appropriately sized */}
                <Logo className="h-7 group-data-[collapsible=icon]:h-6 transition-all duration-300" />
             </SidebarHeader>
             <SidebarContent>
@@ -83,7 +82,7 @@ export default function AppLayout({
                       asChild
                       isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/")}
                       tooltip={item.label}
-                      className="justify-start" // Ensures icon and text are left-aligned
+                      className="justify-start" 
                     >
                       <Link href={item.href}>
                         <item.icon className="h-5 w-5" />
@@ -94,12 +93,10 @@ export default function AppLayout({
                 ))}
               </SidebarMenu>
             </SidebarContent>
-            {/* SidebarFooter could be added here if needed */}
           </Sidebar>
 
-          <SidebarInset> {/* Manages the main content area adapting to sidebar */}
+          <SidebarInset> 
             <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              {/* Mobile Trigger - shown on small screens */}
               <div className="md:hidden">
                  <SidebarTrigger asChild>
                     <Button size="icon" variant="outline" className="h-8 w-8">
@@ -109,7 +106,6 @@ export default function AppLayout({
                  </SidebarTrigger>
               </div>
               
-              {/* Desktop Trigger - shown on medium and larger screens */}
               <div className="hidden md:block">
                 <SidebarTrigger asChild>
                     <Button size="icon" variant="outline" className="h-8 w-8">
@@ -119,13 +115,11 @@ export default function AppLayout({
                  </SidebarTrigger>
               </div>
 
-              {/* User menu, pushed to the right */}
               <div className="ml-auto flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        {/* <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} /> */}
                         <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
                       </Avatar>
                     </Button>
@@ -141,7 +135,6 @@ export default function AppLayout({
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      {/* TODO: Implement settings page and link */}
                       <Link href="#"> 
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Settings</span>
@@ -156,7 +149,7 @@ export default function AppLayout({
                 </DropdownMenu>
               </div>
             </header>
-            <main className="flex-1 overflow-auto p-4 sm:px-6 md:py-6">
+            <main className="flex-1 overflow-auto">
               {children}
             </main>
           </SidebarInset>

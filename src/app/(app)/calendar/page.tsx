@@ -7,7 +7,7 @@ import { CalendarView } from "@/components/calendar/CalendarView";
 import type { Task, SocialMediaPost } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast"; 
-import { parseISO, format } from "date-fns";
+import { parseISO, format, isValid } from "date-fns";
 
 export default function CalendarPage() {
   const { 
@@ -28,9 +28,10 @@ export default function CalendarPage() {
 
   const handleTaskClick = (task: Task) => {
     console.log("Task clicked:", task);
+    const dueDate = task.dueDate && isValid(parseISO(task.dueDate)) ? format(parseISO(task.dueDate), "MMM dd, yyyy") : "N/A";
     toast({
       title: `Task: ${task.title}`,
-      description: `Priority: ${task.priority}, Due: ${task.dueDate && parseISO(task.dueDate) ? format(parseISO(task.dueDate), "MMM dd, yyyy") : "N/A"}`,
+      description: `Priority: ${task.priority}, Due: ${dueDate}`,
     });
   };
 
@@ -46,14 +47,14 @@ export default function CalendarPage() {
 
   if (isLoading && tasks.length === 0 && socialMediaPosts.length === 0) {
     return (
-      <div className="py-8 flex justify-center items-center min-h-[calc(100vh-12rem)]">
+      <div className="px-4 sm:px-6 md:py-6 flex justify-center items-center min-h-[calc(100vh-12rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="py-8">
+    <div className="px-4 sm:px-6 md:py-6">
       <h1 className="text-3xl font-headline font-bold mb-8">Content Calendar</h1>
       <CalendarView 
         tasks={tasks} 

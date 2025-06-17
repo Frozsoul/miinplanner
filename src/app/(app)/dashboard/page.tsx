@@ -69,14 +69,14 @@ export default function DashboardPage() {
 
   if (isLoadingTasks || isLoadingSocialMediaPosts) {
     return (
-      <div className="container mx-auto py-8 flex justify-center items-center min-h-[calc(100vh-12rem)]">
+      <div className="px-4 sm:px-6 md:py-6 flex justify-center items-center min-h-[calc(100vh-12rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="px-4 sm:px-6 md:py-6 space-y-6">
       <PageHeader 
         title="Dashboard" 
         description="Welcome back! Here's an overview of your MiinPlanner workspace."
