@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, Chrome } from "lucide-react"; // Added Chrome for Google icon
+import { AlertCircle, Loader2, Chrome } from "lucide-react"; 
 import type { LoginFormData } from "@/types";
 import { Logo } from "@/components/common/logo";
 import { Separator } from "@/components/ui/separator";
@@ -76,8 +76,8 @@ export default function LoginPage() {
                 placeholder="••••••••"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && !formData.email ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign In"}
+            <Button type="submit" className="w-full" disabled={loading && formData.email !== "" && formData.password !== ""}>
+              {loading && formData.email !== "" && formData.password !== "" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign In"}
             </Button>
           </form>
           
@@ -88,7 +88,7 @@ export default function LoginPage() {
           </div>
 
           <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={loading}>
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />} 
+            {loading && !(formData.email !== "" && formData.password !== "") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />} 
             Sign In with Google
           </Button>
 

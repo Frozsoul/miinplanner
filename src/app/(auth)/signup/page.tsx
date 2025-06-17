@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, Chrome } from "lucide-react"; // Added Chrome for Google icon
+import { AlertCircle, Loader2, Chrome } from "lucide-react";
 import type { SignupFormData } from "@/types";
 import { Logo } from "@/components/common/logo";
 import { Separator } from "@/components/ui/separator";
@@ -26,8 +26,7 @@ export default function SignupPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      // This basic error handling could be improved with a toast or inline message
-      alert("Passwords do not match."); // Consider replacing with a toast
+      alert("Passwords do not match.");
       return;
     }
     await signup({email: formData.email, password: formData.password});
@@ -95,8 +94,8 @@ export default function SignupPage() {
                 minLength={6}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && !formData.email ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign Up"}
+            <Button type="submit" className="w-full" disabled={loading && formData.email !== "" && formData.password !== ""}>
+              {loading && formData.email !== "" && formData.password !== "" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign Up"}
             </Button>
           </form>
 
@@ -107,7 +106,7 @@ export default function SignupPage() {
           </div>
 
           <Button variant="outline" className="w-full" onClick={handleGoogleSignup} disabled={loading}>
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />} 
+            {loading && !(formData.email !== "" && formData.password !== "") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />} 
             Sign Up with Google
           </Button>
 
