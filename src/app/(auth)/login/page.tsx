@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Chrome } from "lucide-react"; // Added Chrome for Google icon
 import type { LoginFormData } from "@/types";
 import { Logo } from "@/components/common/logo";
+import { Separator } from "@/components/ui/separator";
 
 
 export default function LoginPage() {
-  const { login, loading, error, clearError } = useAuth();
+  const { login, loginWithGoogle, loading, error, clearError } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({ email: "", password: "" });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,6 +27,10 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     await login(formData);
+  };
+
+  const handleGoogleLogin = async () => {
+    await loginWithGoogle();
   };
 
   return (
@@ -42,7 +47,7 @@ export default function LoginPage() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Login Failed</AlertTitle>
-                <AlertDescription>{error.message || "An unexpected error occurred."}</AlertDescription>
+                <AlertDescription>{error.message?.replace('Firebase: ', '').replace(/\(auth\/[^)]+\)\.?/, '') || "An unexpected error occurred."}</AlertDescription>
               </Alert>
             )}
             <div className="space-y-2">
@@ -72,11 +77,23 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign In"}
+              {loading && !formData.email ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign In"}
             </Button>
           </form>
+          
+          <div className="my-6 flex items-center">
+            <Separator className="flex-1" />
+            <span className="mx-4 text-xs text-muted-foreground">OR CONTINUE WITH</span>
+            <Separator className="flex-1" />
+          </div>
+
+          <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={loading}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4" />} 
+            Sign In with Google
+          </Button>
+
         </CardContent>
-        <CardFooter className="text-center block">
+        <CardFooter className="text-center block mt-6">
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Button variant="link" asChild className="p-0 h-auto">

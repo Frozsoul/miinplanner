@@ -2,7 +2,14 @@
 "use client";
 
 import type { User as FirebaseUser, AuthError } from "firebase/auth";
-import { onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { 
+  onAuthStateChanged, 
+  signOut as firebaseSignOut, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
@@ -13,6 +20,7 @@ interface AuthContextType {
   loading: boolean;
   login: (data: LoginFormData) => Promise<FirebaseUser | null>;
   signup: (data: SignupFormData) => Promise<FirebaseUser | null>;
+  loginWithGoogle: () => Promise<FirebaseUser | null>;
   logout: () => Promise<void>;
   error: AuthError | null;
   clearError: () => void;
@@ -40,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       setUser(userCredential.user);
-      router.push("/dashboard"); // Or last visited protected page
+      router.push("/dashboard"); 
       return userCredential.user;
     } catch (err) {
       setError(err as AuthError);
@@ -56,7 +64,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       setUser(userCredential.user);
-      // Optionally, you could set up a user profile in Firestore here
+      router.push("/dashboard");
+      return userCredential.user;
+    } catch (err) {
+      setError(err as AuthError);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async (): Promise<FirebaseUser | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      setUser(userCredential.user);
       router.push("/dashboard");
       return userCredential.user;
     } catch (err) {
@@ -86,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, error, clearError }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout, error, clearError }}>
       {children}
     </AuthContext.Provider>
   );
