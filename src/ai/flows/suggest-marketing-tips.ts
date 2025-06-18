@@ -44,8 +44,25 @@ const suggestMarketingTipsFlow = ai.defineFlow(
     inputSchema: SuggestMarketingTipsInputSchema,
     outputSchema: SuggestMarketingTipsOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) : Promise<SuggestMarketingTipsOutput> => {
+    let modelOutput: z.infer<typeof SuggestMarketingTipsOutputSchema> | undefined | null = undefined;
+    try {
+      console.log('[MiinPlanner suggestMarketingTipsFlow] Attempting to call prompt with input:', JSON.stringify(input));
+      const response = await prompt(input);
+      modelOutput = response.output;
+      console.log('[MiinPlanner suggestMarketingTipsFlow] Prompt call successful, output:', JSON.stringify(modelOutput));
+    } catch (e: any) {
+      console.error('[MiinPlanner suggestMarketingTipsFlow] Critical error during prompt execution:', e.message, e.stack);
+      // Ensure modelOutput remains null/undefined to trigger fallback
+      modelOutput = null;
+    }
+
+    if (!modelOutput || !modelOutput.tips) {
+      console.warn('[MiinPlanner suggestMarketingTipsFlow] AI did not return valid tips or an error occurred. Using fallback.');
+      return {
+        tips: "I'm sorry, I encountered an issue while processing your request for marketing tips. Please try rephrasing your query or try again later.",
+      };
+    }
+    return modelOutput;
   }
 );
