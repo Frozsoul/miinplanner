@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
               4. Update the 'alt' text and 'data-ai-hint' accordingly.
             */}
             <Image
-                src="https://miindigital.com/wp-content/uploads/2025/06/logbanner.jpg"
+                src="/images/logbanner.jpg"
                 alt="MiinDigital brand banner"
                 width={800}
                 height={1000}
