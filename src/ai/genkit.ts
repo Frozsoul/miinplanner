@@ -1,3 +1,4 @@
+
 // src/ai/genkit.ts
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
@@ -9,7 +10,7 @@ const apiKey = process.env.GOOGLE_API_KEY;
 if (process.env.NODE_ENV === 'production') {
   if (!apiKey) {
     console.error(
-      '[MiinPlanner LOG CRITICAL] src/ai/genkit.ts: GOOGLE_API_KEY environment variable is NOT SET in production. AI features will fail.'
+      '[MiinPlanner LOG CRITICAL] src/ai/genkit.ts: GOOGLE_API_KEY environment variable is NOT SET or EMPTY in the App Hosting production environment. AI features will fail. Please VERIFY your `apphosting.yaml` `secretEnv` configuration and ensure the secret in Google Secret Manager has the correct API key value and that the App Hosting service account has Secret Accessor IAM permissions.'
     );
   } else {
     console.log(
@@ -21,7 +22,7 @@ if (process.env.NODE_ENV === 'production') {
 } else { // Development environment
   if (!apiKey) {
     console.warn(
-      '[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY environment variable is not set for local dev. Genkit might use other auth methods (e.g., genkit auth login or ADC).'
+      '[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY environment variable is not set for local dev (in .env file). Genkit might use other auth methods (e.g., genkit auth login or ADC), or AI features may fail if no key is found.'
     );
   } else {
     console.log('[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY IS SET for local dev.');
@@ -42,14 +43,14 @@ try {
 } catch (e: any) {
   console.error('[MiinPlanner LOG CRITICAL] src/ai/genkit.ts: Error during genkit() or googleAI plugin initialization:');
   console.error('Error Name:', e.name);
-  console.error('Error Message:', e.message);
+  console.error('Error Message:', e.message); // This is where "Please pass in the API key..." error gets logged
   console.error('Error Stack:', e.stack);
   // Log the full error object for more details if possible
   console.error('Full Error Object:', JSON.stringify(e, Object.getOwnPropertyNames(e), 2));
   
   // Fallback: create a dummy ai object to prevent crashes on ai.defineFlow etc.,
   // though flows using this dummy object will not work and will log errors.
-  console.error("[MiinPlanner LOG CRITICAL] src/ai/genkit.ts: AI features will be non-functional due to initialization error.");
+  console.error("[MiinPlanner LOG CRITICAL] src/ai/genkit.ts: AI features will be non-functional due to initialization error. Review API key setup.");
   initializedAI = {
     defineFlow: (config: any, fn: any) => { console.error("[MiinPlanner AI Fallback] defineFlow called - AI NOT INITIALIZED"); return () => Promise.reject(new Error("AI Service Not Initialized Due to Earlier Error")); },
     definePrompt: (config: any) => { console.error("[MiinPlanner AI Fallback] definePrompt called - AI NOT INITIALIZED"); return () => Promise.reject(new Error("AI Service Not Initialized Due to Earlier Error")); },
