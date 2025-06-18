@@ -24,7 +24,6 @@ export type TaskForPrioritization = z.infer<typeof TaskForPrioritizationSchema>;
 
 const PrioritizeTasksInputSchema = z.object({
   tasks: z.array(TaskForPrioritizationSchema).describe("An array of tasks to be prioritized."),
-  // campaignGoals: z.string().optional().describe("Overall campaign goals to consider for prioritization."), // Future enhancement
 });
 export type PrioritizeTasksInput = z.infer<typeof PrioritizeTasksInputSchema>;
 
@@ -81,20 +80,30 @@ const prioritizeTasksFlow = ai.defineFlow(
     outputSchema: PrioritizeTasksOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
+    let modelOutput: z.infer<typeof PrioritizeTasksOutputSchema> | undefined | null = undefined;
+
+    try {
+      const response = await prompt(input);
+      modelOutput = response.output; // Can be null if model fails to produce structured output
+    } catch (e) {
+      console.error("Critical error during prioritizeTasksPrompt execution:", e);
+      // Ensure modelOutput remains null/undefined to trigger fallback
+      modelOutput = null; 
+    }
     
-    if (!output || !output.prioritizedTasks) {
-        // Fallback: return original tasks with a default reasoning if AI fails
+    if (!modelOutput || !modelOutput.prioritizedTasks) {
+        // Fallback: return original tasks with a default reasoning if AI fails or prompt errors out
         const fallbackTasks = input.tasks.map(task => ({
             ...task,
-            suggestedPriority: task.priority, // Suggest current priority as fallback
-            reasoning: "AI prioritization process encountered an issue. No change suggested."
+            suggestedPriority: task.priority, 
+            reasoning: "AI prioritization process encountered an issue or failed. No change suggested."
         }));
         return { prioritizedTasks: fallbackTasks };
     }
+    
     // Ensure every task from input gets a corresponding output, even if AI omits some
     const allTasksWithSuggestions = input.tasks.map(originalTask => {
-        const suggestion = output.prioritizedTasks.find(st => st.id === originalTask.id);
+        const suggestion = modelOutput.prioritizedTasks.find(st => st.id === originalTask.id);
         if (suggestion) {
             return {
                 ...originalTask,
