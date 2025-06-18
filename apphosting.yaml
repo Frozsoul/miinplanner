@@ -9,14 +9,15 @@ runtime: nodejs20
 # Choose a region close to your users, e.g., 'us-central1', 'europe-west1', etc.
 region: us-central1
 
-runConfig:
-  # Minimum number of instances to keep running.
-  # Set to 0 to allow scaling to zero for cost savings during low traffic.
-  # minInstances: 0
+# Optional: Define resource allocation for your instances.
+# runConfig:
+#   # Minimum number of instances to keep running.
+#   # Set to 0 to allow scaling to zero for cost savings during low traffic.
+#   minInstances: 0
 
-  # Maximum number of instances to automatically spin up
-  # in response to increased traffic.
-  maxInstances: 1 # Adjust as needed for your expected load
+#   # Maximum number of instances to automatically spin up
+#   # in response to increased traffic.
+#   maxInstances: 1 # Adjust as needed for your expected load
 
 # Optional: Define resource allocation for your instances.
 # resources:
@@ -24,7 +25,8 @@ runConfig:
 #   memoryMiB: 512
 
 # Environment variables available at runtime.
-# NEXT_PUBLIC_ variables are bundled by Next.js for client-side access.
+# NEXT_PUBLIC_ variables are used by Next.js for client-side access.
+# Variables defined here are for server-side runtime and build time.
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyCxwaQejx1u2oleqoqwXcGYIdN_mZ6js4U"
@@ -41,9 +43,8 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     value: "G-KVR78N13KK"
 
-
-# Optional: For using secrets from Google Secret Manager at runtime.
+# For using secrets from Google Secret Manager at runtime.
+# This makes the secret's value available as an environment variable to your application.
 secretEnv:
-  - variable: gemini-api-key
-    secret: "miinplannergenerative"
-
+  - variable: GOOGLE_API_KEY # This is the variable Genkit will look for
+    secret: miinplannergenerative # Your secret name in Google Secret Manager
