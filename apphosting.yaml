@@ -41,7 +41,9 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     value: "G-KVR78N13KK"
 
+
 # Optional: For using secrets from Google Secret Manager at runtime.
-# secretEnv:
-#   - variable: API_KEY_SECRET
-#     secret: YOUR_SECRET_NAME_IN_SECRET_MANAGER
+secretEnv:
+  - variable: gemini-api-key
+    secret: "miinplannergenerative"
+
