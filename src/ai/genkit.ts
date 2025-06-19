@@ -8,24 +8,24 @@ console.log('[MiinPlanner LOG] src/ai/genkit.ts: Module loading...');
 const apiKey = process.env.GOOGLE_API_KEY;
 
 if (process.env.NODE_ENV === 'production') {
-  if (!apiKey) {
+  if (!apiKey || apiKey.trim() === "") { // Check if apiKey is undefined, null, or an empty string
     console.error(
       '[MiinPlanner LOG CRITICAL] src/ai/genkit.ts: GOOGLE_API_KEY environment variable is NOT SET or EMPTY in the App Hosting production environment. AI features will fail. Please VERIFY your `apphosting.yaml` `secretEnv` configuration and ensure the secret in Google Secret Manager has the correct API key value and that the App Hosting service account has Secret Accessor IAM permissions.'
     );
   } else {
     console.log(
-      '[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY IS SET in production. Length:', apiKey.length > 0 ? apiKey.length : 'EMPTY (API key is an empty string!)'
+      '[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY IS SET in production. Length:', apiKey.length
     );
     // For deeper debugging, you could temporarily log the first few chars, but be mindful of security:
     // console.log('[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY starts with:', apiKey.substring(0, 4));
   }
 } else { // Development environment
-  if (!apiKey) {
+  if (!apiKey || apiKey.trim() === "") {
     console.warn(
-      '[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY environment variable is not set for local dev (in .env file). Genkit might use other auth methods (e.g., genkit auth login or ADC), or AI features may fail if no key is found.'
+      '[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY environment variable is not set or is empty for local dev (in .env file). Genkit might use other auth methods (e.g., genkit auth login or ADC), or AI features may fail if no key is found.'
     );
   } else {
-    console.log('[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY IS SET for local dev.');
+    console.log('[MiinPlanner LOG] src/ai/genkit.ts: GOOGLE_API_KEY IS SET for local dev. Length:', apiKey.length);
   }
 }
 
@@ -33,9 +33,10 @@ let initializedAI: any;
 
 try {
   console.log('[MiinPlanner LOG] src/ai/genkit.ts: Attempting to call genkit() with googleAI plugin...');
+  // Explicitly pass the apiKey if it exists, otherwise pass undefined which might make the plugin look for default env vars or throw.
   initializedAI = genkit({
     plugins: [
-      googleAI(apiKey ? {apiKey} : undefined), // Pass apiKey if available
+      googleAI(apiKey ? {apiKey} : undefined),
     ],
     model: 'googleai/gemini-2.0-flash', // Default model for the ai object
   });
