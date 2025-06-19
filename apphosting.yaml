@@ -48,3 +48,5 @@ env:
 secretEnv:
   - variable: GOOGLE_API_KEY # This is the variable Genkit will look for
     secret: miinplannergenerative # Your secret name in Google Secret Manager
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY # Match the exact secret name in Secret Manager
