@@ -13,7 +13,7 @@ region: us-central1
 # runConfig:
 #   # Minimum number of instances to keep running.
 #   # Set to 0 to allow scaling to zero for cost savings during low traffic.
-#   minInstances: 0
+minInstances: 0
 
 #   # Maximum number of instances to automatically spin up
 #   # in response to increased traffic.
@@ -42,11 +42,5 @@ env:
     value: "1:1079342014799:web:ba4886022183bf4cc9653a"
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     value: "G-KVR78N13KK"
-
-# For using secrets from Google Secret Manager at runtime.
-# This makes the secret's value available as an environment variable to your application.
-secretEnv:
-  - variable: GOOGLE_API_KEY # This is the variable Genkit will look for
-    secret: miinplannergenerative # Your secret name in Google Secret Manager
-  - variable: GEMINI_API_KEY
-    secret: GEMINI_API_KEY # Match the exact secret name in Secret Manager
+  - variable: GOOGLE_API_KEY
+    secret: miinplannergenerative
