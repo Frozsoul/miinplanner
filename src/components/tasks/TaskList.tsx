@@ -32,8 +32,8 @@ export function TaskList({ tasks, onEdit, onDelete, onView }: TaskListProps) {
       case 'Done': return 'default';
       case 'In Progress': return 'secondary';
       case 'To Do': return 'outline';
-      case 'Blocked': return 'destructive';
-      case 'Review': return 'default'; // Using 'default' for Review, could be another color
+      case 'Pending': return 'secondary';
+      case 'Review': return 'default';
       default: return 'default';
     }
   };

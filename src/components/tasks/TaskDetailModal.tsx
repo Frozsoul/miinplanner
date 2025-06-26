@@ -34,7 +34,7 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
       case 'Done': return 'default';
       case 'In Progress': return 'secondary';
       case 'To Do': return 'outline';
-      case 'Blocked': return 'destructive';
+      case 'Pending': return 'secondary';
       case 'Review': return 'default';
       default: return 'default';
     }
