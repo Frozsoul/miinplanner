@@ -1,12 +1,11 @@
-
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import type { Task, TaskData } from "@/types";
+import { useState, useEffect, useMemo } from "react";
+import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppData } from "@/contexts/app-data-context";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, LayoutGrid } from "lucide-react";
+import { Loader2, PlusCircle, List, LayoutGrid, ListChecks } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,10 +14,16 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { TaskList } from "@/components/tasks/TaskList"; 
+import { TaskList } from "@/components/tasks/TaskList";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskForm } from "@/components/tasks/TaskForm";
-import { parseISO } from 'date-fns';
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -38,10 +43,26 @@ export default function TasksPage() {
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | "All">("All");
+  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "All">("All");
+  
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+
   useEffect(() => {
     fetchTasks();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesStatus = statusFilter === "All" || task.status === statusFilter;
+      const matchesPriority = priorityFilter === "All" || task.priority === priorityFilter;
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [tasks, searchTerm, statusFilter, priorityFilter]);
 
   const openFormModal = (taskToEdit?: Task) => {
     setEditingTask(taskToEdit || null);
@@ -77,12 +98,9 @@ export default function TasksPage() {
     try {
       if (editingTask?.id) {
         await updateTaskContext(editingTask.id, taskData);
-        toast({ title: "Success", description: "Task updated." });
       } else {
         await addTaskContext(taskData);
-        toast({ title: "Success", description: "Task added." });
       }
-      // fetchTasks(); // AppDataContext handles fetching after add/update
       closeFormModal();
     } catch (error) {
       console.error("TasksPage: Failed to save task:", error);
@@ -100,8 +118,6 @@ export default function TasksPage() {
     setIsSubmitting(true);
     try {
       await deleteTaskContext(taskId);
-      // fetchTasks(); // AppDataContext handles fetching after delete
-      toast({ title: "Success", description: "Task deleted." });
     } catch (error) {
       console.error("TasksPage: Failed to delete task:", error);
       toast({ title: "Error deleting task", description: (error as Error).message || "Could not delete task.", variant: "destructive" });
@@ -123,7 +139,7 @@ export default function TasksPage() {
     <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
-          <LayoutGrid className="h-7 w-7 text-primary"/> Task Manager
+          <ListChecks className="h-7 w-7 text-primary"/> Task Manager
         </h1>
         <div className="flex gap-2">
             <Button onClick={() => openFormModal()}>
@@ -132,13 +148,73 @@ export default function TasksPage() {
         </div>
       </div>
 
+      <Card className="mb-6 shadow-sm border">
+        <CardContent className="p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                 <div className="sm:col-span-1">
+                    <Label htmlFor="search-tasks" className="block text-sm font-medium text-muted-foreground mb-1.5">Search</Label>
+                    <Input
+                        id="search-tasks"
+                        placeholder="Keywords..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="status-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Status</Label>
+                    <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as TaskStatus | "All")}>
+                        <SelectTrigger id="status-filter"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Statuses</SelectItem>
+                            {TASK_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <Label htmlFor="priority-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Priority</Label>
+                    <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as TaskPriority | "All")}>
+                        <SelectTrigger id="priority-filter"><SelectValue placeholder="Filter by priority" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Priorities</SelectItem>
+                            {TASK_PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            <div className="flex-shrink-0 pt-5">
+              <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="list">
+                <ToggleGroupItem value="list" aria-label="List view">
+                  <List className="h-4 w-4"/>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="kanban" aria-label="Kanban board view">
+                  <LayoutGrid className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+        </CardContent>
+      </Card>
+
       {isLoadingTasks && tasks.length > 0 && (
         <div className="flex justify-center items-center py-4">
             <Loader2 className="h-6 w-6 animate-spin text-primary" /> <span className="ml-2">Refreshing tasks...</span>
         </div>
       )}
 
-      <TaskList tasks={tasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} />
+      <div className="flex-grow">
+        {viewMode === 'list' ? (
+          <TaskList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} />
+        ) : (
+          <KanbanBoard tasks={filteredTasks} onEditTask={openFormModal} onDeleteTask={handleDeleteTask} onViewTask={openDetailModal} />
+        )}
+
+        {!isLoadingTasks && tasks.length > 0 && filteredTasks.length === 0 && (
+          <Card className="mt-4">
+            <CardContent className="pt-6 text-center text-muted-foreground">
+              No tasks found matching your filters.
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) closeFormModal(); else setIsFormOpen(isOpen); }}>
         <DialogContent className="sm:max-w-lg">
