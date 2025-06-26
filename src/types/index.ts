@@ -24,13 +24,51 @@ export interface Task {
 // For creating/updating tasks, omitting server-generated fields and id
 export type TaskData = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'completed'> & { completed?: boolean };
 
+// AI Insights Types
+export interface InsightTask {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  createdAt: string; // ISO String
+  updatedAt: string; // ISO String
+  dueDate?: string; // ISO String
+}
 
-export interface PrioritizedTaskSuggestion {
+export interface AtRiskTaskInsight {
   taskId: string;
   title: string;
-  currentPriority: TaskPriority;
-  suggestedPriority: TaskPriority;
+  dueDate: string;
   reason: string;
+}
+
+export interface StalledTaskInsight {
+  taskId: string;
+  title: string;
+  lastUpdate: string;
+  reason: string;
+}
+
+export interface AIInsights {
+  type: 'full';
+  summary: string;
+  productivityScore: number;
+  completionRate: {
+    daily: number;
+    weekly: number;
+  };
+  averageCompletionTimeHours: number;
+  atRiskTasks: AtRiskTaskInsight[];
+  stalledTasks: StalledTaskInsight[];
+  proactiveSuggestions: string[];
+}
+
+export interface SimpleInsights {
+    type: 'simple';
+    totalTasks: number;
+    tasksToDo: number;
+    highPriorityTasks: number;
+    message: string;
 }
 
 
@@ -58,21 +96,6 @@ export interface LoginFormData {
 export interface SignupFormData extends LoginFormData {
   confirmPassword?: string;
 }
-
-// For AI flow input (matching the flow's Zod schema)
-export type TaskForPrioritization = {
-  id: string;
-  title: string;
-  description?: string;
-  priority: TaskPriority;
-  dueDate?: string;
-  tags?: string[];
-};
-
-export type AIPrioritizedTask = TaskForPrioritization & {
-  suggestedPriority?: TaskPriority;
-  reasoning?: string;
-};
 
 // Content Studio Types
 export type Platform = 'X' | 'LinkedIn' | 'Instagram' | 'General';

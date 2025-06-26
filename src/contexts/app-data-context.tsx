@@ -2,13 +2,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Task, TaskPriority, PrioritizedTaskSuggestion, TaskData, TaskForPrioritization, SocialMediaPost, SocialMediaPostData, Platform } from '@/types';
+import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getSocialMediaPosts, addSocialMediaPost as addPostService, updateSocialMediaPost as updatePostService, deleteSocialMediaPost as deletePostService } from '@/services/social-media-post-service';
-import { prioritizeTasks as aiPrioritizeTasks, type PrioritizeTasksInput, type AIPrioritizedTask } from '@/ai/flows/prioritize-tasks-flow';
+import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
 import { generateSocialMediaPost as aiGenerateSocialMediaPost, type GenerateSocialMediaPostInput } from '@/ai/flows/generate-social-media-post';
 import { useToast } from '@/hooks/use-toast';
+import { isAfter, subDays } from 'date-fns';
 
 interface AppDataContextType {
   // Tasks
@@ -19,13 +20,10 @@ interface AppDataContextType {
   updateTask: (taskId: string, taskUpdate: Partial<TaskData>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 
-  // AI Task Prioritization
-  prioritizedSuggestions: PrioritizedTaskSuggestion[];
-  isLoadingAi: boolean; // Generic AI loading state
-  suggestTaskPrioritization: () => Promise<void>;
-  updateTaskPriority: (taskId: string, newPriority: TaskPriority) => Promise<void>;
-  dismissSuggestion: (taskId: string) => void;
-  clearSuggestions: () => void;
+  // AI Insights
+  insights: AIInsights | SimpleInsights | null;
+  isLoadingAi: boolean;
+  generateInsights: () => Promise<void>;
   
   // Social Media Posts
   socialMediaPosts: SocialMediaPost[];
@@ -39,6 +37,8 @@ interface AppDataContextType {
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
+const MIN_TASKS_FOR_AI = 5; // Minimum number of valid tasks to trigger full AI insights
+
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -46,8 +46,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   // Task State
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
-  const [prioritizedSuggestions, setPrioritizedSuggestions] = useState<PrioritizedTaskSuggestion[]>([]);
   
+  // AI Insights State
+  const [insights, setInsights] = useState<AIInsights | SimpleInsights | null>(null);
+
   // Social Media Post State
   const [socialMediaPosts, setSocialMediaPosts] = useState<SocialMediaPost[]>([]);
   const [isLoadingSocialMediaPosts, setIsLoadingSocialMediaPosts] = useState(true);
@@ -79,10 +81,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
       return null;
     }
-    setIsLoadingTasks(true); // Or a more specific loading state
+    setIsLoadingTasks(true);
     try {
       const newTask = await addTaskService(user.uid, taskData);
-      await fetchUserTasks(); // Re-fetch to get the latest list with server-generated timestamps
+      await fetchUserTasks(); 
       toast({ title: "Success", description: "Task added." });
       return newTask;
     } catch (error) {
@@ -122,9 +124,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       await deleteTaskService(user.uid, taskId);
       await fetchUserTasks();
       toast({ title: "Success", description: "Task deleted." });
-    } catch (error) {
-      console.error("AppDataContext: Failed to delete task:", error);
-      toast({ title: "Error", description: "Could not delete task.", variant: "destructive" });
     } finally {
       setIsLoadingTasks(false);
     }
@@ -134,67 +133,59 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     fetchUserTasks();
   }, [fetchUserTasks]);
 
-  // --- AI Task Prioritization Functions ---
-  const suggestTaskPrioritization = async () => {
-    if (!user?.uid) {
-      toast({ title: "Authentication Error", description: "Please log in to use AI prioritization.", variant: "destructive" });
-      return;
-    }
-    const activeTasks = tasks.filter(t => t.status === 'To Do' || t.status === 'In Progress');
-    if (activeTasks.length === 0) {
-      toast({ title: "No Tasks", description: "No active tasks available for AI prioritization.", variant: "default" });
-      setPrioritizedSuggestions([]);
+  // --- AI Insights Functions ---
+  const generateInsights = async () => {
+    setIsLoadingAi(true);
+    setInsights(null);
+
+    // Filter for tasks that have the necessary data for insights
+    const validTasksForAnalysis = tasks.filter(task => 
+      task.createdAt && typeof task.createdAt.toDate === 'function' &&
+      task.updatedAt && typeof task.updatedAt.toDate === 'function'
+    );
+    
+    if (validTasksForAnalysis.length < MIN_TASKS_FOR_AI) {
+      // Generate simple, local insights
+      const simpleReport: SimpleInsights = {
+        type: 'simple',
+        totalTasks: tasks.length,
+        tasksToDo: tasks.filter(t => t.status === 'To Do' || t.status === 'In Progress').length,
+        highPriorityTasks: tasks.filter(t => t.priority === 'High' || t.priority === 'Urgent').length,
+        message: `You currently have ${validTasksForAnalysis.length} tasks with complete data. Reach ${MIN_TASKS_FOR_AI} to unlock advanced AI analysis, including productivity scores and proactive suggestions!`,
+      };
+      setInsights(simpleReport);
+      toast({ title: "Basic Insights Generated", description: "Add more tasks to unlock the full power of AI." });
+      setIsLoadingAi(false);
       return;
     }
 
-    setIsLoadingAi(true);
+    // Prepare data for the full AI flow
+    const insightTasks: InsightTask[] = validTasksForAnalysis.map(t => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      createdAt: t.createdAt.toDate().toISOString(),
+      updatedAt: t.updatedAt.toDate().toISOString(),
+      dueDate: t.dueDate,
+    }));
+
     try {
-      const aiInput: PrioritizeTasksInput = {
-        tasks: activeTasks.map(t => ({
-          id: t.id,
-          title: t.title,
-          description: t.description,
-          priority: t.priority,
-          dueDate: t.dueDate,
-          tags: t.tags,
-        })),
+      const input: InsightGenerationInput = {
+        tasks: insightTasks,
+        currentDate: new Date().toISOString(),
       };
-      const result = await aiPrioritizeTasks(aiInput);
-      const suggestions: PrioritizedTaskSuggestion[] = result.prioritizedTasks
-        .filter(pt => pt.suggestedPriority !== undefined && pt.id)
-        .map((pt: AIPrioritizedTask) => {
-          const originalTask = activeTasks.find(t => t.id === pt.id);
-          return {
-            taskId: pt.id!,
-            title: pt.title,
-            currentPriority: originalTask?.priority || pt.priority,
-            suggestedPriority: pt.suggestedPriority!,
-            reason: pt.reasoning || "AI suggested this priority.",
-          };
-        });
-      setPrioritizedSuggestions(suggestions);
-      toast({title: suggestions.length > 0 ? "AI Suggestions Ready" : "AI Analysis Complete", description: suggestions.length > 0 ? "Review the suggested task priorities." : "No priority changes were suggested."});
+      const aiResult = await aiGenerateInsights(input);
+      setInsights({ ...aiResult, type: 'full' });
+      toast({ title: "AI Insights Generated", description: "Your productivity report is ready." });
     } catch (error) {
-      console.error("AppDataContext: AI prioritization failed:", error);
-      toast({ title: "AI Error", description: "Could not get AI priority suggestions.", variant: "destructive" });
-      setPrioritizedSuggestions([]);
+      console.error("AppDataContext: AI insight generation failed:", error);
+      toast({ title: "AI Error", description: "Could not generate insights. Please try again.", variant: "destructive" });
+      setInsights(null);
     } finally {
       setIsLoadingAi(false);
     }
   };
-
-  const updateTaskPriority = async (taskId: string, newPriority: TaskPriority) => {
-    if (!user?.uid) return;
-    await updateTask(taskId, { priority: newPriority }); // Reuses the generic updateTask
-    setPrioritizedSuggestions(prev => prev.filter(s => s.taskId !== taskId)); // Remove suggestion after applying
-  };
-  
-  const dismissSuggestion = (taskId: string) => {
-    setPrioritizedSuggestions(prev => prev.filter(s => s.taskId !== taskId));
-    toast({ title: "Suggestion Dismissed", description: "The AI suggestion for this task has been dismissed."});
-  };
-
-  const clearSuggestions = () => setPrioritizedSuggestions([]);
 
   // --- Social Media Post Functions ---
   const fetchSocialMediaPosts = useCallback(async () => {
@@ -298,12 +289,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       addTask,
       updateTask,
       deleteTask,
-      prioritizedSuggestions, 
+      insights, 
       isLoadingAi, 
-      suggestTaskPrioritization, 
-      updateTaskPriority,
-      dismissSuggestion,
-      clearSuggestions,
+      generateInsights,
       socialMediaPosts,
       isLoadingSocialMediaPosts,
       fetchSocialMediaPosts,

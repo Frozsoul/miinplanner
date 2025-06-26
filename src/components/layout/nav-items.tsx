@@ -4,14 +4,14 @@ import {
   ListChecks,
   CalendarDays,
   BotMessageSquare,
-  Wand2,
+  Lightbulb,
   FileText,
 } from "lucide-react";
 
 export const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/tasks", icon: ListChecks, label: "Task Manager" },
-  { href: "/prioritization", icon: Wand2, label: "AI Prioritization" },
+  { href: "/insights", icon: Lightbulb, label: "AI Insights" },
   { href: "/content", icon: FileText, label: "Content Studio" },
   { href: "/calendar", icon: CalendarDays, label: "Content Calendar" },
   { href: "/chatbot", icon: BotMessageSquare, label: "AI Chatbot" },
