@@ -24,11 +24,12 @@ import { PlusCircle, Loader2 } from "lucide-react";
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 
-const initialFormState: Partial<TaskData> & { dueDateObj?: Date } = {
+const initialFormState: Partial<TaskData> & { startDateObj?: Date, dueDateObj?: Date } = {
   title: "",
   description: "",
   priority: "Medium",
   status: "To Do",
+  startDateObj: undefined,
   dueDateObj: undefined,
   tags: [],
   channel: "",
@@ -63,6 +64,7 @@ export function QuickAddTask() {
       description: formData.description,
       priority: formData.priority as TaskPriority,
       status: formData.status as TaskStatus,
+      startDate: formData.startDateObj?.toISOString(),
       dueDate: formData.dueDateObj?.toISOString(),
       tags: [], // Tags can be added later via full edit
       channel: formData.channel,
@@ -155,12 +157,21 @@ export function QuickAddTask() {
               </Select>
             </div>
           </div>
-          <div>
-            <Label htmlFor="quick-dueDate">Due Date (Optional)</Label>
-            <DatePicker
-              date={formData.dueDateObj}
-              setDate={(date) => handleChange("dueDateObj", date)}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="quick-startDate">Start Date (Optional)</Label>
+                <DatePicker
+                date={formData.startDateObj}
+                setDate={(date) => handleChange("startDateObj", date)}
+                />
+            </div>
+            <div>
+                <Label htmlFor="quick-dueDate">Due Date (Optional)</Label>
+                <DatePicker
+                date={formData.dueDateObj}
+                setDate={(date) => handleChange("dueDateObj", date)}
+                />
+            </div>
           </div>
           <DialogFooter className="pt-4">
             <DialogClose asChild><Button type="button" variant="outline" onClick={resetForm}>Cancel</Button></DialogClose>

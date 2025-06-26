@@ -34,14 +34,20 @@ export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: Calenda
   const tasksForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
     return tasks.filter(task => {
-        if (!task.dueDate) return false;
-        try {
-            const dueDate = parseISO(task.dueDate);
-            return isSameDay(dueDate, selectedDate);
-        } catch (e) {
-            console.error("Error parsing task due date:", task.dueDate, e);
-            return false;
+        let match = false;
+        if (task.dueDate) {
+            try {
+                const dueDate = parseISO(task.dueDate);
+                if (isSameDay(dueDate, selectedDate)) match = true;
+            } catch (e) { console.error("Error parsing task due date:", task.dueDate, e); }
         }
+        if (!match && task.startDate) {
+             try {
+                const startDate = parseISO(task.startDate);
+                if (isSameDay(startDate, selectedDate)) match = true;
+            } catch (e) { console.error("Error parsing task start date:", task.startDate, e); }
+        }
+        return match;
     });
   }, [tasks, selectedDate]);
 
@@ -112,7 +118,16 @@ export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: Calenda
               <div key={`empty-${i}`} className="bg-card aspect-square"></div>
             ))}
             {daysInMonth.map(day => {
-              const tasksOnDay = tasks.filter(t => t.dueDate && isSameDay(parseISO(t.dueDate), day));
+              const tasksOnDay = tasks.filter(t => {
+                  let match = false;
+                  if (t.dueDate) {
+                      try { if (isSameDay(parseISO(t.dueDate), day)) match = true; } catch(e){}
+                  }
+                  if (!match && t.startDate) {
+                      try { if (isSameDay(parseISO(t.startDate), day)) match = true; } catch(e){}
+                  }
+                  return match;
+              });
               const postsOnDay = posts.filter(p => p.scheduledDate && isSameDay(parseISO(p.scheduledDate), day));
               const isSelected = selectedDate && isSameDay(day, selectedDate);
               const isToday = isSameDay(day, new Date());
@@ -214,5 +229,3 @@ export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: Calenda
     </div>
   );
 }
-
-  

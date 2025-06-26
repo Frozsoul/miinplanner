@@ -10,6 +10,7 @@ export interface Task {
   description?: string;
   priority: TaskPriority;
   status: TaskStatus; // Changed from stage
+  startDate?: string; // Stored as ISO string
   dueDate?: string; // Stored as ISO string
   channel?: string;
   assignee?: string;

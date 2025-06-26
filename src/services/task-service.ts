@@ -28,6 +28,7 @@ const fromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>): Task => {
     description: data.description || "",
     priority: data.priority || 'Medium',
     status: data.status || 'To Do',
+    startDate: data.startDate ? (data.startDate as Timestamp).toDate().toISOString() : undefined,
     dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate().toISOString() : undefined,
     channel: data.channel || undefined,
     assignee: data.assignee || undefined,
@@ -69,6 +70,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
       completed: taskData.status === 'Done' ? true : (taskData.completed || false),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
       dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
       tags: taskData.tags || [],
       status: taskData.status || 'To Do',
@@ -105,6 +107,12 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
   try {
     const taskRef = doc(db, TASK_COLLECTION, taskId);
     const updateData: any = { ...taskUpdate, updatedAt: serverTimestamp() };
+    
+    if (taskUpdate.startDate) {
+      updateData.startDate = Timestamp.fromDate(new Date(taskUpdate.startDate));
+    } else if (taskUpdate.hasOwnProperty('startDate') && taskUpdate.startDate === undefined) {
+      updateData.startDate = null; 
+    }
 
     if (taskUpdate.dueDate) {
       updateData.dueDate = Timestamp.fromDate(new Date(taskUpdate.dueDate));

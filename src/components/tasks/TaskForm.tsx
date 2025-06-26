@@ -21,11 +21,12 @@ interface TaskFormProps {
   isSubmitting: boolean;
 }
 
-const initialFormState: TaskData & { dueDateObj?: Date; tagsString?: string } = {
+const initialFormState: TaskData & { startDateObj?: Date; dueDateObj?: Date; tagsString?: string } = {
   title: "",
   description: "",
   priority: "Medium",
   status: "To Do",
+  startDateObj: undefined,
   dueDateObj: undefined,
   channel: "",
   assignee: "",
@@ -38,16 +39,20 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
 
   useEffect(() => {
     if (taskToEdit) {
+      let startDateObject: Date | undefined = undefined;
+      if (taskToEdit.startDate) {
+        try {
+          const parsed = parseISO(taskToEdit.startDate);
+          if (isValid(parsed)) startDateObject = parsed;
+        } catch (e) {}
+      }
+      
       let dueDateObject: Date | undefined = undefined;
       if (taskToEdit.dueDate) {
         try {
           const parsed = parseISO(taskToEdit.dueDate);
-          if (isValid(parsed)) {
-            dueDateObject = parsed;
-          }
-        } catch (e) {
-          console.warn("Error parsing taskToEdit.dueDate:", taskToEdit.dueDate, e);
-        }
+          if (isValid(parsed)) dueDateObject = parsed;
+        } catch (e) {}
       }
 
       setFormData({
@@ -55,6 +60,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
         description: taskToEdit.description || "",
         priority: taskToEdit.priority,
         status: taskToEdit.status,
+        startDateObj: startDateObject,
         dueDateObj: dueDateObject,
         channel: taskToEdit.channel || "",
         assignee: taskToEdit.assignee || "",
@@ -78,6 +84,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
       description: formData.description,
       priority: formData.priority,
       status: formData.status,
+      startDate: formData.startDateObj?.toISOString(),
       dueDate: formData.dueDateObj?.toISOString(),
       channel: formData.channel,
       assignee: formData.assignee,
@@ -126,9 +133,15 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
             <Input id="assignee" value={formData.assignee} onChange={e => handleChange('assignee', e.target.value)} placeholder="e.g., John Doe" />
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="dueDate">Due Date</Label>
-        <DatePicker date={formData.dueDateObj} setDate={(date) => handleChange('dueDateObj', date)} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+            <Label htmlFor="startDate">Start Date (Optional)</Label>
+            <DatePicker date={formData.startDateObj} setDate={(date) => handleChange('startDateObj', date)} />
+        </div>
+        <div className="space-y-1.5">
+            <Label htmlFor="dueDate">Due Date (Optional)</Label>
+            <DatePicker date={formData.dueDateObj} setDate={(date) => handleChange('dueDateObj', date)} />
+        </div>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="tags">Tags (comma-separated)</Label>

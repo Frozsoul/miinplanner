@@ -94,7 +94,10 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
               <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority}</Badge>
             </div>
           </div>
-          <p><span className="font-semibold">Due Date:</span> {formatDateSafe(task.dueDate, "PPP")}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <p><span className="font-semibold">Start Date:</span> {formatDateSafe(task.startDate, "PPP")}</p>
+            <p><span className="font-semibold">Due Date:</span> {formatDateSafe(task.dueDate, "PPP")}</p>
+          </div>
           <p><span className="font-semibold">Assignee:</span> {task.assignee || "N/A"}</p>
           <p><span className="font-semibold">Channel:</span> {task.channel || "N/A"}</p>
           {task.tags && task.tags.length > 0 && (
