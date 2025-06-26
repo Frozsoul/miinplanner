@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -224,12 +225,14 @@ export default function TasksPage() {
               {editingTask ? "Update the details of your task." : "Fill in the details for your new task."}
             </DialogDescription>
           </DialogHeader>
-          <TaskForm
-            taskToEdit={editingTask}
-            onSave={handleSaveTask}
-            onCancel={closeFormModal}
-            isSubmitting={isSubmitting}
-          />
+          <ScrollArea className="max-h-[70vh] p-1 pr-4">
+            <TaskForm
+              taskToEdit={editingTask}
+              onSave={handleSaveTask}
+              onCancel={closeFormModal}
+              isSubmitting={isSubmitting}
+            />
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 
