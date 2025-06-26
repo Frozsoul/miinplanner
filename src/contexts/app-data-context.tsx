@@ -9,7 +9,7 @@ import { getSocialMediaPosts, addSocialMediaPost as addPostService, updateSocial
 import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
 import { generateSocialMediaPost as aiGenerateSocialMediaPost, type GenerateSocialMediaPostInput } from '@/ai/flows/generate-social-media-post';
 import { useToast } from '@/hooks/use-toast';
-import { isAfter, subDays } from 'date-fns';
+import { TASK_STATUSES } from '@/lib/constants';
 
 interface AppDataContextType {
   // Tasks
@@ -138,10 +138,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     setIsLoadingAi(true);
     setInsights(null);
 
+    const validStatuses = new Set(TASK_STATUSES);
+
     // Filter for tasks that have the necessary data for insights
     const validTasksForAnalysis = tasks.filter(task => 
       task.createdAt && typeof task.createdAt.toDate === 'function' &&
-      task.updatedAt && typeof task.updatedAt.toDate === 'function'
+      task.updatedAt && typeof task.updatedAt.toDate === 'function' &&
+      validStatuses.has(task.status)
     );
     
     if (validTasksForAnalysis.length < MIN_TASKS_FOR_AI) {
