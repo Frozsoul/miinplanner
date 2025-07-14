@@ -26,7 +26,7 @@ import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -168,21 +168,19 @@ export default function TasksPage() {
                 <div>
                     <Label htmlFor="status-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Status</Label>
                      <MultiSelect
+                        title="Status"
                         options={TASK_STATUSES.map(s => ({ value: s, label: s }))}
                         selected={statusFilter}
                         onChange={setStatusFilter}
-                        placeholder="Filter by status"
-                        className="w-full"
                     />
                 </div>
                 <div>
                     <Label htmlFor="priority-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Priority</Label>
                     <MultiSelect
+                        title="Priority"
                         options={TASK_PRIORITIES.map(p => ({ value: p, label: p }))}
                         selected={priorityFilter}
                         onChange={setPriorityFilter}
-                        placeholder="Filter by priority"
-                        className="w-full"
                     />
                 </div>
             </div>
@@ -257,71 +255,78 @@ interface MultiSelectProps {
   selected: string[];
   onChange: (selected: string[]) => void;
   className?: string;
-  placeholder?: string;
+  title?: string;
 }
 
-function MultiSelect({ options, selected, onChange, className, placeholder = "Select..." }: MultiSelectProps) {
-  const [open, setOpen] = useState(false);
-
+function MultiSelect({ options, selected, onChange, className, title = "Select" }: MultiSelectProps) {
+  
   const handleSelect = (value: string) => {
-    onChange(
-      selected.includes(value)
-        ? selected.filter((item) => item !== value)
-        : [...selected, value]
-    );
+    const isSelected = selected.includes(value);
+    if (isSelected) {
+      onChange(selected.filter((item) => item !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
+
+  const getButtonLabel = () => {
+    if (selected.length === 0) return `Filter by ${title.toLowerCase()}`;
+    if (selected.length === 1) return selected[0];
+    if (selected.length === options.length) return `All ${title}s`;
+    return `${selected.length} ${title}s selected`;
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
-          aria-expanded={open}
           className={cn("w-full justify-between", className)}
         >
-          <span className="truncate">
-            {selected.length === 0
-              ? placeholder
-              : selected.length === 1
-              ? selected[0]
-              : `${selected.length} selected`}
-          </span>
+          <span className="truncate">{getButtonLabel()}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          <CommandInput placeholder="Search..." />
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  onSelect={(currentValue) => {
-                    handleSelect(currentValue);
-                  }}
-                  value={option.value}
-                >
-                   <Checkbox
-                      className="mr-2"
-                      checked={selected.includes(option.value)}
-                      onCheckedChange={(checked) => {
-                        return checked
-                          ? onChange([...selected, option.value])
-                          : onChange(selected.filter((value) => value !== option.value))
-                      }}
-                    />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+        <div className="p-2">
+            <p className="text-sm font-medium">{title}</p>
+        </div>
+        <Separator />
+        <div className="p-1">
+          {options.map((option) => (
+            <div
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+            >
+              <Checkbox
+                id={`multiselect-${title}-${option.value}`}
+                checked={selected.includes(option.value)}
+                onCheckedChange={() => handleSelect(option.value)}
+              />
+              <Label htmlFor={`multiselect-${title}-${option.value}`} className="font-normal cursor-pointer flex-1">
+                {option.label}
+              </Label>
+            </div>
+          ))}
+        </div>
+        {selected.length > 0 && (
+            <>
+                <Separator />
+                <div className="p-2">
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => onChange([])}
+                    >
+                        Clear selection
+                    </Button>
+                </div>
+            </>
+        )}
       </PopoverContent>
     </Popover>
   );
 }
-
-    
