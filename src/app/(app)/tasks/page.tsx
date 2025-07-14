@@ -264,12 +264,11 @@ function MultiSelect({ options, selected, onChange, className, placeholder = "Se
   const [open, setOpen] = useState(false);
 
   const handleSelect = (value: string) => {
-    const isSelected = selected.includes(value);
-    if (isSelected) {
-      onChange(selected.filter((item) => item !== value));
-    } else {
-      onChange([...selected, value]);
-    }
+    onChange(
+      selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...selected, value]
+    );
   };
 
   return (
@@ -300,21 +299,21 @@ function MultiSelect({ options, selected, onChange, className, placeholder = "Se
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  onSelect={(e) => {
-                    e.preventDefault();
+                  onSelect={(currentValue) => {
+                    handleSelect(currentValue);
                   }}
-                  className="cursor-pointer"
+                  value={option.value}
                 >
-                  <div
-                    className="flex w-full items-center"
-                    onClick={() => handleSelect(option.value)}
-                  >
-                    <Checkbox
+                   <Checkbox
                       className="mr-2"
                       checked={selected.includes(option.value)}
+                      onCheckedChange={(checked) => {
+                        return checked
+                          ? onChange([...selected, option.value])
+                          : onChange(selected.filter((value) => value !== option.value))
+                      }}
                     />
-                    {option.label}
-                  </div>
+                  {option.label}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -324,3 +323,5 @@ function MultiSelect({ options, selected, onChange, className, placeholder = "Se
     </Popover>
   );
 }
+
+    
