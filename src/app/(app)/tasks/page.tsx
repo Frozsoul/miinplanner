@@ -305,7 +305,6 @@ function MultiSelect({ options, selected, onChange, className, placeholder = "Se
                   <Checkbox
                     className="mr-2"
                     checked={selected.includes(option.value)}
-                    onCheckedChange={() => handleSelect(option.value)}
                   />
                   {option.label}
                 </CommandItem>
