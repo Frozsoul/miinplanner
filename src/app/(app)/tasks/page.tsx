@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -5,7 +6,7 @@ import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppData } from "@/contexts/app-data-context";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, List, LayoutGrid, ListChecks } from "lucide-react";
+import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,11 +21,15 @@ import { TaskForm } from "@/components/tasks/TaskForm";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -45,8 +50,8 @@ export default function TasksPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | "All">("All");
-  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "All">("All");
+  const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
+  const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
@@ -59,8 +64,8 @@ export default function TasksPage() {
     return tasks.filter(task => {
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesStatus = statusFilter === "All" || task.status === statusFilter;
-      const matchesPriority = priorityFilter === "All" || task.priority === priorityFilter;
+      const matchesStatus = statusFilter.length === 0 || statusFilter.includes(task.status);
+      const matchesPriority = priorityFilter.length === 0 || priorityFilter.includes(task.priority);
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [tasks, searchTerm, statusFilter, priorityFilter]);
@@ -127,7 +132,6 @@ export default function TasksPage() {
     }
   };
 
-
   if (isLoadingTasks && tasks.length === 0) {
     return (
       <div className="px-4 sm:px-6 md:py-6 flex min-h-[calc(100vh-10rem)] items-center justify-center bg-background">
@@ -163,23 +167,23 @@ export default function TasksPage() {
                 </div>
                 <div>
                     <Label htmlFor="status-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Status</Label>
-                    <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as TaskStatus | "All")}>
-                        <SelectTrigger id="status-filter"><SelectValue placeholder="Filter by status" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="All">All Statuses</SelectItem>
-                            {TASK_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                     <MultiSelect
+                        options={TASK_STATUSES.map(s => ({ value: s, label: s }))}
+                        selected={statusFilter}
+                        onChange={setStatusFilter}
+                        placeholder="Filter by status"
+                        className="w-full"
+                    />
                 </div>
                 <div>
                     <Label htmlFor="priority-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Priority</Label>
-                    <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as TaskPriority | "All")}>
-                        <SelectTrigger id="priority-filter"><SelectValue placeholder="Filter by priority" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="All">All Priorities</SelectItem>
-                            {TASK_PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <MultiSelect
+                        options={TASK_PRIORITIES.map(p => ({ value: p, label: p }))}
+                        selected={priorityFilter}
+                        onChange={setPriorityFilter}
+                        placeholder="Filter by priority"
+                        className="w-full"
+                    />
                 </div>
             </div>
             <div className="flex-shrink-0 pt-5">
@@ -244,5 +248,72 @@ export default function TasksPage() {
         />
       )}
     </div>
+  );
+}
+
+
+interface MultiSelectProps {
+  options: { label: string; value: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  className?: string;
+  placeholder?: string;
+}
+
+function MultiSelect({ options, selected, onChange, className, placeholder = "Select..." }: MultiSelectProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (value: string) => {
+    const isSelected = selected.includes(value);
+    if (isSelected) {
+      onChange(selected.filter((item) => item !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn("w-full justify-between", className)}
+        >
+          <span className="truncate">
+            {selected.length === 0
+              ? placeholder
+              : selected.length === 1
+              ? selected[0]
+              : `${selected.length} selected`}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <Command>
+          <CommandInput placeholder="Search..." />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  onSelect={() => handleSelect(option.value)}
+                >
+                  <Checkbox
+                    className="mr-2"
+                    checked={selected.includes(option.value)}
+                    onCheckedChange={() => handleSelect(option.value)}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
