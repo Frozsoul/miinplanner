@@ -300,13 +300,20 @@ function MultiSelect({ options, selected, onChange, className, placeholder = "Se
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  onSelect={() => handleSelect(option.value)}
+                  onSelect={(e) => e.preventDefault()}
+                  className="cursor-pointer"
                 >
-                  <Checkbox
-                    className="mr-2"
-                    checked={selected.includes(option.value)}
-                  />
-                  {option.label}
+                  <div
+                    className="flex w-full items-center"
+                    onClick={() => handleSelect(option.value)}
+                  >
+                    <Checkbox
+                      className="mr-2"
+                      checked={selected.includes(option.value)}
+                      onCheckedChange={() => handleSelect(option.value)}
+                    />
+                    {option.label}
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>
