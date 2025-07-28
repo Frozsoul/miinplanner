@@ -5,14 +5,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO, isValid } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Archive, ArchiveRestore } from "lucide-react";
 
 interface TaskDetailModalProps {
   task: Task | null;
   isOpen: boolean;
   onClose: () => void;
+  onArchiveToggle: (task: Task) => void;
 }
 
-export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: TaskDetailModalProps) {
   if (!task) return null;
 
   const getPriorityBadgeVariant = (priority: TaskPriority) => {
@@ -72,7 +74,10 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold">{task.title}</DialogTitle>
+          <div className="flex items-center gap-4">
+             <DialogTitle className="text-2xl font-semibold">{task.title}</DialogTitle>
+             {task.archived && <Badge variant="outline">Archived</Badge>}
+          </div>
           <DialogDescription className="text-xs text-muted-foreground">
             Created: {formatDateSafe(task.createdAt)} | Last Updated: {formatDateSafe(task.updatedAt)}
           </DialogDescription>
@@ -109,7 +114,17 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
             </div>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="justify-between">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onArchiveToggle(task);
+                onClose();
+              }}
+            >
+              {task.archived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+              {task.archived ? 'Restore Task' : 'Archive Task'}
+            </Button>
             <Button variant="outline" onClick={onClose}>Close</Button>
         </DialogFooter>
       </DialogContent>

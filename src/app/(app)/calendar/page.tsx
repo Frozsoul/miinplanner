@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useAppData } from "@/contexts/app-data-context";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import type { Task, SocialMediaPost } from "@/types";
@@ -25,6 +25,8 @@ export default function CalendarPage() {
     fetchSocialMediaPosts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
+
+  const activeTasks = useMemo(() => tasks.filter(task => !task.archived), [tasks]);
 
   const handleTaskClick = (task: Task) => {
     console.log("Task clicked:", task);
@@ -57,7 +59,7 @@ export default function CalendarPage() {
     <div className="px-4 sm:px-6 md:py-6">
       <h1 className="text-3xl font-headline font-bold mb-8">Content Calendar</h1>
       <CalendarView 
-        tasks={tasks} 
+        tasks={activeTasks} 
         posts={socialMediaPosts}
         onTaskClick={handleTaskClick}
         onPostClick={handlePostClick}

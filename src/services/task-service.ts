@@ -34,6 +34,7 @@ const fromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>): Task => {
     assignee: data.assignee || undefined,
     tags: data.tags || [],
     completed: data.completed || (data.status === 'Done'), // Infer completed from status if not present
+    archived: data.archived || false, // Add archived field
     createdAt: data.createdAt, // This will be a Firestore Timestamp
     updatedAt: data.updatedAt, // This will be a Firestore Timestamp
     userId: data.userId,
@@ -48,6 +49,7 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
   }
   try {
     const tasksRef = collection(db, TASK_COLLECTION);
+    // Fetch all tasks for the user, filtering will be done on the client
     const q = query(tasksRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(fromFirestore);
@@ -68,6 +70,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
       ...taskData,
       userId,
       completed: taskData.status === 'Done' ? true : (taskData.completed || false),
+      archived: false, // New tasks are never archived
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
@@ -89,6 +92,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
         id: docRef.id, 
         ...taskData, // original taskData
         userId,
+        archived: false,
         completed: docData.completed,
         // createdAt and updatedAt are Timestamps from server, not immediately available.
         // For optimistic UI, we can use client-side new Date() if needed, but fromFirestore handles real values.
@@ -100,7 +104,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
   }
 };
 
-export const updateTask = async (userId: string, taskId: string, taskUpdate: Partial<TaskData & { completed?: boolean }>): Promise<void> => {
+export const updateTask = async (userId: string, taskId: string, taskUpdate: Partial<TaskData & { completed?: boolean, archived?: boolean }>): Promise<void> => {
   if (!userId || !taskId) {
     throw new Error("User ID and Task ID are required to update a task.");
   }
@@ -139,6 +143,10 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
     }
     if (taskUpdate.hasOwnProperty('assignee')) {
       updateData.assignee = taskUpdate.assignee || null;
+    }
+
+    if (taskUpdate.hasOwnProperty('archived')) {
+        updateData.archived = taskUpdate.archived;
     }
 
     // Ensure we don't try to update userId or createdAt directly

@@ -29,11 +29,12 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const tasksToDo = tasks.filter(task => task.status === 'To Do').length;
-  const tasksInProgress = tasks.filter(task => task.status === 'In Progress').length;
-  const tasksDone = tasks.filter(task => task.status === 'Done').length;
+  const activeTasks = tasks.filter(task => !task.archived);
+  const tasksToDo = activeTasks.filter(task => task.status === 'To Do').length;
+  const tasksInProgress = activeTasks.filter(task => task.status === 'In Progress').length;
+  const tasksDone = activeTasks.filter(task => task.status === 'Done').length;
   
-  const upcomingTasks = tasks
+  const upcomingTasks = activeTasks
     .filter(task => {
         if (!task.dueDate) return false;
         try {
@@ -85,10 +86,10 @@ export default function DashboardPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard title="Total Tasks" value={tasks.length} icon={ListChecks} description="All tasks in system" />
+        <SummaryCard title="Active Tasks" value={activeTasks.length} icon={ListChecks} description="All non-archived tasks" />
         <SummaryCard title="Tasks To Do" value={tasksToDo} icon={Clock} description="Pending tasks" className="bg-destructive/80 text-destructive-foreground" />
         <SummaryCard title="In Progress" value={tasksInProgress} icon={Users} description="Currently active tasks" className="bg-accent/80 text-accent-foreground" />
-        <SummaryCard title="Completed" value={tasksDone} icon={CheckCircle} description="Finished tasks" className="bg-primary/90 text-primary-foreground" />
+        <SummaryCard title="Completed" value={tasksDone} icon={CheckCircle} description="Finished active tasks" className="bg-primary/90 text-primary-foreground" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

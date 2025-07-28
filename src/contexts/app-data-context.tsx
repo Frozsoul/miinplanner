@@ -62,6 +62,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     if (user?.uid) {
       setIsLoadingTasks(true);
       try {
+        // Fetches all tasks, including archived ones
         const userTasks = await getTasks(user.uid);
         setTasks(userTasks);
       } catch (error) {
@@ -101,16 +102,20 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
       return;
     }
-    setIsLoadingTasks(true);
+    // No full loading state for quick updates like archiving
+    const originalTasks = tasks;
+    // Optimistic update
+    setTasks(prevTasks => prevTasks.map(task => 
+      task.id === taskId ? { ...task, ...taskUpdate } as Task : task
+    ));
     try {
       await updateTaskService(user.uid, taskId, taskUpdate);
+      // Optional: re-fetch for consistency, but optimistic update handles UI
       await fetchUserTasks();
-      toast({ title: "Success", description: "Task updated." });
     } catch (error) {
       console.error("AppDataContext: Failed to update task:", error);
       toast({ title: "Error", description: "Could not update task.", variant: "destructive" });
-    } finally {
-      setIsLoadingTasks(false);
+      setTasks(originalTasks); // Revert on error
     }
   };
 
@@ -141,6 +146,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const validStatuses = new Set(TASK_STATUSES);
 
     // Filter for tasks that have the necessary data for insights
+    // AI can analyze archived tasks, so we don't filter them out here.
     const validTasksForAnalysis = tasks.filter(task => 
       task.createdAt && typeof task.createdAt.toDate === 'function' &&
       task.updatedAt && typeof task.updatedAt.toDate === 'function' &&
@@ -151,9 +157,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       // Generate simple, local insights
       const simpleReport: SimpleInsights = {
         type: 'simple',
-        totalTasks: tasks.length,
-        tasksToDo: tasks.filter(t => t.status === 'To Do' || t.status === 'In Progress').length,
-        highPriorityTasks: tasks.filter(t => t.priority === 'High' || t.priority === 'Urgent').length,
+        totalTasks: tasks.filter(t => !t.archived).length, // Only count active tasks for this metric
+        tasksToDo: tasks.filter(t => !t.archived && (t.status === 'To Do' || t.status === 'In Progress')).length,
+        highPriorityTasks: tasks.filter(t => !t.archived && (t.priority === 'High' || t.priority === 'Urgent')).length,
         message: `You currently have ${validTasksForAnalysis.length} tasks with complete data. Reach ${MIN_TASKS_FOR_AI} to unlock advanced AI analysis, including productivity scores and proactive suggestions!`,
       };
       setInsights(simpleReport);
@@ -169,7 +175,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       status: t.status,
       priority: t.priority,
       createdAt: t.createdAt.toDate().toISOString(),
-      updatedAt: t.updatedAt.toDate().toISOString(),
+      updatedAt: (t.updatedAt || t.createdAt).toDate().toISOString(),
       dueDate: t.dueDate,
     }));
 

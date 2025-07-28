@@ -6,7 +6,7 @@ import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppData } from "@/contexts/app-data-context";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown } from "lucide-react";
+import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown, Archive, ArchiveRestore } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -54,6 +55,7 @@ export default function TasksPage() {
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -62,13 +64,17 @@ export default function TasksPage() {
   
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
+      // Filter by archived state first
+      if (task.archived && !showArchived) return false;
+      if (!task.archived && showArchived) return false;
+
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesStatus = statusFilter.length === 0 || statusFilter.includes(task.status);
       const matchesPriority = priorityFilter.length === 0 || priorityFilter.includes(task.priority);
       return matchesSearch && matchesStatus && matchesPriority;
     });
-  }, [tasks, searchTerm, statusFilter, priorityFilter]);
+  }, [tasks, searchTerm, statusFilter, priorityFilter, showArchived]);
 
   const openFormModal = (taskToEdit?: Task) => {
     setEditingTask(taskToEdit || null);
@@ -132,6 +138,24 @@ export default function TasksPage() {
     }
   };
 
+  const handleArchiveToggle = async (task: Task) => {
+    if (!user?.uid) {
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    try {
+      await updateTaskContext(task.id, { archived: !task.archived });
+      toast({
+        title: "Success",
+        description: `Task "${task.title}" has been ${!task.archived ? 'archived' : 'restored'}.`,
+      });
+    } catch (error) {
+      console.error("TasksPage: Failed to update archive status:", error);
+      toast({ title: "Error", description: "Could not update task.", variant: "destructive" });
+    }
+  };
+
+
   if (isLoadingTasks && tasks.length === 0) {
     return (
       <div className="px-4 sm:px-6 md:py-6 flex min-h-[calc(100vh-10rem)] items-center justify-center bg-background">
@@ -184,15 +208,29 @@ export default function TasksPage() {
                     />
                 </div>
             </div>
-            <div className="flex-shrink-0 pt-5">
-              <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="kanban">
-                <ToggleGroupItem value="list" aria-label="List view">
-                  <List className="h-4 w-4"/>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="kanban" aria-label="Kanban board view">
-                  <LayoutGrid className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
+            <div className="flex flex-col md:flex-row gap-4 items-center pt-5">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-archived"
+                  checked={showArchived}
+                  onCheckedChange={setShowArchived}
+                />
+                <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground">
+                  {showArchived ? <ArchiveRestore className="inline-block h-4 w-4 mr-1" /> : <Archive className="inline-block h-4 w-4 mr-1" />}
+                  {showArchived ? 'Viewing Archived' : 'View Archived'}
+                </Label>
+              </div>
+              <Separator orientation="vertical" className="h-6 hidden md:block" />
+              <div className="flex-shrink-0">
+                <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="kanban">
+                  <ToggleGroupItem value="list" aria-label="List view">
+                    <List className="h-4 w-4"/>
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="kanban" aria-label="Kanban board view">
+                    <LayoutGrid className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
             </div>
         </CardContent>
       </Card>
@@ -205,9 +243,9 @@ export default function TasksPage() {
 
       <div className="flex-grow">
         {viewMode === 'list' ? (
-          <TaskList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} />
+          <TaskList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} onArchiveToggle={handleArchiveToggle} />
         ) : (
-          <KanbanBoard tasks={filteredTasks} onEditTask={openFormModal} onDeleteTask={handleDeleteTask} onViewTask={openDetailModal} />
+          <KanbanBoard tasks={filteredTasks} onEditTask={openFormModal} onDeleteTask={handleDeleteTask} onViewTask={openDetailModal} onArchiveToggle={handleArchiveToggle} showArchived={showArchived}/>
         )}
 
         {!isLoadingTasks && tasks.length > 0 && filteredTasks.length === 0 && (
@@ -243,6 +281,7 @@ export default function TasksPage() {
             task={viewingTask}
             isOpen={isDetailModalOpen}
             onClose={closeDetailModal}
+            onArchiveToggle={handleArchiveToggle}
         />
       )}
     </div>
@@ -303,6 +342,7 @@ function MultiSelect({ options, selected, onChange, className, title = "Select" 
               <Checkbox
                 id={`multiselect-${title}-${option.value}`}
                 checked={selected.includes(option.value)}
+                readOnly
               />
               <Label htmlFor={`multiselect-${title}-${option.value}`} className="font-normal cursor-pointer flex-1">
                 {option.label}

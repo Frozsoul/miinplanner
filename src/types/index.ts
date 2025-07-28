@@ -16,6 +16,7 @@ export interface Task {
   assignee?: string;
   tags?: string[];
   completed: boolean;
+  archived: boolean; // Added for archiving
   createdAt: Timestamp; // Firestore server timestamp
   updatedAt: Timestamp; // Firestore server timestamp
   userId: string;

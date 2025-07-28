@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Edit3, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Edit3, Trash2, Eye, Archive, ArchiveRestore } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -14,9 +14,10 @@ interface TaskListProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onView?: (task: Task) => void;
+  onArchiveToggle: (task: Task) => void;
 }
 
-export function TaskList({ tasks, onEdit, onDelete, onView }: TaskListProps) {
+export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle }: TaskListProps) {
   const getPriorityBadgeVariant = (priority: TaskPriority) => {
     switch (priority) {
       case 'High': return 'destructive';
@@ -61,9 +62,14 @@ export function TaskList({ tasks, onEdit, onDelete, onView }: TaskListProps) {
             </TableRow>
           ) : (
             tasks.map((task) => (
-              <TableRow key={task.id}>
+              <TableRow key={task.id} className={task.archived ? "bg-muted/30" : ""}>
                 <TableCell className="font-medium max-w-xs truncate" title={task.title}>{task.title}</TableCell>
-                <TableCell><Badge variant={getStatusBadgeVariant(task.status)} className="capitalize">{task.status}</Badge></TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={getStatusBadgeVariant(task.status)} className="capitalize">{task.status}</Badge>
+                    {task.archived && <Badge variant="outline">Archived</Badge>}
+                  </div>
+                </TableCell>
                 <TableCell><Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority}</Badge></TableCell>
                 <TableCell>{task.dueDate && isValid(parseISO(task.dueDate)) ? format(parseISO(task.dueDate), "MMM dd, yyyy") : "N/A"}</TableCell>
                 <TableCell>{task.channel || "N/A"}</TableCell>
@@ -78,7 +84,11 @@ export function TaskList({ tasks, onEdit, onDelete, onView }: TaskListProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       {onView && <DropdownMenuItem onClick={() => onView(task)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem>}
-                      <DropdownMenuItem onClick={() => onEdit(task)}><Edit3 className="mr-2 h-4 w-4" />Edit Task</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onEdit(task)} disabled={task.archived}><Edit3 className="mr-2 h-4 w-4" />Edit Task</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onArchiveToggle(task)}>
+                        {task.archived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                        {task.archived ? 'Restore' : 'Archive'}
+                      </DropdownMenuItem>
                        <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <DropdownMenuItem

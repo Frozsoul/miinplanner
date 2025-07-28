@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Task, TaskPriority } from "@/types";
@@ -6,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Edit3, Trash2, Eye, Calendar, User, Tag } from "lucide-react";
+import { MoreHorizontal, Edit3, Trash2, Eye, Calendar, User, Tag, Archive, ArchiveRestore } from "lucide-react";
 import { format, parseISO, isValid } from 'date-fns';
 
 interface TaskCardProps {
@@ -14,6 +15,7 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onView: (task: Task) => void;
+  onArchiveToggle: (task: Task) => void;
 }
 
 const getPriorityBadgeVariant = (priority: TaskPriority) => {
@@ -25,7 +27,7 @@ const getPriorityBadgeVariant = (priority: TaskPriority) => {
   }
 };
 
-export function TaskCard({ task, onEdit, onDelete, onView }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onDelete, onView, onArchiveToggle }: TaskCardProps) {
   return (
     <Card className="mb-4 bg-card hover:shadow-md transition-shadow duration-200">
       <CardHeader className="p-4">
@@ -39,7 +41,11 @@ export function TaskCard({ task, onEdit, onDelete, onView }: TaskCardProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onView(task)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(task)}><Edit3 className="mr-2 h-4 w-4" /> Edit Task</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(task)} disabled={task.archived}><Edit3 className="mr-2 h-4 w-4" /> Edit Task</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onArchiveToggle(task)}>
+                  {task.archived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                  {task.archived ? 'Restore' : 'Archive'}
+              </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-red-50">
