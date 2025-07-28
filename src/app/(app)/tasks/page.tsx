@@ -53,7 +53,7 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
 
   useEffect(() => {
     fetchTasks();
@@ -185,7 +185,7 @@ export default function TasksPage() {
                 </div>
             </div>
             <div className="flex-shrink-0 pt-5">
-              <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="list">
+              <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="kanban">
                 <ToggleGroupItem value="list" aria-label="List view">
                   <List className="h-4 w-4"/>
                 </ToggleGroupItem>
@@ -303,7 +303,6 @@ function MultiSelect({ options, selected, onChange, className, title = "Select" 
               <Checkbox
                 id={`multiselect-${title}-${option.value}`}
                 checked={selected.includes(option.value)}
-                onCheckedChange={() => handleSelect(option.value)}
               />
               <Label htmlFor={`multiselect-${title}-${option.value}`} className="font-normal cursor-pointer flex-1">
                 {option.label}
