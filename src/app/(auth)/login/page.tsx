@@ -33,6 +33,13 @@ export default function LoginPage() {
     await loginWithGoogle();
   };
 
+  const getErrorMessage = (err: any) => {
+    if (err.code === "auth/email-not-verified") {
+        return err.message;
+    }
+    return err.message?.replace('Firebase: ', '').replace(/\(auth\/[^)]+\)\.?/, '') || "An unexpected error occurred.";
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-full">
       <Logo className="mb-8 h-10" />
@@ -47,7 +54,7 @@ export default function LoginPage() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Login Failed</AlertTitle>
-                <AlertDescription>{error.message?.replace('Firebase: ', '').replace(/\(auth\/[^)]+\)\.?/, '') || "An unexpected error occurred."}</AlertDescription>
+                <AlertDescription>{getErrorMessage(error)}</AlertDescription>
               </Alert>
             )}
             <div className="space-y-2">

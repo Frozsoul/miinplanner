@@ -30,6 +30,7 @@ import { User, Settings, LogOut, Loader2, PanelLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from 'react';
 import { AppDataProvider } from '@/contexts/app-data-context';
+import { SheetTitle } from '@/components/ui/sheet';
 
 export default function AppLayout({
   children,
@@ -71,6 +72,7 @@ export default function AppLayout({
             collapsible="icon" 
             className="border-r" 
           >
+            <SheetTitle className="sr-only">Main Navigation</SheetTitle>
             <SidebarHeader className="p-4 flex items-center justify-center data-[state=collapsed]:justify-center group-data-[collapsible=icon]:py-3.5 h-14">
                <Logo className="h-7 group-data-[collapsible=icon]:h-6 transition-all duration-300" />
             </SidebarHeader>
