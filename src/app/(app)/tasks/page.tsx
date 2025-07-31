@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -43,6 +44,7 @@ export default function TasksPage() {
     isLoadingTasks 
   } = useAppData();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -242,7 +244,9 @@ export default function TasksPage() {
       )}
 
       <div className="flex-grow">
-        {viewMode === 'list' ? (
+        {isMobile ? (
+           <TaskList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} onArchiveToggle={handleArchiveToggle} />
+        ) : viewMode === 'list' ? (
           <TaskList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} onArchiveToggle={handleArchiveToggle} />
         ) : (
           <KanbanBoard tasks={filteredTasks} onEditTask={openFormModal} onDeleteTask={handleDeleteTask} onViewTask={openDetailModal} onArchiveToggle={handleArchiveToggle} showArchived={showArchived}/>
