@@ -27,7 +27,7 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
   };
 
   return (
-    <div className="flex flex-col flex-1 min-w-[300px] bg-muted/50 rounded-lg">
+    <div className="flex flex-col w-[90vw] sm:w-auto sm:min-w-[320px] sm:max-w-[340px] flex-shrink-0 bg-muted/50 rounded-lg">
       <div className="p-4 border-b flex justify-between items-center">
         <h3 className="font-semibold text-lg flex items-center">
           {status}
@@ -35,13 +35,13 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
         </h3>
         {status === 'Done' && !isArchivedColumn && tasks.length > 0 && (
             <Button size="sm" variant="ghost" onClick={handleArchiveAll} title="Archive all tasks in this column">
-                <Archive className="h-4 w-4 mr-2" />
-                Archive All
+                <Archive className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Archive All</span>
             </Button>
         )}
       </div>
-      <ScrollArea className="h-[calc(100vh-22rem)]">
-        <div className="p-4">
+      <ScrollArea className="h-[calc(100vh-26rem)]">
+        <div className="p-2 md:p-4">
           {tasks.length > 0 ? (
             tasks.map(task => (
               <TaskCard 

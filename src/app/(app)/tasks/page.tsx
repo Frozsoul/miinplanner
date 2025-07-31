@@ -166,21 +166,21 @@ export default function TasksPage() {
 
   return (
     <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
-      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
           <ListChecks className="h-7 w-7 text-primary"/> Task Manager
         </h1>
-        <div className="flex gap-2">
-            <Button onClick={() => openFormModal()}>
+        <div className="flex gap-2 w-full sm:w-auto">
+            <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Task
             </Button>
         </div>
       </div>
 
       <Card className="mb-6 shadow-sm border">
-        <CardContent className="p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-                 <div className="sm:col-span-1">
+        <CardContent className="p-4 flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                 <div className="md:col-span-1">
                     <Label htmlFor="search-tasks" className="block text-sm font-medium text-muted-foreground mb-1.5">Search</Label>
                     <Input
                         id="search-tasks"
@@ -208,19 +208,19 @@ export default function TasksPage() {
                     />
                 </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-4 items-center pt-5">
+            <div className="flex flex-col sm:flex-row gap-4 items-center sm:justify-between w-full xl:w-auto xl:justify-start pt-5 xl:pt-0">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="show-archived"
                   checked={showArchived}
                   onCheckedChange={setShowArchived}
                 />
-                <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground">
+                <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
                   {showArchived ? <ArchiveRestore className="inline-block h-4 w-4 mr-1" /> : <Archive className="inline-block h-4 w-4 mr-1" />}
                   {showArchived ? 'Viewing Archived' : 'View Archived'}
                 </Label>
               </div>
-              <Separator orientation="vertical" className="h-6 hidden md:block" />
+              <Separator orientation="vertical" className="h-6 hidden sm:block xl:ml-4" />
               <div className="flex-shrink-0">
                 <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="kanban">
                   <ToggleGroupItem value="list" aria-label="List view">

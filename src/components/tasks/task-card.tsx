@@ -78,13 +78,13 @@ export function TaskCard({ task, onEdit, onDelete, onView, onArchiveToggle }: Ta
           </div>
         )}
         {task.assignee && (
-           <div className="flex items-center gap-1.5">
+           <div className="hidden sm:flex items-center gap-1.5">
             <User className="h-3.5 w-3.5" />
             <span>{task.assignee}</span>
           </div>
         )}
         {task.tags && task.tags.length > 0 && (
-           <div className="flex items-center gap-1.5 flex-wrap">
+           <div className="hidden sm:flex items-center gap-1.5 flex-wrap">
             <Tag className="h-3.5 w-3.5" />
             {task.tags.slice(0, 3).map(tag => <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>)}
           </div>
