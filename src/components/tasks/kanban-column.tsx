@@ -27,7 +27,7 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
   };
 
   return (
-    <div className="flex flex-col min-w-[320px] max-w-[340px] flex-shrink-0 bg-muted/50 rounded-lg">
+    <div className="flex flex-col bg-muted/50 rounded-lg h-full">
       <div className="p-4 border-b flex justify-between items-center">
         <h3 className="font-semibold text-lg flex items-center">
           {status}

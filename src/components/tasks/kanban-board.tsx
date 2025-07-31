@@ -19,7 +19,7 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
   const columns = showArchived ? ['Archived'] : TASK_STATUSES;
 
   return (
-    <div className="flex gap-6 pb-4 overflow-x-auto">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 pb-4">
       {columns.map(status => {
         const tasksForStatus = tasks.filter(task => 
           showArchived ? task.archived : task.status === status
