@@ -27,7 +27,7 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
   };
 
   return (
-    <div className="flex flex-col bg-muted/50 rounded-lg h-full">
+    <div className="flex flex-col bg-muted/50 rounded-lg h-full min-h-[200px]">
       <div className="p-4 border-b flex justify-between items-center">
         <h3 className="font-semibold text-lg flex items-center">
           {status}
@@ -40,8 +40,8 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
             </Button>
         )}
       </div>
-      <ScrollArea className="h-[calc(100vh-26rem)]">
-        <div className="p-2 md:p-4">
+      <ScrollArea className="flex-grow">
+        <div className="p-2 md:p-4 space-y-4">
           {tasks.length > 0 ? (
             tasks.map(task => (
               <TaskCard 

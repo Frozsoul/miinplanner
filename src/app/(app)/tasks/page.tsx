@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { TaskCardList } from "@/components/tasks/TaskCardList";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -165,6 +166,16 @@ export default function TasksPage() {
       </div>
     );
   }
+  
+  const renderContent = () => {
+    if (viewMode === 'list') {
+      if (isMobile) {
+        return <TaskCardList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} onArchiveToggle={handleArchiveToggle} />;
+      }
+      return <TaskList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} onArchiveToggle={handleArchiveToggle} />;
+    }
+    return <KanbanBoard tasks={filteredTasks} onEditTask={openFormModal} onDeleteTask={handleDeleteTask} onViewTask={openDetailModal} onArchiveToggle={handleArchiveToggle} showArchived={showArchived}/>;
+  };
 
   return (
     <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
@@ -243,14 +254,8 @@ export default function TasksPage() {
         </div>
       )}
 
-      <div className="flex-grow">
-        {isMobile ? (
-           <TaskList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} onArchiveToggle={handleArchiveToggle} />
-        ) : viewMode === 'list' ? (
-          <TaskList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} onArchiveToggle={handleArchiveToggle} />
-        ) : (
-          <KanbanBoard tasks={filteredTasks} onEditTask={openFormModal} onDeleteTask={handleDeleteTask} onViewTask={openDetailModal} onArchiveToggle={handleArchiveToggle} showArchived={showArchived}/>
-        )}
+      <div className="flex-grow min-h-0">
+        {renderContent()}
 
         {!isLoadingTasks && tasks.length > 0 && filteredTasks.length === 0 && (
           <Card className="mt-4">
