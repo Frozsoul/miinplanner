@@ -73,11 +73,14 @@ const generateDashboardGreetingFlow = ai.defineFlow(
       return "Welcome! It looks like a clean slate. Add some tasks to get started.";
     }
 
-    const {output} = await prompt(input);
-
-    // If the model returns null or an empty string, provide a safe default.
-    return output || "Welcome back! Let's have a productive day.";
+    try {
+        const {output} = await prompt(input);
+        // If the model returns null or an empty string, provide a safe default.
+        return output || "Welcome back! Let's have a productive day.";
+    } catch (error) {
+        console.error("Error generating dashboard greeting:", error);
+        // Fallback in case of any error during prompt execution
+        return "Welcome back! Let's have a productive day.";
+    }
   }
 );
-
-    
