@@ -14,6 +14,7 @@ import { TASK_STATUSES } from '@/lib/constants';
 interface AppDataContextType {
   // Tasks
   tasks: Task[];
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>; // Add this
   isLoadingTasks: boolean;
   fetchTasks: () => Promise<void>;
   addTask: (taskData: TaskData) => Promise<Task | null>;
@@ -330,6 +331,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppDataContext.Provider value={{ 
       tasks, 
+      setTasks,
       isLoadingTasks, 
       fetchTasks: fetchUserTasks,
       addTask,
