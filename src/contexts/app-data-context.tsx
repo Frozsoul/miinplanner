@@ -2,11 +2,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask, TaskStatus } from '@/types';
+import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask, TaskStatus, DashboardGreeting } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getSocialMediaPosts, addSocialMediaPost as addPostService, updateSocialMediaPost as updatePostService, deleteSocialMediaPost as deletePostService } from '@/services/social-media-post-service';
 import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
+import { generateDashboardGreeting as aiGenerateDashboardGreeting } from '@/ai/flows/generate-dashboard-greeting';
 import { generateSocialMediaPost as aiGenerateSocialMediaPost, type GenerateSocialMediaPostInput } from '@/ai/flows/generate-social-media-post';
 import { useToast } from '@/hooks/use-toast';
 import { TASK_STATUSES } from '@/lib/constants';
@@ -19,15 +20,18 @@ interface AppDataContextType {
   fetchTasks: () => Promise<void>;
   addTask: (taskData: TaskData) => Promise<Task | null>;
   updateTask: (taskId: string, taskUpdate: Partial<TaskData>) => Promise<void>;
-  updateTaskField: <K extends keyof TaskData>(taskId: string, field: K, value: TaskData[K]) => Promise<void>;
+  updateTaskField: (taskId: string, field: keyof TaskData, value: TaskData[keyof TaskData]) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, newStatus: TaskStatus, newIndex: number) => Promise<void>;
 
 
   // AI Insights
   insights: AIInsights | SimpleInsights | null;
+  dashboardGreeting: DashboardGreeting | null;
   isLoadingAi: boolean;
+  isLoadingGreeting: boolean;
   generateInsights: () => Promise<void>;
+  fetchDashboardGreeting: () => Promise<void>;
   
   // Social Media Posts
   socialMediaPosts: SocialMediaPost[];
@@ -53,6 +57,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   
   // AI Insights State
   const [insights, setInsights] = useState<AIInsights | SimpleInsights | null>(null);
+  const [dashboardGreeting, setDashboardGreeting] = useState<DashboardGreeting | null>(null);
+  const [isLoadingGreeting, setIsLoadingGreeting] = useState(false);
+
 
   // Social Media Post State
   const [socialMediaPosts, setSocialMediaPosts] = useState<SocialMediaPost[]>([]);
@@ -123,7 +130,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateTaskField = async <K extends keyof TaskData>(taskId: string, field: K, value: TaskData[K] | undefined) => {
+  const updateTaskField = async (taskId: string, field: keyof TaskData, value: TaskData[keyof TaskData] | undefined) => {
     if (!user?.uid) {
       toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
       return;
@@ -254,6 +261,56 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       setIsLoadingAi(false);
     }
   };
+  
+  const fetchDashboardGreeting = useCallback(async () => {
+    if (tasks.length === 0) return; // Don't run if there are no tasks
+
+    setIsLoadingGreeting(true);
+    const today = new Date().toDateString();
+    
+    // Check if we already have a greeting for today
+    if (dashboardGreeting && dashboardGreeting.date === today) {
+        setIsLoadingGreeting(false);
+        return;
+    }
+
+    const insightTasks: InsightTask[] = tasks
+      .filter(t => !t.archived) // Only use active tasks for the greeting
+      .map(t => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        createdAt: t.createdAt.toDate().toISOString(),
+        updatedAt: (t.updatedAt || t.createdAt).toDate().toISOString(),
+        dueDate: t.dueDate,
+    }));
+
+    if(insightTasks.length === 0) {
+        setDashboardGreeting({
+            greeting: "Welcome! Add some tasks to get started.",
+            date: today
+        });
+        setIsLoadingGreeting(false);
+        return;
+    }
+
+    try {
+      const input: InsightGenerationInput = {
+        tasks: insightTasks,
+        currentDate: new Date().toISOString(),
+      };
+      const greetingText = await aiGenerateDashboardGreeting(input);
+      setDashboardGreeting({ greeting: greetingText, date: today });
+    } catch (error) {
+      console.error("AppDataContext: Failed to fetch dashboard greeting:", error);
+      // Don't show a toast for this, it's a non-critical feature
+      setDashboardGreeting({ greeting: "Welcome back! Ready to tackle your day?", date: today });
+    } finally {
+      setIsLoadingGreeting(false);
+    }
+  }, [tasks, dashboardGreeting]);
+
 
   // --- Social Media Post Functions ---
   const fetchSocialMediaPosts = useCallback(async () => {
@@ -361,8 +418,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       deleteTask,
       moveTask,
       insights, 
+      dashboardGreeting,
       isLoadingAi, 
+      isLoadingGreeting,
       generateInsights,
+      fetchDashboardGreeting,
       socialMediaPosts,
       isLoadingSocialMediaPosts,
       fetchSocialMediaPosts,
@@ -383,5 +443,7 @@ export const useAppData = (): AppDataContextType => {
   }
   return context;
 };
+
+    
 
     

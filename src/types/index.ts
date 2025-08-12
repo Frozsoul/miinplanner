@@ -72,6 +72,11 @@ export interface SimpleInsights {
     message: string;
 }
 
+export interface DashboardGreeting {
+  greeting: string;
+  date: string; // Storing date as string 'YYYY-MM-DD' to easily check if it's for today
+}
+
 
 export interface ChatMessage {
   id:string;
@@ -119,3 +124,5 @@ export interface SocialMediaPost {
 }
 
 export type SocialMediaPostData = Omit<SocialMediaPost, 'id' | 'createdAt' | 'updatedAt' | 'userId'>;
+
+    

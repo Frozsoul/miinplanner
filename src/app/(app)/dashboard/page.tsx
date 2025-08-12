@@ -10,6 +10,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { format, parseISO, isValid } from "date-fns";
 import { useEffect } from "react";
+import { DashboardAIInsight } from "@/components/dashboard/DashboardAIInsight";
+
 
 const LayoutDashboardIcon = BarChart3;
 
@@ -85,6 +87,8 @@ export default function DashboardPage() {
         actionButtons={<QuickAddTask />} 
       />
 
+      <DashboardAIInsight />
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <SummaryCard title="Active Tasks" value={activeTasks.length} icon={ListChecks} description="All non-archived tasks" />
         <SummaryCard title="Tasks To Do" value={tasksToDo} icon={Clock} description="Pending tasks" className="bg-destructive/80 text-destructive-foreground" />
@@ -148,3 +152,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
