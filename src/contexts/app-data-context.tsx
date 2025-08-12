@@ -123,54 +123,35 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const moveTask = async (taskId: string, newStatus: TaskStatus, newIndex: number) => {
     if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
+        toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+        return;
     }
 
-    const taskToMove = tasks.find(t => t.id === taskId);
-    if (!taskToMove) return;
+    // This logic ensures the local state is updated correctly before calling the service.
+    setTasks(prevTasks => {
+        const taskToMove = prevTasks.find(t => t.id === taskId);
+        if (!taskToMove) return prevTasks;
 
-    // Optimistic UI update
-    const updatedTasks = Array.from(tasks);
-    const [reorderedItem] = updatedTasks.splice(updatedTasks.indexOf(taskToMove), 1);
-    reorderedItem.status = newStatus;
-    
-    const tasksInNewColumn = updatedTasks.filter(t => t.status === newStatus);
-    const insertAtIndex = updatedTasks.indexOf(tasksInNewColumn[newIndex]);
+        // Create a new array without the task to move
+        const remainingTasks = prevTasks.filter(t => t.id !== taskId);
+        
+        // Update the status of the moved task
+        const movedTask = { ...taskToMove, status: newStatus };
 
-    if (insertAtIndex !== -1) {
-        updatedTasks.splice(insertAtIndex, 0, reorderedItem);
-    } else {
-        // If new column is empty, find where to insert based on TASK_STATUSES order
-        let targetIndex = 0;
-        const statusOrder = TASK_STATUSES;
-        const newStatusIndex = statusOrder.indexOf(newStatus);
-
-        for (let i = newStatusIndex + 1; i < statusOrder.length; i++) {
-            const nextStatus = statusOrder[i];
-            const firstOfNext = updatedTasks.findIndex(t => t.status === nextStatus);
-            if (firstOfNext !== -1) {
-                targetIndex = firstOfNext;
-                break;
-            }
-        }
-        if (targetIndex === 0) { // If it's the last column or others are empty
-             updatedTasks.push(reorderedItem);
-        } else {
-            updatedTasks.splice(targetIndex, 0, reorderedItem);
-        }
-    }
-
-    setTasks(updatedTasks);
+        // Insert the moved task at the correct new position
+        remainingTasks.splice(newIndex, 0, movedTask);
+        
+        return remainingTasks;
+    });
 
     try {
-      await updateTaskService(user.uid, taskId, { status: newStatus });
-      // Don't toast for drag-and-drop, it's noisy
+        await updateTaskService(user.uid, taskId, { status: newStatus });
+        // Don't toast for drag-and-drop, it's noisy and optimistic
     } catch (error) {
-      console.error("AppDataContext: Failed to move task:", error);
-      toast({ title: "Error", description: "Could not move task. Reverting.", variant: "destructive" });
-      // Revert on error by re-fetching
-      fetchUserTasks(); 
+        console.error("AppDataContext: Failed to move task:", error);
+        toast({ title: "Error", description: "Could not move task. Reverting.", variant: "destructive" });
+        // Revert on error by re-fetching
+        fetchUserTasks(); 
     }
   };
 
