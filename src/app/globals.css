@@ -7,7 +7,7 @@ body {
 }
 
 @layer base {
-  :root {
+  :root, .theme-miin {
     --background: 0 0% 96.1%; /* #F5F5F5 */
     --foreground: 0 4% 10%; /* #1c1a1a */
     --card: 0 0% 100%; /* #FFFFFF */
@@ -45,7 +45,7 @@ body {
     --sidebar-ring: 48 100% 50%; /* #ffce00 */
   }
 
-  .dark {
+  .dark:root, .dark.theme-miin {
     --background: 0 4% 10%; /* #1c1a1a */
     --foreground: 0 0% 96.1%; /* #F5F5F5 */
     --card: 0 3% 16%; /* #2a2828 */
@@ -80,6 +80,65 @@ body {
     --sidebar-accent-foreground: 0 0% 87.8%; /* #E0E0E0 */
     --sidebar-border: 0 4% 10%; /* #1c1a1a */
     --sidebar-ring: 48 100% 50%; /* #ffce00 */
+  }
+
+  /* Forest Theme */
+  .theme-forest {
+    --primary: 158 29% 51%; /* #5A9C74 */
+    --primary-foreground: 0 0% 100%;
+    --accent: 142 76% 36%; /* #2A9D8F */
+    --ring: 142 76% 36%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+  }
+
+  .dark .theme-forest {
+    --primary: 142 76% 36%; /* #2A9D8F */
+    --primary-foreground: 0 0% 100%;
+    --accent: 158 29% 51%; /* #5A9C74 */
+    --ring: 158 29% 51%;
+    --sidebar-primary: 158 29% 51%;
+    --sidebar-primary-foreground: 0 0% 100%;
+  }
+
+  /* Ocean Theme */
+  .theme-ocean {
+    --primary: 217 91% 60%; /* #3B82F6 */
+    --primary-foreground: 0 0% 100%;
+    --accent: 210 40% 96.1%; /* #F0F4FA */
+    --accent-foreground: 222 47% 11%;
+    --ring: 217 91% 60%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+  }
+
+  .dark .theme-ocean {
+    --primary: 217 91% 60%; /* #3B82F6 */
+    --primary-foreground: 0 0% 100%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 0 0% 98%;
+    --ring: 217 91% 60%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+  }
+
+  /* Sunset Theme */
+  .theme-sunset {
+    --primary: 24 96% 53%; /* #F5651D */
+    --primary-foreground: 0 0% 100%;
+    --accent: 35 92% 61%; /* #F9A84A */
+    --ring: 35 92% 61%;
+    --sidebar-primary: 24 96% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+  }
+
+  .dark .theme-sunset {
+    --primary: 35 92% 61%; /* #F9A84A */
+    --primary-foreground: 0 4% 10%;
+    --accent: 24 96% 53%; /* #F5651D */
+    --ring: 24 96% 53%;
+    --sidebar-primary: 35 92% 61%;
+    --sidebar-primary-foreground: 0 4% 10%;
   }
 }
 
