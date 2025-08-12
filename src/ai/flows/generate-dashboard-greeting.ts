@@ -75,6 +75,7 @@ const generateDashboardGreetingFlow = ai.defineFlow(
 
     const {output} = await prompt(input);
 
+    // If the model returns null or an empty string, provide a safe default.
     return output || "Welcome back! Let's have a productive day.";
   }
 );
