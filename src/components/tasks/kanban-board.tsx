@@ -1,9 +1,13 @@
 
 "use client";
 
-import type { Task } from "@/types";
+import type { Task, TaskStatus } from "@/types";
 import { KanbanColumn } from "./kanban-column";
 import { TASK_STATUSES } from "@/lib/constants";
+import { DragDropContext, type DropResult } from "react-beautiful-dnd";
+import { useAppData } from "@/contexts/app-data-context";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -15,29 +19,56 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArchiveToggle, showArchived }: KanbanBoardProps) {
+  const { moveTask } = useAppData();
+  const isMobile = useIsMobile();
   
   const columns = showArchived ? ['Archived'] : TASK_STATUSES;
 
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) {
+      return; // Dropped outside of a droppable area
+    }
+
+    if (destination.droppableId === source.droppableId && destination.index === source.index) {
+      return; // Dropped in the same place
+    }
+
+    const newStatus = destination.droppableId as TaskStatus;
+    moveTask(draggableId, newStatus, destination.index);
+  };
+  
+  const containerClasses = cn(
+    "grid gap-6",
+    isMobile 
+      ? "grid-flow-col auto-cols-[90%] overflow-x-auto snap-x snap-mandatory" 
+      : "md:grid-cols-2 lg:grid-cols-5"
+  );
+
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 pb-4 md:h-full overflow-y-hidden">
-      {columns.map(status => {
-        const tasksForStatus = tasks.filter(task => 
-          showArchived ? task.archived : task.status === status
-        );
-        
-        return (
-          <KanbanColumn 
-            key={status}
-            status={status}
-            tasks={tasksForStatus}
-            onEditTask={onEditTask}
-            onDeleteTask={onDeleteTask}
-            onViewTask={onViewTask}
-            onArchiveToggle={onArchiveToggle}
-            isArchivedColumn={showArchived}
-          />
-        );
-      })}
-    </div>
+    <DragDropContext onDragEnd={onDragEnd}>
+       <div className={containerClasses}>
+        {columns.map(status => {
+          const tasksForStatus = tasks.filter(task => 
+            showArchived ? task.archived : task.status === status
+          );
+          
+          return (
+            <KanbanColumn 
+              key={status}
+              status={status}
+              tasks={tasksForStatus}
+              onEditTask={onEditTask}
+              onDeleteTask={onDeleteTask}
+              onViewTask={onViewTask}
+              onArchiveToggle={onArchiveToggle}
+              isArchivedColumn={showArchived}
+            />
+          );
+        })}
+      </div>
+    </DragDropContext>
   );
 }

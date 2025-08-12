@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask } from '@/types';
+import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask, TaskStatus } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getSocialMediaPosts, addSocialMediaPost as addPostService, updateSocialMediaPost as updatePostService, deleteSocialMediaPost as deletePostService } from '@/services/social-media-post-service';
@@ -19,6 +19,8 @@ interface AppDataContextType {
   addTask: (taskData: TaskData) => Promise<Task | null>;
   updateTask: (taskId: string, taskUpdate: Partial<TaskData>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  moveTask: (taskId: string, newStatus: TaskStatus, newIndex: number) => Promise<void>;
+
 
   // AI Insights
   insights: AIInsights | SimpleInsights | null;
@@ -118,6 +120,60 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       setTasks(originalTasks); // Revert on error
     }
   };
+
+  const moveTask = async (taskId: string, newStatus: TaskStatus, newIndex: number) => {
+    if (!user?.uid) {
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+
+    const taskToMove = tasks.find(t => t.id === taskId);
+    if (!taskToMove) return;
+
+    // Optimistic UI update
+    const updatedTasks = Array.from(tasks);
+    const [reorderedItem] = updatedTasks.splice(updatedTasks.indexOf(taskToMove), 1);
+    reorderedItem.status = newStatus;
+    
+    const tasksInNewColumn = updatedTasks.filter(t => t.status === newStatus);
+    const insertAtIndex = updatedTasks.indexOf(tasksInNewColumn[newIndex]);
+
+    if (insertAtIndex !== -1) {
+        updatedTasks.splice(insertAtIndex, 0, reorderedItem);
+    } else {
+        // If new column is empty, find where to insert based on TASK_STATUSES order
+        let targetIndex = 0;
+        const statusOrder = TASK_STATUSES;
+        const newStatusIndex = statusOrder.indexOf(newStatus);
+
+        for (let i = newStatusIndex + 1; i < statusOrder.length; i++) {
+            const nextStatus = statusOrder[i];
+            const firstOfNext = updatedTasks.findIndex(t => t.status === nextStatus);
+            if (firstOfNext !== -1) {
+                targetIndex = firstOfNext;
+                break;
+            }
+        }
+        if (targetIndex === 0) { // If it's the last column or others are empty
+             updatedTasks.push(reorderedItem);
+        } else {
+            updatedTasks.splice(targetIndex, 0, reorderedItem);
+        }
+    }
+
+    setTasks(updatedTasks);
+
+    try {
+      await updateTaskService(user.uid, taskId, { status: newStatus });
+      // Don't toast for drag-and-drop, it's noisy
+    } catch (error) {
+      console.error("AppDataContext: Failed to move task:", error);
+      toast({ title: "Error", description: "Could not move task. Reverting.", variant: "destructive" });
+      // Revert on error by re-fetching
+      fetchUserTasks(); 
+    }
+  };
+
 
   const deleteTask = async (taskId: string) => {
      if (!user?.uid) {
@@ -298,6 +354,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       addTask,
       updateTask,
       deleteTask,
+      moveTask,
       insights, 
       isLoadingAi, 
       generateInsights,

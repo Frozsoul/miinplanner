@@ -23,10 +23,11 @@ export function TaskCardList({ tasks, onEdit, onDelete, onView, onArchiveToggle 
 
   return (
     <div className="space-y-4">
-      {tasks.map((task) => (
+      {tasks.map((task, index) => (
         <TaskCard
           key={task.id}
           task={task}
+          index={index}
           onEdit={onEdit}
           onDelete={onDelete}
           onView={onView}

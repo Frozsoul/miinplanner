@@ -6,6 +6,8 @@ import { TaskCard } from "./task-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Archive } from "lucide-react";
+import { Droppable } from "react-beautiful-dnd";
+import { cn } from "@/lib/utils";
 
 interface KanbanColumnProps {
   status: TaskStatus | 'Archived';
@@ -27,7 +29,7 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
   };
 
   return (
-    <div className="flex flex-col bg-muted/50 rounded-lg h-full min-h-[200px]">
+    <div className="flex flex-col bg-muted/50 rounded-lg h-full min-h-[200px] snap-center">
       <div className="p-4 border-b flex justify-between items-center">
         <h3 className="font-semibold text-lg flex items-center">
           {status}
@@ -40,26 +42,41 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
             </Button>
         )}
       </div>
-      <ScrollArea className="flex-grow">
-        <div className="p-2 md:p-4 space-y-4">
-          {tasks.length > 0 ? (
-            tasks.map(task => (
-              <TaskCard 
-                key={task.id} 
-                task={task} 
-                onEdit={onEditTask}
-                onDelete={onDeleteTask}
-                onView={onViewTask}
-                onArchiveToggle={onArchiveToggle}
-              />
-            ))
-          ) : (
-            <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
-              No tasks here.
+       <Droppable droppableId={status} isDropDisabled={isArchivedColumn}>
+        {(provided, snapshot) => (
+          <ScrollArea 
+            className="flex-grow"
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+          >
+            <div 
+              className={cn(
+                "p-2 md:p-4 space-y-4 h-full transition-colors duration-200",
+                snapshot.isDraggingOver && "bg-accent/20"
+              )}
+            >
+              {tasks.length > 0 ? (
+                tasks.map((task, index) => (
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    index={index}
+                    onEdit={onEditTask}
+                    onDelete={onDeleteTask}
+                    onView={onViewTask}
+                    onArchiveToggle={onArchiveToggle}
+                  />
+                ))
+              ) : (
+                <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
+                  No tasks here.
+                </div>
+              )}
+              {provided.placeholder}
             </div>
-          )}
-        </div>
-      </ScrollArea>
+          </ScrollArea>
+        )}
+      </Droppable>
     </div>
   );
 }
