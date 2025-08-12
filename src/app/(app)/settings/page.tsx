@@ -8,39 +8,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Settings, Monitor, Sun, Moon, Palette, Leaf, Droplets, Sunrise } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
+import useLocalStorage from "@/hooks/use-local-storage";
 
 const colorThemes = [
-    { name: 'miin', label: 'Miin', icon: Palette, lightColor: "bg-yellow-400", darkColor: "bg-yellow-400" },
-    { name: 'forest', label: 'Forest', icon: Leaf, lightColor: "bg-green-500", darkColor: "bg-teal-500" },
-    { name: 'ocean', label: 'Ocean', icon: Droplets, lightColor: "bg-blue-500", darkColor: "bg-blue-500" },
-    { name: 'sunset', label: 'Sunset', icon: Sunrise, lightColor: "bg-orange-500", darkColor: "bg-amber-500" },
+    { name: 'miin', label: 'Miin', icon: Palette },
+    { name: 'forest', label: 'Forest', icon: Leaf },
+    { name: 'ocean', label: 'Ocean', icon: Droplets },
+    { name: 'sunset', label: 'Sunset', icon: Sunrise },
 ]
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  
-  // Extract mode (light/dark/system) and color from theme string (e.g., "dark-forest")
-  const [currentMode, currentColor] = React.useMemo(() => {
-    if (!theme) return ["light", "miin"];
-    const parts = theme.split("-");
-    if (parts.length === 2) return [parts[0], parts[1]];
-    // Handle simple themes like "light", "dark", "system"
-    if (["light", "dark", "system"].includes(theme)) return [theme, "miin"];
-    return ["light", "miin"];
-  }, [theme]);
+  const [colorTheme, setColorTheme] = useLocalStorage('color-theme', 'miin');
 
-
-  const handleModeChange = (newMode: string) => {
-    // Re-combine with current color to set the new theme
-    setTheme(`${newMode}-${currentColor}`);
-  };
-  
-  const handleColorChange = (newColor: string) => {
-    // Re-combine with current mode to set the new theme
-    // If system is selected, default to light mode for constructing the theme string
-    const modeForTheme = currentMode === 'system' ? 'light' : currentMode;
-    setTheme(`${modeForTheme}-${newColor}`);
-  }
+  React.useEffect(() => {
+    document.documentElement.classList.remove('theme-miin', 'theme-forest', 'theme-ocean', 'theme-sunset');
+    document.documentElement.classList.add(`theme-${colorTheme}`);
+  }, [colorTheme]);
 
   return (
     <div className="px-4 sm:px-6 md:py-6 space-y-6">
@@ -67,23 +51,23 @@ export default function SettingsPage() {
               <div className="grid grid-cols-3 gap-2 pt-2">
                 <Button
                   variant="outline"
-                  className={cn(currentMode === "light" && "border-primary ring-2 ring-primary")}
-                  onClick={() => handleModeChange("light")}
+                  className={cn(theme === "light" && "border-primary ring-2 ring-primary")}
+                  onClick={() => setTheme("light")}
                 >
                   <Sun className="mr-2 h-4 w-4" />
                   Light
                 </Button>
                 <Button
                   variant="outline"
-                  className={cn(currentMode === "dark" && "border-primary ring-2 ring-primary")}
-                  onClick={() => handleModeChange("dark")}
+                  className={cn(theme === "dark" && "border-primary ring-2 ring-primary")}
+                  onClick={() => setTheme("dark")}
                 >
                   <Moon className="mr-2 h-4 w-4" />
                   Dark
                 </Button>
                 <Button
                   variant="outline"
-                  className={cn(currentMode === "system" && "border-primary ring-2 ring-primary")}
+                  className={cn(theme === "system" && "border-primary ring-2 ring-primary")}
                   onClick={() => setTheme("system")}
                 >
                   <Monitor className="mr-2 h-4 w-4" />
@@ -106,9 +90,9 @@ export default function SettingsPage() {
                       variant="outline"
                       className={cn(
                         "justify-start h-12",
-                        currentColor === cTheme.name && "border-primary ring-2 ring-primary"
+                        colorTheme === cTheme.name && "border-primary ring-2 ring-primary"
                       )}
-                      onClick={() => handleColorChange(cTheme.name)}
+                      onClick={() => setColorTheme(cTheme.name)}
                     >
                       <span className="flex items-center justify-center rounded-full mr-3 w-6 h-6">
                           <Icon className="h-5 w-5" />

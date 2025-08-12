@@ -28,7 +28,6 @@ export default function RootLayout({
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
-            themes={['light', 'dark', 'light-forest', 'dark-forest', 'light-ocean', 'dark-ocean', 'light-sunset', 'dark-sunset', 'light-miin', 'dark-miin']}
         >
           <AuthProvider>
             {children}
