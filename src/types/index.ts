@@ -72,6 +72,8 @@ export interface SimpleInsights {
     message: string;
 }
 
+export type GreetingContext = 'dashboard' | 'tasks' | 'calendar';
+
 export interface DashboardGreeting {
   greeting: string;
   date: string; // Storing date as string 'YYYY-MM-DD' to easily check if it's for today

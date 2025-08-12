@@ -192,7 +192,7 @@ export default function TasksPage() {
       </div>
 
       <div className="mb-6">
-        <DashboardAIInsight />
+        <DashboardAIInsight pageContext="tasks" />
       </div>
 
       <Card className="mb-6 shadow-sm border">

@@ -7,5 +7,7 @@ import '@/ai/flows/generate-content-ideas.ts';
 import '@/ai/flows/generate-insights-flow.ts';
 import '@/ai/flows/generate-social-media-post.ts';
 import '@/ai/flows/generate-dashboard-greeting.ts';
+import '@/ai/flows/generate-task-manager-greeting.ts';
+import '@/ai/flows/generate-calendar-greeting.ts';
 
     

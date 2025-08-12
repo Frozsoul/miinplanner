@@ -60,7 +60,7 @@ export default function CalendarPage() {
     <div className="px-4 sm:px-6 md:py-6">
       <h1 className="text-3xl font-headline font-bold mb-8">Content Calendar</h1>
       <div className="mb-6">
-        <DashboardAIInsight />
+        <DashboardAIInsight pageContext="calendar" />
       </div>
       <CalendarView 
         tasks={activeTasks} 

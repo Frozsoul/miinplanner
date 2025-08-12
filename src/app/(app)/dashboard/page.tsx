@@ -87,7 +87,7 @@ export default function DashboardPage() {
         actionButtons={<QuickAddTask />} 
       />
 
-      <DashboardAIInsight />
+      <DashboardAIInsight pageContext="dashboard" />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <SummaryCard title="Active Tasks" value={activeTasks.length} icon={ListChecks} description="All non-archived tasks" />
@@ -152,5 +152,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
