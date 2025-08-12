@@ -12,6 +12,8 @@ import { format, parseISO, isValid } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { InlinePriorityPicker } from "./inline-priority-picker";
+import { InlineDatePicker } from "./inline-date-picker";
 
 interface TaskCardProps {
   task: Task;
@@ -21,15 +23,6 @@ interface TaskCardProps {
   onView: (task: Task) => void;
   onArchiveToggle: (task: Task) => void;
 }
-
-const getPriorityBadgeVariant = (priority: TaskPriority) => {
-  switch (priority) {
-    case 'High': case 'Urgent': return 'destructive';
-    case 'Medium': return 'secondary';
-    case 'Low': return 'outline';
-    default: return 'default';
-  }
-};
 
 export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggle }: TaskCardProps) {
     const { 
@@ -103,16 +96,11 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
                 </DropdownMenu>
                 </div>
                 <CardDescription className="text-xs pt-1">
-                <Badge variant={getPriorityBadgeVariant(task.priority)}>{task.priority}</Badge>
+                    <InlinePriorityPicker task={task} />
                 </CardDescription>
             </CardHeader>
             <CardContent className="px-4 pb-4 text-xs text-muted-foreground space-y-2">
-                {task.dueDate && isValid(parseISO(task.dueDate)) && (
-                <div className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>{format(parseISO(task.dueDate), "MMM dd, yyyy")}</span>
-                </div>
-                )}
+                <InlineDatePicker task={task} />
                 {task.assignee && (
                 <div className="hidden sm:flex items-center gap-1.5">
                     <User className="h-3.5 w-3.5" />

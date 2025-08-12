@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit3, Trash2, Eye, Archive, ArchiveRestore } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { InlinePriorityPicker } from "./inline-priority-picker";
+import { InlineStatusPicker } from "./inline-status-picker";
+import { InlineDatePicker } from "./inline-date-picker";
 
 interface TaskListProps {
   tasks: Task[];
@@ -18,26 +21,6 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle }: TaskListProps) {
-  const getPriorityBadgeVariant = (priority: TaskPriority) => {
-    switch (priority) {
-      case 'High': return 'destructive';
-      case 'Urgent': return 'destructive';
-      case 'Medium': return 'secondary';
-      case 'Low': return 'outline';
-      default: return 'default';
-    }
-  };
-
-  const getStatusBadgeVariant = (status: TaskStatus) => {
-     switch (status) {
-      case 'Done': return 'default';
-      case 'In Progress': return 'secondary';
-      case 'To Do': return 'outline';
-      case 'Pending': return 'secondary';
-      case 'Review': return 'default';
-      default: return 'default';
-    }
-  };
 
   return (
     <div className="rounded-lg border overflow-hidden shadow-sm">
@@ -66,12 +49,16 @@ export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle }: T
                 <TableCell className="font-medium max-w-xs truncate" title={task.title}>{task.title}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Badge variant={getStatusBadgeVariant(task.status)} className="capitalize">{task.status}</Badge>
+                    <InlineStatusPicker task={task} />
                     {task.archived && <Badge variant="outline">Archived</Badge>}
                   </div>
                 </TableCell>
-                <TableCell><Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority}</Badge></TableCell>
-                <TableCell>{task.dueDate && isValid(parseISO(task.dueDate)) ? format(parseISO(task.dueDate), "MMM dd, yyyy") : "N/A"}</TableCell>
+                <TableCell>
+                  <InlinePriorityPicker task={task} />
+                </TableCell>
+                <TableCell>
+                  <InlineDatePicker task={task} />
+                </TableCell>
                 <TableCell>{task.channel || "N/A"}</TableCell>
                 <TableCell>{task.assignee || "N/A"}</TableCell>
                 <TableCell className="text-right">

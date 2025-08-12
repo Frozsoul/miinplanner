@@ -14,11 +14,12 @@ import { TASK_STATUSES } from '@/lib/constants';
 interface AppDataContextType {
   // Tasks
   tasks: Task[];
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>; // Add this
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   isLoadingTasks: boolean;
   fetchTasks: () => Promise<void>;
   addTask: (taskData: TaskData) => Promise<Task | null>;
   updateTask: (taskId: string, taskUpdate: Partial<TaskData>) => Promise<void>;
+  updateTaskField: <K extends keyof TaskData>(taskId: string, field: K, value: TaskData[K]) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, newStatus: TaskStatus, newIndex: number) => Promise<void>;
 
@@ -119,6 +120,29 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       console.error("AppDataContext: Failed to update task:", error);
       toast({ title: "Error", description: "Could not update task.", variant: "destructive" });
       setTasks(originalTasks); // Revert on error
+    }
+  };
+
+  const updateTaskField = async <K extends keyof TaskData>(taskId: string, field: K, value: TaskData[K] | undefined) => {
+    if (!user?.uid) {
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    const originalTasks = [...tasks];
+    
+    // Optimistic UI update
+    setTasks(prevTasks => prevTasks.map(task =>
+      task.id === taskId ? { ...task, [field]: value } as Task : task
+    ));
+
+    try {
+      await updateTaskService(user.uid, taskId, { [field]: value });
+      // Optionally toast on success, but can be noisy for inline edits
+      // toast({ title: "Task Updated", description: `Task ${field} was updated.`});
+    } catch (error) {
+      console.error(`AppDataContext: Failed to update task field ${field}:`, error);
+      toast({ title: "Error", description: `Could not update task ${field}.`, variant: "destructive" });
+      setTasks(originalTasks); // Revert on failure
     }
   };
 
@@ -336,6 +360,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       fetchTasks: fetchUserTasks,
       addTask,
       updateTask,
+      updateTaskField,
       deleteTask,
       moveTask,
       insights, 
