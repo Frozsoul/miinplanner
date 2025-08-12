@@ -33,7 +33,7 @@ export function InlineStatusPicker({ task }: InlineStatusPickerProps) {
 
   const handleStatusChange = (newStatus: string) => {
     if (newStatus && newStatus !== task.status) {
-      updateTaskField('status', newStatus as TaskStatus);
+      updateTaskField(task.id, 'status', newStatus as TaskStatus);
     }
   };
 
@@ -62,3 +62,5 @@ export function InlineStatusPicker({ task }: InlineStatusPickerProps) {
     </DropdownMenu>
   );
 }
+
+    

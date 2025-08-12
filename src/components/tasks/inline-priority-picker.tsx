@@ -36,7 +36,7 @@ export function InlinePriorityPicker({ task }: InlinePriorityPickerProps) {
 
   const handlePriorityChange = (newPriority: string) => {
     if (newPriority && newPriority !== task.priority) {
-      updateTaskField('priority', newPriority as TaskPriority);
+      updateTaskField(task.id, 'priority', newPriority as TaskPriority);
     }
   };
 
@@ -65,3 +65,5 @@ export function InlinePriorityPicker({ task }: InlinePriorityPickerProps) {
     </DropdownMenu>
   );
 }
+
+    

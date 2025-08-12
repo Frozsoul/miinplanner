@@ -154,24 +154,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setTasks(prevTasks => {
-      const taskToMove = prevTasks.find(t => t.id === taskId);
-      if (!taskToMove) return prevTasks;
+        const taskToMove = prevTasks.find(t => t.id === taskId);
+        if (!taskToMove) return prevTasks;
 
-      const remainingTasks = prevTasks.filter(t => t.id !== taskId);
-      const updatedTask = { ...taskToMove, status: newStatus };
-      
-      const targetColumnTasks = remainingTasks.filter(t => t.status === newStatus);
-      targetColumnTasks.splice(newIndex, 0, updatedTask);
-      
-      const otherTasks = remainingTasks.filter(t => t.status !== newStatus);
+        const sourceTasks = prevTasks.filter(t => t.id !== taskId);
+        const newTasks = [...sourceTasks];
 
-      const reorderedTasks = [...otherTasks, ...targetColumnTasks];
-      
-      const finalTasks = TASK_STATUSES.flatMap(status => 
-        reorderedTasks.filter(t => t.status === status)
-      );
-      
-      return finalTasks;
+        const updatedTask = { ...taskToMove, status: newStatus };
+        newTasks.splice(newIndex, 0, updatedTask);
+
+        return newTasks;
     });
 
     try {
@@ -391,3 +383,5 @@ export const useAppData = (): AppDataContextType => {
   }
   return context;
 };
+
+    

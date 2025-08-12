@@ -22,7 +22,7 @@ export function InlineDatePicker({ task }: InlineDatePickerProps) {
   const currentDate = task.dueDate && isValid(parseISO(task.dueDate)) ? parseISO(task.dueDate) : undefined;
 
   const handleDateSelect = (date: Date | undefined) => {
-    updateTaskField('dueDate', date?.toISOString());
+    updateTaskField(task.id, 'dueDate', date?.toISOString());
     setIsOpen(false);
   };
 
@@ -63,3 +63,5 @@ export function InlineDatePicker({ task }: InlineDatePickerProps) {
     </Popover>
   );
 }
+
+    
