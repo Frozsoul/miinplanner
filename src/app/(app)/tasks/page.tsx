@@ -33,6 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TaskCardList } from "@/components/tasks/TaskCardList";
+import { DashboardAIInsight } from "@/components/dashboard/DashboardAIInsight";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -188,6 +189,10 @@ export default function TasksPage() {
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Task
             </Button>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <DashboardAIInsight />
       </div>
 
       <Card className="mb-6 shadow-sm border">

@@ -8,6 +8,7 @@ import type { Task, SocialMediaPost } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast"; 
 import { parseISO, format, isValid } from "date-fns";
+import { DashboardAIInsight } from "@/components/dashboard/DashboardAIInsight";
 
 export default function CalendarPage() {
   const { 
@@ -58,6 +59,9 @@ export default function CalendarPage() {
   return (
     <div className="px-4 sm:px-6 md:py-6">
       <h1 className="text-3xl font-headline font-bold mb-8">Content Calendar</h1>
+      <div className="mb-6">
+        <DashboardAIInsight />
+      </div>
       <CalendarView 
         tasks={activeTasks} 
         posts={socialMediaPosts}
