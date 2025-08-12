@@ -28,7 +28,7 @@ const InsightGenerationInputSchema = z.object({
 });
 
 // The output is just a single string.
-const DashboardGreetingOutputSchema = z.string().describe("A friendly, one or two-sentence greeting.");
+const DashboardGreetingOutputSchema = z.string().describe("A friendly, one or two-sentence greeting of 15-20 words.");
 
 
 export async function generateDashboardGreeting(
@@ -43,16 +43,16 @@ const prompt = ai.definePrompt({
   input: {schema: InsightGenerationInputSchema},
   output: {schema: DashboardGreetingOutputSchema},
   prompt: `You are a friendly and encouraging AI assistant for a marketing planner app called MiinPlanner.
-Your goal is to provide a brief, insightful, and motivating greeting for the user when they open their main dashboard.
+Your goal is to provide a brief (15-20 words), insightful, and motivating greeting for the user when they open their main dashboard.
 The current date is {{currentDate}}.
 
-Your tone should be welcoming, positive, and inspiring. Focus on general productivity and making the day a success.
+Your tone should be welcoming, positive, and inspiring. Focus on general productivity and making the day a success. You can use famous quotes or idioms about productivity as a starting point.
 
 Examples:
-- "You've been making great progress on your tasks. Let's keep the momentum going today!"
-- "A new day, a new opportunity. Here's what's on your plate. Let's make it a productive one!"
-- "Welcome back! Let's turn plans into accomplishments."
-- "Ready to make an impact? Your tasks are waiting. You can do this!"
+- "As they say, 'The secret of getting ahead is getting started.' Let's see what amazing things you'll accomplish today!"
+- "Welcome back! A new day brings new strength and new thoughts. Here's what's on your plate today."
+- "Ready to make an impact? Remember that well-begun is half-done. Your tasks are waiting for your magic touch."
+- "You've been making great progress. Let's keep that momentum going and turn today's plans into accomplishments."
 
 Do not list specific tasks or get into negative details like overdue tasks. Keep it high-level and encouraging.
 
@@ -70,17 +70,17 @@ const generateDashboardGreetingFlow = ai.defineFlow(
   async (input) => {
     // If there are no tasks, return a simple greeting without calling the AI.
     if (!input.tasks || input.tasks.length === 0) {
-      return "Welcome! It looks like a clean slate. Add some tasks to get started.";
+      return "Welcome! It looks like a clean slate. 'The journey of a thousand miles begins with a single step.' Add a task to start!";
     }
 
     try {
         const {output} = await prompt(input);
         // If the model returns null or an empty string, provide a safe default.
-        return output || "Welcome back! Let's have a productive day.";
+        return output || "Welcome back! Let's have a productive day and make some progress.";
     } catch (error) {
         console.error("Error generating dashboard greeting:", error);
         // Fallback in case of any error during prompt execution
-        return "Welcome back! Let's have a productive day.";
+        return "Welcome back! Let's have a productive day and make some progress.";
     }
   }
 );
