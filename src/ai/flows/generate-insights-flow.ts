@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -16,7 +17,7 @@ import type { TaskStatus, TaskPriority } from '@/types';
 const InsightTaskSchema = z.object({
   id: z.string(),
   title: z.string(),
-  status: z.enum(['To Do', 'In Progress', 'Done', 'Pending', 'Review']),
+  status: z.enum(['To Do', 'In Progress', 'Done', 'Pending', 'Review', 'Blocked']),
   priority: z.enum(['Low', 'Medium', 'High', 'Urgent']),
   createdAt: z.string().describe("The task's creation date in ISO 8601 format."),
   updatedAt: z.string().describe("The task's last updated date in ISO 8601 format."),
