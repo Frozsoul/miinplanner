@@ -18,14 +18,28 @@ const colorThemes = [
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const [mode, color] = theme?.split("-") || ["light", "miin"];
+  
+  // Extract mode (light/dark/system) and color from theme string (e.g., "dark-forest")
+  const [currentMode, currentColor] = React.useMemo(() => {
+    if (!theme) return ["light", "miin"];
+    const parts = theme.split("-");
+    if (parts.length === 2) return [parts[0], parts[1]];
+    // Handle simple themes like "light", "dark", "system"
+    if (["light", "dark", "system"].includes(theme)) return [theme, "miin"];
+    return ["light", "miin"];
+  }, [theme]);
+
 
   const handleModeChange = (newMode: string) => {
-    setTheme(`${newMode}-${color}`);
+    // Re-combine with current color to set the new theme
+    setTheme(`${newMode}-${currentColor}`);
   };
   
   const handleColorChange = (newColor: string) => {
-    setTheme(`${mode}-${newColor}`);
+    // Re-combine with current mode to set the new theme
+    // If system is selected, default to light mode for constructing the theme string
+    const modeForTheme = currentMode === 'system' ? 'light' : currentMode;
+    setTheme(`${modeForTheme}-${newColor}`);
   }
 
   return (
@@ -53,7 +67,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-3 gap-2 pt-2">
                 <Button
                   variant="outline"
-                  className={cn(mode === "light" && "border-primary ring-2 ring-primary")}
+                  className={cn(currentMode === "light" && "border-primary ring-2 ring-primary")}
                   onClick={() => handleModeChange("light")}
                 >
                   <Sun className="mr-2 h-4 w-4" />
@@ -61,7 +75,7 @@ export default function SettingsPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  className={cn(mode === "dark" && "border-primary ring-2 ring-primary")}
+                  className={cn(currentMode === "dark" && "border-primary ring-2 ring-primary")}
                   onClick={() => handleModeChange("dark")}
                 >
                   <Moon className="mr-2 h-4 w-4" />
@@ -69,8 +83,8 @@ export default function SettingsPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  className={cn(mode === "system" && "border-primary ring-2 ring-primary")}
-                  onClick={() => handleModeChange("system")}
+                  className={cn(currentMode === "system" && "border-primary ring-2 ring-primary")}
+                  onClick={() => setTheme("system")}
                 >
                   <Monitor className="mr-2 h-4 w-4" />
                   System
@@ -92,7 +106,7 @@ export default function SettingsPage() {
                       variant="outline"
                       className={cn(
                         "justify-start h-12",
-                        color === cTheme.name && "border-primary ring-2 ring-primary"
+                        currentColor === cTheme.name && "border-primary ring-2 ring-primary"
                       )}
                       onClick={() => handleColorChange(cTheme.name)}
                     >

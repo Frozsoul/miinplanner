@@ -7,7 +7,7 @@ body {
 }
 
 @layer base {
-  :root, .theme-miin {
+  :root {
     --background: 0 0% 96.1%; /* #F5F5F5 */
     --foreground: 0 4% 10%; /* #1c1a1a */
     --card: 0 0% 100%; /* #FFFFFF */
@@ -45,7 +45,7 @@ body {
     --sidebar-ring: 48 100% 50%; /* #ffce00 */
   }
 
-  .dark:root, .dark.theme-miin {
+  .dark:root {
     --background: 0 4% 10%; /* #1c1a1a */
     --foreground: 0 0% 96.1%; /* #F5F5F5 */
     --card: 0 3% 16%; /* #2a2828 */
@@ -92,7 +92,7 @@ body {
     --sidebar-primary-foreground: 0 0% 100%;
   }
 
-  .dark .theme-forest {
+  .dark.theme-forest {
     --primary: 142 76% 36%; /* #2A9D8F */
     --primary-foreground: 0 0% 100%;
     --accent: 158 29% 51%; /* #5A9C74 */
@@ -112,7 +112,7 @@ body {
     --sidebar-primary-foreground: 0 0% 100%;
   }
 
-  .dark .theme-ocean {
+  .dark.theme-ocean {
     --primary: 217 91% 60%; /* #3B82F6 */
     --primary-foreground: 0 0% 100%;
     --accent: 217 33% 17%;
@@ -132,7 +132,7 @@ body {
     --sidebar-primary-foreground: 0 0% 100%;
   }
 
-  .dark .theme-sunset {
+  .dark.theme-sunset {
     --primary: 35 92% 61%; /* #F9A84A */
     --primary-foreground: 0 4% 10%;
     --accent: 24 96% 53%; /* #F5651D */
