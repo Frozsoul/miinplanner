@@ -8,7 +8,7 @@ import { TASK_STATUSES } from "@/lib/constants";
 import { useAppData } from "@/contexts/app-data-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { DndContext, type DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners } from "@dnd-kit/core";
+import { DndContext, type DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners, type Active, type Over } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { TaskCard } from './task-card';
 
@@ -23,7 +23,7 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArchiveToggle, showArchived }: KanbanBoardProps) {
-  const { moveTask } = useAppData();
+  const { moveTask, setTasks } = useAppData();
   const isMobile = useIsMobile();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   
@@ -37,6 +37,12 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
     })
   );
 
+  const findColumn = (id: string | number) => {
+    if (typeof id !== 'string') return null;
+    if (columns.includes(id as TaskStatus)) return id;
+    return tasks.find(t => t.id === id)?.status;
+  };
+
   const onDragStart = (event: any) => {
     const { active } = event;
     const task = tasks.find(t => t.id === active.id);
@@ -45,46 +51,36 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
     }
   };
 
-
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
-
-    if (!over) {
-      return;
-    }
-
+  
+    if (!over) return;
+  
     const activeId = active.id as string;
     const overId = over.id as string;
+  
+    const activeColumn = findColumn(active.id);
+    const overColumn = findColumn(over.id);
 
-    const activeTask = tasks.find(t => t.id === activeId);
-    if (!activeTask) return;
-
-    // This is the new status of the task
-    const newStatus = over.data.current?.status as TaskStatus;
-
-    // Find the tasks in the destination column to calculate the new index
-    const overColumnTasks = tasks.filter(t => t.status === newStatus);
-
-    let newIndex = overColumnTasks.findIndex(t => t.id === overId);
-    
-    // If we're dropping over a column but not a specific item, findIndex is -1.
-    // In that case, we append it to the end.
-    if (newIndex === -1) {
-        // Check if we are dropping on a column container
-        if(over.data.current?.type === 'COLUMN'){
-            newIndex = overColumnTasks.length;
-        } else {
-           return; // Dropped somewhere invalid
+    if (!activeColumn || !overColumn || activeColumn === overColumn) {
+        // Handle reordering within the same column if you want to persist it
+        if(activeColumn && overColumn && activeColumn === overColumn && active.id !== over.id){
+             setTasks((currentTasks) => {
+                const activeIndex = currentTasks.findIndex((t) => t.id === active.id);
+                const overIndex = currentTasks.findIndex((t) => t.id === over.id);
+                return arrayMove(currentTasks, activeIndex, overIndex);
+             });
         }
+        return;
     }
-    
-    // Check if the status is actually changing
-    if (activeTask.status !== newStatus) {
-        moveTask(activeId, newStatus, newIndex);
-    }
-    // Note: Reordering within the same column is not implemented in `moveTask` yet
-    // For now, only status changes are persisted.
+
+     const newStatus = overColumn as TaskStatus;
+     const overColumnTasks = tasks.filter(t => t.status === newStatus);
+     const overIndex = over.data.current?.sortable?.index ?? overColumnTasks.length;
+
+     // Call context function to update state and firestore
+     moveTask(activeId, newStatus, overIndex);
   };
   
   const containerClasses = cn(
@@ -111,7 +107,7 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
           return (
             <KanbanColumn 
               key={status}
-              status={status}
+              status={status as TaskStatus}
               tasks={tasksForStatus}
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
@@ -137,4 +133,3 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
     </DndContext>
   );
 }
-
