@@ -23,9 +23,9 @@ interface NavItem {
 const allNavItems: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/tasks", icon: ListChecks, label: "Task Manager" },
-  { href: "/insights", icon: Lightbulb, label: "AI Insights" },
+  { href: "/calendar", icon: CalendarDays, label: "Calendar" },
+  { href: "/insights", icon: Lightbulb, label: "AI Insights", isPremium: true },
   { href: "/content", icon: FileText, label: "Content Studio", isPremium: true },
-  { href: "/calendar", icon: CalendarDays, label: "Content Calendar" },
   { href: "/chatbot", icon: BotMessageSquare, label: "AI Chatbot", isPremium: true },
 ];
 
