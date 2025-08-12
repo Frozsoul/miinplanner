@@ -1,6 +1,7 @@
 
 "use client";
 
+import React from 'react';
 import type { Task, TaskStatus } from "@/types";
 import { KanbanColumn } from "./kanban-column";
 import { TASK_STATUSES } from "@/lib/constants";
@@ -8,7 +9,6 @@ import { DragDropContext, type DropResult } from "react-beautiful-dnd";
 import { useAppData } from "@/contexts/app-data-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { Droppable, Draggable } from "react-beautiful-dnd";
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -29,11 +29,11 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
     const { destination, source, draggableId } = result;
 
     if (!destination) {
-      return; // Dropped outside of a droppable area
+      return;
     }
 
     if (destination.droppableId === source.droppableId && destination.index === source.index) {
-      return; // Dropped in the same place
+      return;
     }
 
     const newStatus = destination.droppableId as TaskStatus;
@@ -44,13 +44,13 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
     "grid gap-6 h-full",
     isMobile 
       ? "grid-flow-col auto-cols-[90%] overflow-x-auto snap-x snap-mandatory p-2" 
-      : "md:grid-cols-2 lg:grid-cols-5"
+      : "lg:grid-cols-5" 
   );
 
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-       <div className={containerClasses}>
+      <div className={containerClasses}>
         {columns.map(status => {
           const tasksForStatus = tasks.filter(task => 
             showArchived ? task.archived : task.status === status

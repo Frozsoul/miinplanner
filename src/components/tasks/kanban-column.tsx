@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Archive } from "lucide-react";
 import { Droppable } from "react-beautiful-dnd";
 import { cn } from "@/lib/utils";
+import { StrictModeDroppable } from "./strict-mode-droppable";
 
 interface KanbanColumnProps {
   status: TaskStatus | 'Archived';
@@ -42,7 +43,7 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
             </Button>
         )}
       </div>
-       <Droppable droppableId={status} isDropDisabled={isArchivedColumn}>
+       <StrictModeDroppable droppableId={status} isDropDisabled={isArchivedColumn}>
         {(provided, snapshot) => (
           <ScrollArea 
             className="flex-grow"
@@ -76,7 +77,7 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
             </div>
           </ScrollArea>
         )}
-      </Droppable>
+      </StrictModeDroppable>
     </div>
   );
 }
