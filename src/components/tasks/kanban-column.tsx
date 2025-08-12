@@ -6,9 +6,9 @@ import { TaskCard } from "./task-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Archive } from "lucide-react";
-import { Droppable } from "react-beautiful-dnd";
 import { cn } from "@/lib/utils";
-import { StrictModeDroppable } from "./strict-mode-droppable";
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 interface KanbanColumnProps {
   status: TaskStatus | 'Archived';
@@ -22,12 +22,23 @@ interface KanbanColumnProps {
 
 export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTask, onArchiveToggle, isArchivedColumn = false }: KanbanColumnProps) {
   
+  const { setNodeRef, isOver } = useDroppable({
+    id: status,
+    data: {
+      type: 'COLUMN',
+      status: status
+    },
+    disabled: isArchivedColumn,
+  });
+
   const handleArchiveAll = () => {
     // We only archive tasks from the 'Done' column
     if (status === 'Done') {
         tasks.forEach(task => onArchiveToggle(task));
     }
   };
+  
+  const taskIds = tasks.map(t => t.id);
 
   return (
     <div className="flex flex-col bg-muted/50 rounded-lg h-full min-h-[200px] snap-center">
@@ -43,17 +54,15 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
             </Button>
         )}
       </div>
-       <StrictModeDroppable droppableId={status} isDropDisabled={isArchivedColumn}>
-        {(provided, snapshot) => (
+       <SortableContext id={status} items={taskIds} strategy={verticalListSortingStrategy}>
           <ScrollArea 
             className="flex-grow"
           >
             <div 
-              ref={provided.innerRef}
-              {...provided.droppableProps}
+              ref={setNodeRef}
               className={cn(
                 "p-2 md:p-4 space-y-4 h-full transition-colors duration-200",
-                snapshot.isDraggingOver && "bg-accent/20"
+                isOver && "bg-accent/20"
               )}
             >
               {tasks.length > 0 ? (
@@ -73,11 +82,10 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
                   No tasks here.
                 </div>
               )}
-              {provided.placeholder}
             </div>
           </ScrollArea>
-        )}
-      </StrictModeDroppable>
+      </SortableContext>
     </div>
   );
 }
+
