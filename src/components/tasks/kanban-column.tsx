@@ -46,10 +46,10 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
         {(provided, snapshot) => (
           <ScrollArea 
             className="flex-grow"
-            ref={provided.innerRef}
-            {...provided.droppableProps}
           >
             <div 
+              ref={provided.innerRef}
+              {...provided.droppableProps}
               className={cn(
                 "p-2 md:p-4 space-y-4 h-full transition-colors duration-200",
                 snapshot.isDraggingOver && "bg-accent/20"

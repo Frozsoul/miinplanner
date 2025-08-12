@@ -8,6 +8,7 @@ import { DragDropContext, type DropResult } from "react-beautiful-dnd";
 import { useAppData } from "@/contexts/app-data-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { Droppable, Draggable } from "react-beautiful-dnd";
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -40,9 +41,9 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
   };
   
   const containerClasses = cn(
-    "grid gap-6",
+    "grid gap-6 h-full",
     isMobile 
-      ? "grid-flow-col auto-cols-[90%] overflow-x-auto snap-x snap-mandatory" 
+      ? "grid-flow-col auto-cols-[90%] overflow-x-auto snap-x snap-mandatory p-2" 
       : "md:grid-cols-2 lg:grid-cols-5"
   );
 
