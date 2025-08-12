@@ -4,7 +4,7 @@
 import { useTheme } from "next-themes";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Monitor, Sun, Moon, Palette, Leaf, Droplets, Sunrise, CheckCircle, Shield, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
