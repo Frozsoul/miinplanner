@@ -136,7 +136,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     ));
 
     try {
-      await updateTaskService(user.uid, taskId, { [field]: value });
+      const payload = { [field]: value };
+      await updateTaskService(user.uid, taskId, payload);
       // Optionally toast on success, but can be noisy for inline edits
       // toast({ title: "Task Updated", description: `Task ${field} was updated.`});
     } catch (error) {
@@ -152,21 +153,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
 
-    // This logic ensures the local state is updated correctly before calling the service.
     setTasks(prevTasks => {
-        const taskToMove = prevTasks.find(t => t.id === taskId);
-        if (!taskToMove) return prevTasks;
+      const taskToMove = prevTasks.find(t => t.id === taskId);
+      if (!taskToMove) return prevTasks;
 
-        // Create a new array without the task to move
-        const remainingTasks = prevTasks.filter(t => t.id !== taskId);
-        
-        // Update the status of the moved task
-        const movedTask = { ...taskToMove, status: newStatus };
+      const remainingTasks = prevTasks.filter(t => t.id !== taskId);
+      const updatedTask = { ...taskToMove, status: newStatus };
+      
+      const targetColumnTasks = remainingTasks.filter(t => t.status === newStatus);
+      targetColumnTasks.splice(newIndex, 0, updatedTask);
+      
+      const otherTasks = remainingTasks.filter(t => t.status !== newStatus);
 
-        // Insert the moved task at the correct new position
-        remainingTasks.splice(newIndex, 0, movedTask);
-        
-        return remainingTasks;
+      const reorderedTasks = [...otherTasks, ...targetColumnTasks];
+      
+      const finalTasks = TASK_STATUSES.flatMap(status => 
+        reorderedTasks.filter(t => t.status === status)
+      );
+      
+      return finalTasks;
     });
 
     try {
