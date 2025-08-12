@@ -25,11 +25,13 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { navItems } from "@/components/layout/nav-items";
+import { useNavItems } from "@/components/layout/nav-items";
 import { User, Settings, LogOut, Loader2, PanelLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from 'react';
 import { AppDataProvider } from '@/contexts/app-data-context';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AppLayout({
   children,
@@ -38,7 +40,9 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading, logout } = useAuth();
+  const { user, userProfile, loading, logout } = useAuth();
+  const navItems = useNavItems();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,6 +66,21 @@ export default function AppLayout({
     await logout();
   };
 
+  const handleNavItemClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isPremiumFeature?: boolean) => {
+    if (isPremiumFeature && userProfile?.plan !== 'premium') {
+      e.preventDefault();
+      toast({
+        title: "Premium Feature",
+        description: "Please upgrade to a premium plan to access this feature.",
+        variant: "destructive"
+      });
+      router.push('/settings');
+    } else {
+       router.push(href);
+    }
+  };
+
+
   return (
     <AppDataProvider>
       <SidebarProvider>
@@ -82,9 +101,12 @@ export default function AppLayout({
                       asChild
                       isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/")}
                       tooltip={item.label}
-                      className="justify-start" 
+                      className={cn(
+                        "justify-start",
+                        item.isPremium && userProfile?.plan !== 'premium' && 'text-muted-foreground'
+                      )}
                     >
-                      <Link href={item.href}>
+                      <Link href={item.href} onClick={(e) => handleNavItemClick(e, item.href, item.isPremium)}>
                         <item.icon className="h-5 w-5" />
                         <span>{item.label}</span>
                       </Link>

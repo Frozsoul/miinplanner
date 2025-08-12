@@ -1,7 +1,7 @@
 
 import type { Timestamp } from "firebase/firestore";
 
-export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Pending' | 'Review';
+export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Pending' | 'Review' | 'Blocked';
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
 export interface Task {
@@ -93,6 +93,18 @@ export interface ContentIdea {
   targetAudience?: string;
 }
 
+// User Profile and Plan Types
+export type UserPlan = 'free' | 'premium';
+
+export interface UserProfile {
+  id: string; // Should match Firebase Auth UID
+  email: string;
+  displayName?: string;
+  plan: UserPlan;
+  createdAt: Date | Timestamp;
+}
+
+
 // Authentication Form Data
 export interface LoginFormData {
   email: string;
@@ -124,5 +136,3 @@ export interface SocialMediaPost {
 }
 
 export type SocialMediaPostData = Omit<SocialMediaPost, 'id' | 'createdAt' | 'updatedAt' | 'userId'>;
-
-    

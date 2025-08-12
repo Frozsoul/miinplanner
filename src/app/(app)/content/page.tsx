@@ -7,15 +7,19 @@ import { Button } from "@/components/ui/button";
 import { GeneratePostForm } from "@/components/content/GeneratePostForm";
 import { PostCard } from "@/components/content/PostCard";
 import { PostForm, type PostFormData } from "@/components/content/PostForm";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Share2, Wand2, Filter, Loader2 } from "lucide-react";
+import { PlusCircle, Share2, Wand2, Filter, Loader2, Shield } from "lucide-react";
 import type { SocialMediaPost, Platform, PostStatus, SocialMediaPostData } from "@/types";
 import { SOCIAL_PLATFORMS, POST_STATUSES } from "@/lib/constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
+import Link from "next/link";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+
 
 export default function ContentStudioPage() {
   const { 
@@ -26,6 +30,7 @@ export default function ContentStudioPage() {
     isLoadingSocialMediaPosts,
     fetchSocialMediaPosts,
   } = useAppData();
+  const { userProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -38,10 +43,14 @@ export default function ContentStudioPage() {
   const [platformFilter, setPlatformFilter] = useState<Platform | "All">("All");
   const [statusFilter, setStatusFilter] = useState<PostStatus | "All">("All");
 
+  const isPremium = userProfile?.plan === 'premium';
+
   useEffect(() => {
-    fetchSocialMediaPosts();
+    if(isPremium) {
+        fetchSocialMediaPosts();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isPremium]);
 
   const handleEdit = (post: SocialMediaPost) => {
     setGeneratedContent(null);
@@ -102,6 +111,46 @@ export default function ContentStudioPage() {
       return matchesSearch && matchesPlatform && matchesStatus;
     });
   }, [socialMediaPosts, searchTerm, platformFilter, statusFilter]);
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-12rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isPremium) {
+     return (
+      <div className="px-4 sm:px-6 md:py-6 flex flex-col items-center justify-center text-center">
+        <Card className="max-w-md shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-center gap-2">
+              <Share2 className="h-6 w-6 text-primary" />
+              Upgrade to Premium
+            </CardTitle>
+            <CardDescription>
+              The Content Studio is a premium feature. Unlock it by upgrading your plan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <Shield className="h-4 w-4" />
+              <AlertTitle>Premium Feature</AlertTitle>
+              <AlertDescription>
+                Gain access to the Content Studio, AI assistant, and advanced insights by upgrading your account.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+          <CardFooter>
+            <Button asChild className="w-full">
+              <Link href="/settings">View Plans</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
 
   return (

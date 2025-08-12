@@ -11,18 +11,22 @@ import {
   signInWithPopup,
   sendEmailVerification,
 } from "firebase/auth";
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from "react";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import type { LoginFormData, SignupFormData } from "@/types";
+import type { LoginFormData, SignupFormData, UserProfile } from "@/types";
+import { getUserProfile, createUserProfile, updateUserProfile } from "@/services/user-service";
+
 
 interface AuthContextType {
   user: FirebaseUser | null;
+  userProfile: UserProfile | null;
   loading: boolean;
   login: (data: LoginFormData) => Promise<FirebaseUser | null>;
   signup: (data: SignupFormData) => Promise<FirebaseUser | null>;
   loginWithGoogle: () => Promise<FirebaseUser | null>;
   logout: () => Promise<void>;
+  updateUserPlan: (plan: 'free' | 'premium') => Promise<void>;
   error: AuthError | null;
   clearError: () => void;
   verificationEmailSent: boolean;
@@ -33,25 +37,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser?.emailVerified) {
-        setUser(firebaseUser);
-      } else {
-        setUser(null);
-        if (firebaseUser) { // User exists but email is not verified
-           firebaseSignOut(auth); // Sign them out
-        }
+  const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
+    if (firebaseUser?.emailVerified) {
+      setUser(firebaseUser);
+      let profile = await getUserProfile(firebaseUser.uid);
+      if (!profile) {
+        // Create a profile if it doesn't exist (e.g., first-time Google sign-in)
+        const newProfileData: UserProfile = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            displayName: firebaseUser.displayName || '',
+            plan: 'free',
+            createdAt: new Date(),
+        };
+        await createUserProfile(newProfileData);
+        profile = newProfileData;
       }
-      setLoading(false);
-    });
-    return () => unsubscribe();
+      setUserProfile(profile);
+    } else {
+      setUser(null);
+      setUserProfile(null);
+      if (firebaseUser) { // User exists but email is not verified
+         await firebaseSignOut(auth); // Sign them out
+      }
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, handleUserAuth);
+    return () => unsubscribe();
+  }, [handleUserAuth]);
 
   const login = async (data: LoginFormData): Promise<FirebaseUser | null> => {
     setLoading(true);
@@ -63,15 +85,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await firebaseSignOut(auth);
         throw { code: "auth/email-not-verified", message: "Your email has not been verified. Please check your inbox for the verification link." } as AuthError;
       }
-      setUser(userCredential.user);
+      // onAuthStateChanged will handle setting user and profile
       router.push("/dashboard"); 
       return userCredential.user;
     } catch (err) {
       setError(err as AuthError);
-      return null;
-    } finally {
       setLoading(false);
-    }
+      return null;
+    } 
   };
 
   const signup = async (data: SignupFormData): Promise<FirebaseUser | null> => {
@@ -80,10 +101,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setVerificationEmailSent(false);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      await sendEmailVerification(userCredential.user);
+      const { user: newUser } = userCredential;
+      
+      // Create user profile in Firestore
+      const newProfile: UserProfile = {
+          id: newUser.uid,
+          email: newUser.email || '',
+          displayName: newUser.displayName || '',
+          plan: 'free',
+          createdAt: new Date(),
+      };
+      await createUserProfile(newProfile);
+
+      await sendEmailVerification(newUser);
       await firebaseSignOut(auth); // Sign out immediately after registration
       setVerificationEmailSent(true);
-      return userCredential.user; // Return user object on success for UI updates
+      return newUser;
     } catch (err) {
       setError(err as AuthError);
       return null;
@@ -99,14 +132,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      setUser(userCredential.user);
+      // onAuthStateChanged will handle setting user and profile
       router.push("/dashboard");
       return userCredential.user;
     } catch (err) {
       setError(err as AuthError);
-      return null;
-    } finally {
       setLoading(false);
+      return null;
     }
   };
 
@@ -116,6 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await firebaseSignOut(auth);
       setUser(null);
+      setUserProfile(null);
       router.push("/login");
     } catch (err) {
       setError(err as AuthError);
@@ -124,12 +157,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
+  const updateUserPlan = async (plan: 'free' | 'premium') => {
+      if (!user?.uid) throw new Error("User not authenticated");
+      await updateUserProfile(user.uid, { plan });
+      setUserProfile(prev => prev ? { ...prev, plan } : null);
+  };
+
   const clearError = () => {
     setError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout, error, clearError, verificationEmailSent, setVerificationEmailSent }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, login, signup, loginWithGoogle, logout, updateUserPlan, error, clearError, verificationEmailSent, setVerificationEmailSent }}>
       {children}
     </AuthContext.Provider>
   );

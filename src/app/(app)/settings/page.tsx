@@ -5,10 +5,11 @@ import { useTheme } from "next-themes";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Monitor, Sun, Moon, Palette, Leaf, Droplets, Sunrise } from "lucide-react";
+import { Settings, Monitor, Sun, Moon, Palette, Leaf, Droplets, Sunrise, CheckCircle, Shield, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
-import useLocalStorage from "@/hooks/use-local-storage";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
 
 const colorThemes = [
     { name: 'miin', label: 'Miin', icon: Palette },
@@ -18,13 +19,55 @@ const colorThemes = [
 ]
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
-  const [colorTheme, setColorTheme] = useLocalStorage('color-theme', 'miin');
+  const { theme: colorMode, setTheme: setColorMode } = useTheme(); // This is for light/dark/system
+  const [colorTheme, setColorTheme] = React.useState('miin');
+  const { userProfile, loading, updateUserPlan } = useAuth();
+  const { toast } = useToast();
+  const [isUpdatingPlan, setIsUpdatingPlan] = React.useState(false);
+
 
   React.useEffect(() => {
-    document.documentElement.classList.remove('theme-miin', 'theme-forest', 'theme-ocean', 'theme-sunset');
-    document.documentElement.classList.add(`theme-${colorTheme}`);
-  }, [colorTheme]);
+    // Set initial color theme from localStorage or default
+    const savedTheme = localStorage.getItem('color-theme') || 'miin';
+    setColorTheme(savedTheme);
+    document.documentElement.className = ''; // Clear existing classes
+    document.documentElement.classList.add(colorMode ?? 'light', `theme-${savedTheme}`);
+  }, [colorMode]);
+
+  const handleSetColorTheme = (themeName: string) => {
+    setColorTheme(themeName);
+    localStorage.setItem('color-theme', themeName);
+    
+    // Get all theme classes
+    const allThemes = colorThemes.map(t => `theme-${t.name}`);
+    
+    // Remove all theme classes first
+    document.documentElement.classList.remove(...allThemes);
+    
+    // Add the new one
+    document.documentElement.classList.add(`theme-${themeName}`);
+  };
+
+  const handlePlanChange = async (newPlan: 'free' | 'premium') => {
+    setIsUpdatingPlan(true);
+    try {
+        await updateUserPlan(newPlan);
+        toast({
+            title: "Plan Updated!",
+            description: `You are now on the ${newPlan} plan.`,
+        });
+    } catch (error) {
+        console.error("Failed to update plan:", error);
+        toast({
+            title: "Error",
+            description: "Could not update your plan. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsUpdatingPlan(false);
+    }
+  };
+
 
   return (
     <div className="px-4 sm:px-6 md:py-6 space-y-6">
@@ -35,6 +78,67 @@ export default function SettingsPage() {
       />
 
       <div className="max-w-2xl mx-auto space-y-6">
+         <Card>
+          <CardHeader>
+            <CardTitle>Plan & Billing</CardTitle>
+            <CardDescription>
+              Manage your subscription plan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+             {loading && <Loader2 className="animate-spin" />}
+             {!loading && userProfile && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Card className={cn(userProfile.plan === 'free' ? "border-primary ring-2 ring-primary" : "")}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">Free Plan</CardTitle>
+                            <CardDescription>Basic features for individuals.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Task Management</li>
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Content Calendar</li>
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Basic AI Insights</li>
+                            </ul>
+                        </CardContent>
+                        <CardFooter>
+                            {userProfile.plan === 'free' ? (
+                                <Button disabled className="w-full">Current Plan</Button>
+                            ) : (
+                                <Button variant="outline" onClick={() => handlePlanChange('free')} disabled={isUpdatingPlan} className="w-full">
+                                    {isUpdatingPlan ? <Loader2 className="animate-spin" /> : "Downgrade"}
+                                </Button>
+                            )}
+                        </CardFooter>
+                    </Card>
+                     <Card className={cn(userProfile.plan === 'premium' ? "border-primary ring-2 ring-primary" : "")}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Shield className="text-primary"/>Premium Plan</CardTitle>
+                            <CardDescription>Advanced features for power users.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Everything in Free</li>
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Full AI Insights</li>
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> AI Content Studio</li>
+                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> AI Chatbot Assistant</li>
+                            </ul>
+                        </CardContent>
+                        <CardFooter>
+                             {userProfile.plan === 'premium' ? (
+                                <Button disabled className="w-full">Current Plan</Button>
+                            ) : (
+                                <Button onClick={() => handlePlanChange('premium')} disabled={isUpdatingPlan} className="w-full">
+                                    {isUpdatingPlan ? <Loader2 className="animate-spin" /> : "Upgrade"}
+                                </Button>
+                            )}
+                        </CardFooter>
+                    </Card>
+                </div>
+             )}
+          </CardContent>
+        </Card>
+        
         <Card>
           <CardHeader>
             <CardTitle>Appearance</CardTitle>
@@ -51,24 +155,24 @@ export default function SettingsPage() {
               <div className="grid grid-cols-3 gap-2 pt-2">
                 <Button
                   variant="outline"
-                  className={cn(theme === "light" && "border-primary ring-2 ring-primary")}
-                  onClick={() => setTheme("light")}
+                  className={cn(colorMode === "light" && "border-primary ring-2 ring-primary")}
+                  onClick={() => setColorMode("light")}
                 >
                   <Sun className="mr-2 h-4 w-4" />
                   Light
                 </Button>
                 <Button
                   variant="outline"
-                  className={cn(theme === "dark" && "border-primary ring-2 ring-primary")}
-                  onClick={() => setTheme("dark")}
+                  className={cn(colorMode === "dark" && "border-primary ring-2 ring-primary")}
+                  onClick={() => setColorMode("dark")}
                 >
                   <Moon className="mr-2 h-4 w-4" />
                   Dark
                 </Button>
                 <Button
                   variant="outline"
-                  className={cn(theme === "system" && "border-primary ring-2 ring-primary")}
-                  onClick={() => setTheme("system")}
+                  className={cn(colorMode === "system" && "border-primary ring-2 ring-primary")}
+                  onClick={() => setColorMode("system")}
                 >
                   <Monitor className="mr-2 h-4 w-4" />
                   System
@@ -92,7 +196,7 @@ export default function SettingsPage() {
                         "justify-start h-12",
                         colorTheme === cTheme.name && "border-primary ring-2 ring-primary"
                       )}
-                      onClick={() => setColorTheme(cTheme.name)}
+                      onClick={() => handleSetColorTheme(cTheme.name)}
                     >
                       <span className="flex items-center justify-center rounded-full mr-3 w-6 h-6">
                           <Icon className="h-5 w-5" />
