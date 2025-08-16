@@ -29,11 +29,12 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
   const columns = showArchived ? ['Archived'] : taskStatuses;
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    // Conditionally enable the PointerSensor only if not on a mobile device
+    !isMobile ? useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8, // Require pointer to move 8px to start dragging
       },
-    })
+    }) : undefined
   );
 
   const findColumn = (id: string | number) => {
@@ -95,8 +96,6 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
         collisionDetection={closestCorners}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
-        // Disable DND on mobile for better UX
-        disabled={isMobile}
     >
       <div className={containerClasses} style={{ gridTemplateColumns: isMobile ? undefined : `repeat(${columns.length}, minmax(0, 1fr))` }}>
         {columns.map(status => {
