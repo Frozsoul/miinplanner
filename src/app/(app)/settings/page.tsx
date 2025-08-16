@@ -11,6 +11,7 @@ import * as React from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { TaskSpacesManager } from "@/components/settings/TaskSpacesManager";
+import { StatusManager } from "@/components/settings/StatusManager"; // Import the new component
 
 const colorThemes = [
     { name: 'miin', label: 'Miin', icon: Palette },
@@ -139,6 +140,8 @@ export default function SettingsPage() {
              )}
           </CardContent>
         </Card>
+
+        <StatusManager />
         
         <TaskSpacesManager />
 

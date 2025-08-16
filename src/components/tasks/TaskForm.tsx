@@ -11,7 +11,8 @@ import { DatePicker } from "@/components/tasks/date-picker";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { parseISO, isValid } from "date-fns";
-import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/constants";
+import { TASK_PRIORITIES } from "@/lib/constants";
+import { useAppData } from "@/contexts/app-data-context";
 
 
 interface TaskFormProps {
@@ -35,7 +36,11 @@ const initialFormState: TaskData & { startDateObj?: Date; dueDateObj?: Date; tag
 };
 
 export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFormProps) {
-  const [formData, setFormData] = useState(initialFormState);
+  const { taskStatuses } = useAppData();
+  const [formData, setFormData] = useState({
+      ...initialFormState,
+      status: taskStatuses[0] || 'To Do'
+  });
 
   useEffect(() => {
     if (taskToEdit) {
@@ -68,10 +73,12 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
         tags: taskToEdit.tags || [],
       });
     } else {
-      setFormData(initialFormState);
+      setFormData({
+        ...initialFormState,
+        status: taskStatuses[0] || 'To Do'
+      });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskToEdit]);
+  }, [taskToEdit, taskStatuses]);
 
   const handleChange = (field: keyof typeof formData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -109,7 +116,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
           <Select value={formData.status} onValueChange={(value: TaskStatus) => handleChange('status', value)}>
             <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
             <SelectContent>
-              {TASK_STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+              {taskStatuses.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

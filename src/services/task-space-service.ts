@@ -1,6 +1,6 @@
 
 import { db } from '@/lib/firebase';
-import type { TaskSpace, TaskData } from '@/types';
+import type { TaskSpace, TaskData, TaskStatus } from '@/types';
 import {
   collection,
   addDoc,
@@ -32,6 +32,7 @@ export const getTaskSpaces = async (userId: string): Promise<TaskSpace[]> => {
       name: doc.data().name,
       createdAt: (doc.data().createdAt as Timestamp).toDate(),
       tasks: doc.data().tasks || [],
+      taskStatuses: doc.data().taskStatuses, // Load statuses
     }));
   } catch (error) {
     console.error("Error fetching task spaces:", error);
@@ -39,13 +40,14 @@ export const getTaskSpaces = async (userId: string): Promise<TaskSpace[]> => {
   }
 };
 
-export const saveTaskSpace = async (userId: string, name: string, tasks: TaskData[]): Promise<TaskSpace> => {
+export const saveTaskSpace = async (userId: string, name: string, tasks: TaskData[], taskStatuses: TaskStatus[]): Promise<TaskSpace> => {
   if (!userId) throw new Error("User not authenticated.");
   try {
     const spacesRef = collection(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION);
     const docData = {
       name,
       tasks,
+      taskStatuses, // Save statuses
       createdAt: serverTimestamp(),
     };
     const docRef = await addDoc(spacesRef, docData);
@@ -53,6 +55,7 @@ export const saveTaskSpace = async (userId: string, name: string, tasks: TaskDat
       id: docRef.id,
       name,
       tasks,
+      taskStatuses,
       createdAt: new Date(), // Client-side timestamp for immediate UI update
     };
   } catch (error) {
@@ -61,7 +64,7 @@ export const saveTaskSpace = async (userId: string, name: string, tasks: TaskDat
   }
 };
 
-export const loadTasksFromSpace = async (userId: string, spaceId: string): Promise<void> => {
+export const loadTasksFromSpace = async (userId: string, spaceId: string): Promise<{tasks: TaskData[], taskStatuses?: TaskStatus[]}> => {
   if (!userId) throw new Error("User not authenticated.");
   try {
     // 1. Get the tasks from the saved space
@@ -69,6 +72,7 @@ export const loadTasksFromSpace = async (userId: string, spaceId: string): Promi
     const spaceSnap = await getDoc(spaceRef);
     if (!spaceSnap.exists()) throw new Error("Task space not found.");
     const newTasksData: TaskData[] = spaceSnap.data().tasks || [];
+    const newStatuses: TaskStatus[] | undefined = spaceSnap.data().taskStatuses;
 
     // 2. Get all current tasks for the user to delete them
     const tasksRef = collection(db, TASK_COLLECTION);
@@ -101,6 +105,8 @@ export const loadTasksFromSpace = async (userId: string, spaceId: string): Promi
 
     // 4. Commit the batch
     await batch.commit();
+
+    return { tasks: newTasksData, taskStatuses: newStatuses };
 
   } catch (error) {
     console.error("Error loading task space:", error);

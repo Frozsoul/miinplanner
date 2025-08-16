@@ -3,7 +3,6 @@
 
 import { useAppData } from '@/contexts/app-data-context';
 import type { Task, TaskStatus } from '@/types';
-import { TASK_STATUSES } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -17,19 +16,16 @@ interface InlineStatusPickerProps {
   task: Task;
 }
 
-const getStatusBadgeVariant = (status: TaskStatus) => {
-  switch (status) {
-    case 'Done': return 'default';
-    case 'In Progress': return 'secondary';
-    case 'To Do': return 'outline';
-    case 'Pending': return 'secondary';
-    case 'Review': return 'default';
-    default: return 'default';
-  }
+const getStatusBadgeVariant = (status: TaskStatus, statuses: TaskStatus[]) => {
+  // Simple heuristic for coloring: first/last items are special
+  const index = statuses.indexOf(status);
+  if (index === statuses.length - 1) return 'default'; // e.g., 'Done'
+  if (index === 0) return 'outline'; // e.g., 'To Do'
+  return 'secondary'; // In between statuses
 };
 
 export function InlineStatusPicker({ task }: InlineStatusPickerProps) {
-  const { updateTaskField } = useAppData();
+  const { updateTaskField, taskStatuses } = useAppData();
 
   const handleStatusChange = (newStatus: string) => {
     if (newStatus && newStatus !== task.status) {
@@ -41,7 +37,7 @@ export function InlineStatusPicker({ task }: InlineStatusPickerProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Badge
-          variant={getStatusBadgeVariant(task.status)}
+          variant={getStatusBadgeVariant(task.status, taskStatuses)}
           className="cursor-pointer hover:ring-2 hover:ring-ring"
         >
           {task.status}
@@ -52,7 +48,7 @@ export function InlineStatusPicker({ task }: InlineStatusPickerProps) {
           value={task.status}
           onValueChange={handleStatusChange}
         >
-          {TASK_STATUSES.map((status) => (
+          {taskStatuses.map((status) => (
             <DropdownMenuRadioItem key={status} value={status}>
               {status}
             </DropdownMenuRadioItem>
@@ -62,5 +58,3 @@ export function InlineStatusPicker({ task }: InlineStatusPickerProps) {
     </DropdownMenu>
   );
 }
-
-    

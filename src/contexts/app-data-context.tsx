@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getSocialMediaPosts, addSocialMediaPost as addPostService, updateSocialMediaPost as updatePostService, deleteSocialMediaPost as deletePostService } from '@/services/social-media-post-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService } from '@/services/task-space-service';
+import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
 import { generateDashboardGreeting as aiGenerateDashboardGreeting } from '@/ai/flows/generate-dashboard-greeting';
 import { generateTaskManagerGreeting as aiGenerateTaskManagerGreeting } from '@/ai/flows/generate-task-manager-greeting';
@@ -14,9 +15,12 @@ import { generateCalendarGreeting as aiGenerateCalendarGreeting } from '@/ai/flo
 
 import { generateSocialMediaPost as aiGenerateSocialMediaPost, type GenerateSocialMediaPostInput } from '@/ai/flows/generate-social-media-post';
 import { useToast } from '@/hooks/use-toast';
-import { TASK_STATUSES } from '@/lib/constants';
+import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
 
 interface AppDataContextType {
+  // Global loading state
+  isLoadingAppData: boolean;
+
   // Tasks
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
@@ -27,6 +31,9 @@ interface AppDataContextType {
   updateTaskField: (taskId: string, field: keyof TaskData, value: TaskData[keyof TaskData]) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, newStatus: TaskStatus, newIndex: number) => Promise<void>;
+  taskStatuses: TaskStatus[];
+  addStatus: (status: TaskStatus) => Promise<void>;
+  deleteStatus: (status: TaskStatus) => Promise<void>;
 
   // Task Spaces
   taskSpaces: TaskSpace[];
@@ -59,7 +66,7 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 const MIN_TASKS_FOR_AI = 5; // Minimum number of valid tasks to trigger full AI insights
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, userProfile, loading: authLoading, fetchUserProfile } = useAuth();
   const { toast } = useToast();
 
   // Task State
@@ -74,6 +81,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const [greetings, setGreetings] = useState<Partial<Record<GreetingContext, DashboardGreeting>>>({});
   const [isLoadingGreeting, setIsLoadingGreeting] = useState<Partial<Record<GreetingContext, boolean>>>({});
 
+  // Statuses State
+  const [taskStatuses, setTaskStatuses] = useState<TaskStatus[]>(DEFAULT_TASK_STATUSES);
 
   // Social Media Post State
   const [socialMediaPosts, setSocialMediaPosts] = useState<SocialMediaPost[]>([]);
@@ -81,6 +90,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   // Generic AI Loading State
   const [isLoadingAi, setIsLoadingAi] = useState(false);
+  
+  const isLoadingAppData = authLoading || isLoadingTasks;
+
+  useEffect(() => {
+    if (userProfile?.taskStatuses) {
+      setTaskStatuses(userProfile.taskStatuses);
+    } else {
+      setTaskStatuses(DEFAULT_TASK_STATUSES);
+    }
+  }, [userProfile]);
+
 
   // --- Task Functions ---
   const fetchUserTasks = useCallback(async () => {
@@ -214,6 +234,41 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     fetchUserTasks();
   }, [fetchUserTasks]);
 
+  // --- Task Status Functions ---
+  const addStatus = async (status: TaskStatus) => {
+    if (!user?.uid) return;
+    const newStatuses = [...taskStatuses, status];
+    setTaskStatuses(newStatuses); // Optimistic update
+    try {
+      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+      toast({ title: "Success", description: `Status "${status}" added.` });
+    } catch (error) {
+      toast({ title: "Error", description: "Could not add status.", variant: "destructive" });
+      setTaskStatuses(taskStatuses); // Revert
+    }
+  };
+
+  const deleteStatus = async (statusToDelete: TaskStatus) => {
+    if (!user?.uid) return;
+    if (tasks.some(task => task.status === statusToDelete)) {
+      toast({
+        title: "Cannot Delete Status",
+        description: "This status is currently being used by one or more tasks.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const newStatuses = taskStatuses.filter(s => s !== statusToDelete);
+    setTaskStatuses(newStatuses); // Optimistic update
+    try {
+      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+      toast({ title: "Success", description: `Status "${statusToDelete}" deleted.` });
+    } catch (error) {
+      toast({ title: "Error", description: "Could not delete status.", variant: "destructive" });
+      setTaskStatuses(taskStatuses); // Revert
+    }
+  };
+
   // --- Task Spaces Functions ---
   const fetchTaskSpaces = useCallback(async () => {
     if (!user?.uid) {
@@ -248,12 +303,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
           assignee: taskData.assignee || null,
           tags: taskData.tags || [],
           archived: taskData.archived || false,
-          completed: taskData.completed || false,
         };
         return cleanTaskData;
       });
 
-      await saveTaskSpaceService(user.uid, name, tasksToSave);
+      await saveTaskSpaceService(user.uid, name, tasksToSave, taskStatuses);
       await fetchTaskSpaces();
       toast({ title: "Success", description: `Task space "${name}" saved.` });
     } catch (error) {
@@ -268,7 +322,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     try {
-      await loadTasksFromSpace(user.uid, spaceId);
+      const loadedSpace = await loadTasksFromSpace(user.uid, spaceId);
+      if (loadedSpace.taskStatuses) {
+        await updateUserProfile(user.uid, { taskStatuses: loadedSpace.taskStatuses });
+      }
+      await fetchUserProfile(); // Refetch profile to get new statuses
       await fetchUserTasks(); // This reloads the tasks into the main state
       toast({ title: "Success", description: "Task space loaded." });
     } catch (error) {
@@ -283,8 +341,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     try {
-      const newSpace = await saveTaskSpaceService(user.uid, space.name, space.tasks);
-      await loadTasksFromSpace(user.uid, newSpace.id);
+      const newSpace = await saveTaskSpaceService(user.uid, space.name, space.tasks, space.taskStatuses || taskStatuses);
+      const loadedSpace = await loadTasksFromSpace(user.uid, newSpace.id);
+      if (loadedSpace.taskStatuses) {
+        await updateUserProfile(user.uid, { taskStatuses: loadedSpace.taskStatuses });
+      }
+      await fetchUserProfile();
       await fetchUserTasks();
       await fetchTaskSpaces();
       toast({ title: "Success", description: `Imported and loaded "${space.name}".` });
@@ -315,12 +377,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     setIsLoadingAi(true);
     setInsights(null);
 
-    const validStatuses = new Set(TASK_STATUSES);
-
     const validTasksForAnalysis = tasks.filter(task => 
       task.createdAt && typeof task.createdAt.toDate === 'function' &&
-      task.updatedAt && typeof task.updatedAt.toDate === 'function' &&
-      validStatuses.has(task.status)
+      task.updatedAt && typeof task.updatedAt.toDate === 'function'
     );
     
     if (validTasksForAnalysis.length < MIN_TASKS_FOR_AI) {
@@ -522,7 +581,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <AppDataContext.Provider value={{ 
+    <AppDataContext.Provider value={{
+      isLoadingAppData,
       tasks, 
       setTasks,
       isLoadingTasks, 
@@ -532,6 +592,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       updateTaskField,
       deleteTask,
       moveTask,
+      taskStatuses,
+      addStatus,
+      deleteStatus,
       taskSpaces,
       fetchTaskSpaces,
       saveCurrentTaskSpace,

@@ -4,7 +4,6 @@
 import React, { useState } from 'react';
 import type { Task, TaskStatus } from "@/types";
 import { KanbanColumn } from "./kanban-column";
-import { TASK_STATUSES } from "@/lib/constants";
 import { useAppData } from "@/contexts/app-data-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -23,11 +22,11 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArchiveToggle, showArchived }: KanbanBoardProps) {
-  const { moveTask, setTasks } = useAppData();
+  const { moveTask, setTasks, taskStatuses } = useAppData();
   const isMobile = useIsMobile();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   
-  const columns = showArchived ? ['Archived'] : TASK_STATUSES;
+  const columns = showArchived ? ['Archived'] : taskStatuses;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -87,9 +86,8 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
     "grid gap-4 h-full",
     isMobile 
       ? "grid-flow-col auto-cols-[90%] overflow-x-auto snap-x snap-mandatory p-2" 
-      : "grid-cols-5" 
+      : `grid-cols-${columns.length}`
   );
-
 
   return (
     <DndContext 
@@ -98,7 +96,7 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
     >
-      <div className={containerClasses}>
+      <div className={containerClasses} style={{ gridTemplateColumns: isMobile ? undefined : `repeat(${columns.length}, minmax(0, 1fr))` }}>
         {columns.map(status => {
           const tasksForStatus = tasks.filter(task => 
             showArchived ? task.archived : task.status === status

@@ -9,6 +9,8 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
+import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
+
 
 const USER_COLLECTION = 'users';
 
@@ -23,6 +25,7 @@ const fromFirestore = (snapshot: any): UserProfile | null => {
         displayName: data.displayName || '',
         plan: data.plan || 'free',
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
+        taskStatuses: data.taskStatuses || DEFAULT_TASK_STATUSES, // Add task statuses
     };
 };
 
@@ -44,6 +47,7 @@ export const createUserProfile = async (userData: UserProfile): Promise<void> =>
         const dataToSet = {
             ...userData,
             createdAt: serverTimestamp(),
+            taskStatuses: DEFAULT_TASK_STATUSES, // Set default statuses for new users
         };
         // Use setDoc with merge: true to avoid overwriting if it somehow already exists
         await setDoc(userRef, dataToSet, { merge: true }); 

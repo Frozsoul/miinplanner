@@ -17,7 +17,7 @@ import type { TaskStatus, TaskPriority } from '@/types';
 const InsightTaskSchema = z.object({
   id: z.string(),
   title: z.string(),
-  status: z.enum(['To Do', 'In Progress', 'Done', 'Pending', 'Review', 'Blocked']),
+  status: z.string(), // status is now a generic string
   priority: z.enum(['Low', 'Medium', 'High', 'Urgent']),
   createdAt: z.string().describe("The task's creation date in ISO 8601 format."),
   updatedAt: z.string().describe("The task's last updated date in ISO 8601 format."),
@@ -70,15 +70,17 @@ const prompt = ai.definePrompt({
 Your goal is to analyze the provided list of tasks and generate a comprehensive, data-driven insights report.
 The current date is {{currentDate}}. Use this for all time-based calculations.
 
+The user has defined their own task statuses. The final status in their workflow (e.g., 'Done') should be considered as the completed state.
+
 Your response MUST be a JSON object matching the provided schema.
 
 Analysis Guidelines:
 1.  **summary**: Write a 2-3 sentence executive summary of the user's current productivity state. Highlight one key strength and one major area for improvement.
-2.  **productivityScore**: Calculate a score from 0-100. Consider factors like: the ratio of completed to total tasks, the number of overdue tasks, and how many tasks are high-priority. A high completion rate and few overdue tasks should result in a high score.
-3.  **completionRate**: Count tasks moved to 'Done' status within the last 24 hours (daily) and last 7 days (weekly) from the current date.
-4.  **averageCompletionTimeHours**: For tasks with status 'Done', calculate the average time difference in hours between 'createdAt' and their final 'updatedAt'. If no tasks are 'Done', return 0.
-5.  **atRiskTasks**: Identify tasks that are NOT 'Done' and their 'dueDate' is within the next 3 days of '{{currentDate}}' or is already in the past.
-6.  **stalledTasks**: Identify tasks with a status of 'To Do' or 'In Progress' that have not been updated (using 'updatedAt') in over 7 days from '{{currentDate}}'.
+2.  **productivityScore**: Calculate a score from 0-100. Consider factors like: the ratio of completed to total tasks, the number of overdue tasks, and how many tasks are high-priority. A high completion rate and few overdue tasks should result in a high score. Assume the last status in a typical workflow (e.g., 'Done') means completed.
+3.  **completionRate**: Count tasks moved to the final status (e.g., 'Done') within the last 24 hours (daily) and last 7 days (weekly) from the current date.
+4.  **averageCompletionTimeHours**: For completed tasks, calculate the average time difference in hours between 'createdAt' and their final 'updatedAt'. If no tasks are completed, return 0.
+5.  **atRiskTasks**: Identify tasks that are not in a final/completed state and their 'dueDate' is within the next 3 days of '{{currentDate}}' or is already in the past.
+6.  **stalledTasks**: Identify tasks in an initial or in-progress state that have not been updated (using 'updatedAt') in over 7 days from '{{currentDate}}'.
 7.  **proactiveSuggestions**: Based on all the data, provide 3-5 actionable, insightful suggestions. Be specific. Examples: "You have 3 high-priority tasks due this week. Consider breaking 'Task Title' into smaller sub-tasks to make progress." or "The task 'Stalled Task Title' hasn't been updated in 10 days. It might be blocked. Consider checking in on its status."
 
 Analyze the following tasks:

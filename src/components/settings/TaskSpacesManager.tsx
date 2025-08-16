@@ -24,6 +24,7 @@ import {
 export function TaskSpacesManager() {
   const { 
     tasks,
+    taskStatuses,
     taskSpaces, 
     fetchTaskSpaces, 
     saveCurrentTaskSpace, 
@@ -38,7 +39,7 @@ export function TaskSpacesManager() {
 
   useEffect(() => {
     fetchTaskSpaces();
-  // eslint-disable-next-line react-hooks-exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSave = async () => {
@@ -72,7 +73,8 @@ export function TaskSpacesManager() {
     const space: Omit<TaskSpace, 'id'> = {
       name: `MiinPlanner Export ${new Date().toLocaleDateString()}`,
       createdAt: new Date(),
-      tasks: tasks.map(({ id, createdAt, updatedAt, userId, ...taskData }) => taskData)
+      tasks: tasks.map(({ id, createdAt, updatedAt, userId, ...taskData }) => taskData),
+      taskStatuses: taskStatuses
     };
     const dataStr = JSON.stringify(space, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -100,7 +102,7 @@ export function TaskSpacesManager() {
         }
 
         setIsLoading(true);
-        await importTaskSpace(importedSpace as TaskSpace);
+        await importTaskSpace(importedSpace as Omit<TaskSpace, 'id'>);
         toast({ title: "Success", description: "Task space imported successfully." });
       } catch (error) {
         console.error("Import error:", error);
@@ -119,7 +121,7 @@ export function TaskSpacesManager() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><ListChecks />Task Spaces</CardTitle>
         <CardDescription>
-          Save, load, or share your entire set of tasks.
+          Save, load, or share your entire set of tasks and custom statuses.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -141,7 +143,7 @@ export function TaskSpacesManager() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Load Task Space?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will replace all of your current tasks with the tasks from &quot;{space.name}&quot;. This action cannot be undone.
+                            This will replace all of your current tasks and statuses with the ones from &quot;{space.name}&quot;. This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

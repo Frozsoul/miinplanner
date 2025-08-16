@@ -1,7 +1,7 @@
 
 import type { Timestamp } from "firebase/firestore";
 
-export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Pending' | 'Review' | 'Blocked';
+export type TaskStatus = string; // No longer a union type, now a generic string
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
 export interface Task {
@@ -9,7 +9,7 @@ export interface Task {
   title: string;
   description?: string;
   priority: TaskPriority;
-  status: TaskStatus; // Changed from stage
+  status: TaskStatus;
   startDate?: string; // Stored as ISO string
   dueDate?: string; // Stored as ISO string
   channel?: string;
@@ -31,6 +31,7 @@ export interface TaskSpace {
   name: string;
   createdAt: Date | Timestamp;
   tasks: TaskData[];
+  taskStatuses?: TaskStatus[]; // Add statuses to task space
 }
 
 // AI Insights Types
@@ -112,6 +113,7 @@ export interface UserProfile {
   displayName?: string;
   plan: UserPlan;
   createdAt: Date | Timestamp;
+  taskStatuses?: TaskStatus[]; // Add custom statuses
 }
 
 

@@ -21,7 +21,7 @@ import { TaskForm } from "@/components/tasks/TaskForm";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants";
+import { TASK_PRIORITIES } from "@/lib/constants";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,7 +43,8 @@ export default function TasksPage() {
     addTask: addTaskContext, 
     updateTask: updateTaskContext, 
     deleteTask: deleteTaskContext, 
-    isLoadingTasks 
+    isLoadingTasks,
+    taskStatuses
   } = useAppData();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -211,7 +212,7 @@ export default function TasksPage() {
                     <Label htmlFor="status-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Status</Label>
                      <MultiSelect
                         title="Status"
-                        options={TASK_STATUSES.map(s => ({ value: s, label: s }))}
+                        options={taskStatuses.map(s => ({ value: s, label: s }))}
                         selected={statusFilter}
                         onChange={setStatusFilter}
                     />

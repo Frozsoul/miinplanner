@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/tasks/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Loader2 } from "lucide-react";
-import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/constants";
+import { TASK_PRIORITIES } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 
 const initialFormState: Partial<TaskData> & { startDateObj?: Date, dueDateObj?: Date } = {
@@ -37,18 +37,18 @@ const initialFormState: Partial<TaskData> & { startDateObj?: Date, dueDateObj?: 
 };
 
 export function QuickAddTask() {
-  const { addTask } = useAppData();
+  const { addTask, taskStatuses } = useAppData();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState({ ...initialFormState, status: taskStatuses[0] || 'To Do' });
 
   const handleChange = (field: keyof typeof formData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const resetForm = () => {
-    setFormData(initialFormState);
+    setFormData({ ...initialFormState, status: taskStatuses[0] || 'To Do' });
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,7 +148,7 @@ export function QuickAddTask() {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TASK_STATUSES.map((s) => (
+                  {taskStatuses.map((s) => (
                     <SelectItem key={s} value={s}>
                       {s}
                     </SelectItem>

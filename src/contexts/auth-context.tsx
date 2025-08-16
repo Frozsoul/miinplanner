@@ -22,6 +22,7 @@ interface AuthContextType {
   user: FirebaseUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  fetchUserProfile: () => Promise<void>;
   login: (data: LoginFormData) => Promise<FirebaseUser | null>;
   signup: (data: SignupFormData) => Promise<FirebaseUser | null>;
   loginWithGoogle: () => Promise<FirebaseUser | null>;
@@ -43,6 +44,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
   const router = useRouter();
 
+  const fetchUserProfile = useCallback(async () => {
+    if (auth.currentUser) {
+        const profile = await getUserProfile(auth.currentUser.uid);
+        setUserProfile(profile);
+    }
+  }, []);
+
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
     if (firebaseUser?.emailVerified) {
       setUser(firebaseUser);
@@ -57,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             createdAt: new Date(),
         };
         await createUserProfile(newProfileData);
-        profile = newProfileData;
+        profile = await getUserProfile(firebaseUser.uid); // Re-fetch to get server defaults
       }
       setUserProfile(profile);
     } else {
@@ -168,7 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, login, signup, loginWithGoogle, logout, updateUserPlan, error, clearError, verificationEmailSent, setVerificationEmailSent }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, fetchUserProfile, login, signup, loginWithGoogle, logout, updateUserPlan, error, clearError, verificationEmailSent, setVerificationEmailSent }}>
       {children}
     </AuthContext.Provider>
   );
