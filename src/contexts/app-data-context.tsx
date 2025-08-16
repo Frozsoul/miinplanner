@@ -2,10 +2,11 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask, TaskStatus, DashboardGreeting, GreetingContext } from '@/types';
+import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask, TaskStatus, DashboardGreeting, GreetingContext, TaskSpace } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getSocialMediaPosts, addSocialMediaPost as addPostService, updateSocialMediaPost as updatePostService, deleteSocialMediaPost as deletePostService } from '@/services/social-media-post-service';
+import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService } from '@/services/task-space-service';
 import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
 import { generateDashboardGreeting as aiGenerateDashboardGreeting } from '@/ai/flows/generate-dashboard-greeting';
 import { generateTaskManagerGreeting as aiGenerateTaskManagerGreeting } from '@/ai/flows/generate-task-manager-greeting';
@@ -27,6 +28,13 @@ interface AppDataContextType {
   deleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, newStatus: TaskStatus, newIndex: number) => Promise<void>;
 
+  // Task Spaces
+  taskSpaces: TaskSpace[];
+  fetchTaskSpaces: () => Promise<void>;
+  saveCurrentTaskSpace: (name: string) => Promise<void>;
+  loadTaskSpace: (spaceId: string) => Promise<void>;
+  deleteTaskSpace: (spaceId: string) => Promise<void>;
+  importTaskSpace: (space: TaskSpace) => Promise<void>;
 
   // AI Insights
   insights: AIInsights | SimpleInsights | null;
@@ -58,6 +66,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   
+  // Task Spaces State
+  const [taskSpaces, setTaskSpaces] = useState<TaskSpace[]>([]);
+
   // AI Insights State
   const [insights, setInsights] = useState<AIInsights | SimpleInsights | null>(null);
   const [greetings, setGreetings] = useState<Partial<Record<GreetingContext, DashboardGreeting>>>({});
@@ -148,8 +159,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     try {
       const payload = { [field]: value };
       await updateTaskService(user.uid, taskId, payload);
-      // Optionally toast on success, but can be noisy for inline edits
-      // toast({ title: "Task Updated", description: `Task ${field} was updated.`});
     } catch (error) {
       console.error(`AppDataContext: Failed to update task field ${field}:`, error);
       toast({ title: "Error", description: `Could not update task ${field}.`, variant: "destructive" });
@@ -178,11 +187,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         await updateTaskService(user.uid, taskId, { status: newStatus });
-        // Don't toast for drag-and-drop, it's noisy and optimistic
     } catch (error) {
         console.error("AppDataContext: Failed to move task:", error);
         toast({ title: "Error", description: "Could not move task. Reverting.", variant: "destructive" });
-        // Revert on error by re-fetching
         fetchUserTasks(); 
     }
   };
@@ -207,6 +214,85 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     fetchUserTasks();
   }, [fetchUserTasks]);
 
+  // --- Task Spaces Functions ---
+  const fetchTaskSpaces = useCallback(async () => {
+    if (!user?.uid) {
+      setTaskSpaces([]);
+      return;
+    }
+    try {
+      const spaces = await getTaskSpaces(user.uid);
+      setTaskSpaces(spaces);
+    } catch (error) {
+      console.error("AppDataContext: Failed to fetch task spaces:", error);
+      toast({ title: "Error", description: "Could not fetch task spaces.", variant: "destructive" });
+    }
+  }, [user, toast]);
+
+  const saveCurrentTaskSpace = async (name: string) => {
+    if (!user?.uid) {
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    try {
+      const tasksToSave = tasks.map(({ id, createdAt, updatedAt, userId, ...taskData }) => taskData);
+      await saveTaskSpaceService(user.uid, name, tasksToSave);
+      await fetchTaskSpaces();
+      toast({ title: "Success", description: `Task space "${name}" saved.` });
+    } catch (error) {
+      console.error("AppDataContext: Failed to save task space:", error);
+      toast({ title: "Error", description: "Could not save task space.", variant: "destructive" });
+    }
+  };
+
+  const loadTaskSpace = async (spaceId: string) => {
+    if (!user?.uid) {
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    try {
+      await loadTasksFromSpace(user.uid, spaceId);
+      await fetchUserTasks(); // This reloads the tasks into the main state
+      toast({ title: "Success", description: "Task space loaded." });
+    } catch (error) {
+      console.error("AppDataContext: Failed to load task space:", error);
+      toast({ title: "Error", description: "Could not load task space.", variant: "destructive" });
+    }
+  };
+
+  const importTaskSpace = async (space: TaskSpace) => {
+    if (!user?.uid) {
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    try {
+      const newSpace = await saveTaskSpaceService(user.uid, space.name, space.tasks);
+      await loadTasksFromSpace(user.uid, newSpace.id);
+      await fetchUserTasks();
+      await fetchTaskSpaces();
+      toast({ title: "Success", description: `Imported and loaded "${space.name}".` });
+    } catch (error) {
+      console.error("AppDataContext: Failed to import task space:", error);
+      toast({ title: "Error", description: "Could not import task space.", variant: "destructive" });
+    }
+  };
+
+  const deleteTaskSpace = async (spaceId: string) => {
+    if (!user?.uid) {
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    try {
+      await deleteTaskSpaceService(user.uid, spaceId);
+      await fetchTaskSpaces();
+      toast({ title: "Success", description: "Task space deleted." });
+    } catch (error) {
+      console.error("AppDataContext: Failed to delete task space:", error);
+      toast({ title: "Error", description: "Could not delete task space.", variant: "destructive" });
+    }
+  };
+
+
   // --- AI Insights Functions ---
   const generateInsights = async () => {
     setIsLoadingAi(true);
@@ -214,8 +300,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const validStatuses = new Set(TASK_STATUSES);
 
-    // Filter for tasks that have the necessary data for insights
-    // AI can analyze archived tasks, so we don't filter them out here.
     const validTasksForAnalysis = tasks.filter(task => 
       task.createdAt && typeof task.createdAt.toDate === 'function' &&
       task.updatedAt && typeof task.updatedAt.toDate === 'function' &&
@@ -223,10 +307,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     );
     
     if (validTasksForAnalysis.length < MIN_TASKS_FOR_AI) {
-      // Generate simple, local insights
       const simpleReport: SimpleInsights = {
         type: 'simple',
-        totalTasks: tasks.filter(t => !t.archived).length, // Only count active tasks for this metric
+        totalTasks: tasks.filter(t => !t.archived).length,
         tasksToDo: tasks.filter(t => !t.archived && (t.status === 'To Do' || t.status === 'In Progress')).length,
         highPriorityTasks: tasks.filter(t => !t.archived && (t.priority === 'High' || t.priority === 'Urgent')).length,
         message: `You currently have ${validTasksForAnalysis.length} tasks with complete data. Reach ${MIN_TASKS_FOR_AI} to unlock advanced AI analysis, including productivity scores and proactive suggestions!`,
@@ -237,7 +320,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Prepare data for the full AI flow
     const insightTasks: InsightTask[] = validTasksForAnalysis.map(t => ({
       id: t.id,
       title: t.title,
@@ -433,6 +515,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       updateTaskField,
       deleteTask,
       moveTask,
+      taskSpaces,
+      fetchTaskSpaces,
+      saveCurrentTaskSpace,
+      loadTaskSpace,
+      deleteTaskSpace,
+      importTaskSpace,
       insights, 
       greetings,
       isLoadingAi, 

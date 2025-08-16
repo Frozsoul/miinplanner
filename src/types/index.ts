@@ -25,6 +25,14 @@ export interface Task {
 // For creating/updating tasks, omitting server-generated fields and id
 export type TaskData = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'completed'> & { completed?: boolean };
 
+// Task Spaces
+export interface TaskSpace {
+  id: string;
+  name: string;
+  createdAt: Date | Timestamp;
+  tasks: TaskData[];
+}
+
 // AI Insights Types
 export interface InsightTask {
   id: string;
