@@ -34,6 +34,7 @@ interface AppDataContextType {
   taskStatuses: TaskStatus[];
   addStatus: (status: TaskStatus) => Promise<void>;
   deleteStatus: (status: TaskStatus) => Promise<void>;
+  reorderStatuses: (startIndex: number, endIndex: number) => Promise<void>;
 
   // Task Spaces
   taskSpaces: TaskSpace[];
@@ -41,7 +42,7 @@ interface AppDataContextType {
   saveCurrentTaskSpace: (name: string) => Promise<void>;
   loadTaskSpace: (spaceId: string) => Promise<void>;
   deleteTaskSpace: (spaceId: string) => Promise<void>;
-  importTaskSpace: (space: TaskSpace) => Promise<void>;
+  importTaskSpace: (space: Omit<TaskSpace, 'id'>) => Promise<void>;
 
   // AI Insights
   insights: AIInsights | SimpleInsights | null;
@@ -269,6 +270,22 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const reorderStatuses = async (startIndex: number, endIndex: number) => {
+    if (!user?.uid) return;
+    const originalStatuses = [...taskStatuses];
+    const [removed] = originalStatuses.splice(startIndex, 1);
+    originalStatuses.splice(endIndex, 0, removed);
+    
+    setTaskStatuses(originalStatuses); // Optimistic update
+    
+    try {
+      await updateUserProfile(user.uid, { taskStatuses: originalStatuses });
+    } catch (error) {
+      toast({ title: "Error", description: "Could not save new status order.", variant: "destructive" });
+      setTaskStatuses(taskStatuses); // Revert
+    }
+  };
+
   // --- Task Spaces Functions ---
   const fetchTaskSpaces = useCallback(async () => {
     if (!user?.uid) {
@@ -335,7 +352,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const importTaskSpace = async (space: TaskSpace) => {
+  const importTaskSpace = async (space: Omit<TaskSpace, 'id'>) => {
     if (!user?.uid) {
       toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
       return;
@@ -595,6 +612,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       taskStatuses,
       addStatus,
       deleteStatus,
+      reorderStatuses,
       taskSpaces,
       fetchTaskSpaces,
       saveCurrentTaskSpace,
