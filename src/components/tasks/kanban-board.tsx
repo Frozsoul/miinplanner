@@ -29,13 +29,17 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
   const columns = showArchived ? ['Archived'] : taskStatuses;
 
   const sensors = useSensors(
-    // Conditionally enable the PointerSensor only if not on a mobile device
-    !isMobile ? useSensor(PointerSensor, {
+    useSensor(PointerSensor, {
+      // Conditionally enable the PointerSensor only if not on a mobile device
+      // This is the correct way to disable drag-and-drop on mobile
       activationConstraint: {
-        distance: 8, // Require pointer to move 8px to start dragging
+        distance: 8,
       },
-    }) : undefined
+      // The `enabled` option is the correct way to conditionally disable a sensor
+      enabled: !isMobile
+    })
   );
+
 
   const findColumn = (id: string | number) => {
     if (typeof id !== 'string') return null;
