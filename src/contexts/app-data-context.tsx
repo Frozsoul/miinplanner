@@ -235,7 +235,24 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     try {
-      const tasksToSave = tasks.map(({ id, createdAt, updatedAt, userId, ...taskData }) => taskData);
+      const tasksToSave = tasks.map(({ id, createdAt, updatedAt, userId, ...taskData }) => {
+        // Ensure no undefined values are being sent to Firestore
+        const cleanTaskData: TaskData = {
+          title: taskData.title,
+          description: taskData.description || null,
+          priority: taskData.priority,
+          status: taskData.status,
+          startDate: taskData.startDate || null,
+          dueDate: taskData.dueDate || null,
+          channel: taskData.channel || null,
+          assignee: taskData.assignee || null,
+          tags: taskData.tags || [],
+          archived: taskData.archived || false,
+          completed: taskData.completed || false,
+        };
+        return cleanTaskData;
+      });
+
       await saveTaskSpaceService(user.uid, name, tasksToSave);
       await fetchTaskSpaces();
       toast({ title: "Success", description: `Task space "${name}" saved.` });
