@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import type { Task, TaskStatus } from "@/types";
 import { KanbanColumn } from "./kanban-column";
 import { useAppData } from "@/contexts/app-data-context";
@@ -24,22 +24,17 @@ interface KanbanBoardProps {
 export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArchiveToggle, showArchived }: KanbanBoardProps) {
   const { moveTask, setTasks, taskStatuses } = useAppData();
   const isMobile = useIsMobile();
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = React.useState<Task | null>(null);
   
   const columns = showArchived ? ['Archived'] : taskStatuses;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      // This is the correct way to conditionally enable/disable the sensor
-      // It prevents drag-and-drop on mobile while maintaining hook stability.
       activationConstraint: {
         distance: 8,
       },
-      // The `enabled` option is the correct way to conditionally disable a sensor
-      enabled: !isMobile
     })
   );
-
 
   const findColumn = (id: string | number) => {
     if (typeof id !== 'string') return null;
@@ -68,7 +63,6 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
     const overColumn = findColumn(over.id);
 
     if (!activeColumn || !overColumn || activeColumn === overColumn) {
-        // Handle reordering within the same column if you want to persist it
         if(activeColumn && overColumn && activeColumn === overColumn && active.id !== over.id){
              setTasks((currentTasks) => {
                 const activeIndex = currentTasks.findIndex((t) => t.id === active.id);
@@ -83,7 +77,6 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
      const overColumnTasks = tasks.filter(t => t.status === newStatus);
      const overIndex = over.data.current?.sortable?.index ?? overColumnTasks.length;
 
-     // Call context function to update state and firestore
      moveTask(activeId, newStatus, overIndex);
   };
   

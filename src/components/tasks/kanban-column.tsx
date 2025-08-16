@@ -61,7 +61,7 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
             <div 
               ref={setNodeRef}
               className={cn(
-                "p-2 md:p-4 space-y-4 h-full transition-colors duration-200",
+                "p-3 space-y-3 h-full transition-colors duration-200",
                 isOver && "bg-accent/20"
               )}
             >
@@ -88,4 +88,3 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
     </div>
   );
 }
-
