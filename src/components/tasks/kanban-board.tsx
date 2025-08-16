@@ -30,8 +30,8 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      // Conditionally enable the PointerSensor only if not on a mobile device
-      // This is the correct way to disable drag-and-drop on mobile
+      // This is the correct way to conditionally enable/disable the sensor
+      // It prevents drag-and-drop on mobile while maintaining hook stability.
       activationConstraint: {
         distance: 8,
       },
