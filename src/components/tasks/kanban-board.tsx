@@ -7,7 +7,7 @@ import { KanbanColumn } from "./kanban-column";
 import { useAppData } from "@/contexts/app-data-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { DndContext, type DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners, type Active, type Over } from "@dnd-kit/core";
+import { DndContext, type DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { TaskCard } from './task-card';
 
@@ -85,7 +85,7 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
   const containerClasses = cn(
     "grid gap-4 h-full",
     isMobile 
-      ? "grid-flow-col auto-cols-[90%] overflow-x-auto snap-x snap-mandatory p-2" 
+      ? "grid-cols-1" 
       : `grid-cols-${columns.length}`
   );
 
@@ -95,6 +95,8 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
         collisionDetection={closestCorners}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
+        // Disable DND on mobile for better UX
+        disabled={isMobile}
     >
       <div className={containerClasses} style={{ gridTemplateColumns: isMobile ? undefined : `repeat(${columns.length}, minmax(0, 1fr))` }}>
         {columns.map(status => {
@@ -125,6 +127,7 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
                 onDelete={onDeleteTask}
                 onView={onViewTask}
                 onArchiveToggle={onArchiveToggle}
+                isOverlay
             />
         ) : null}
       </DragOverlay>
