@@ -22,47 +22,39 @@ interface TaskFormProps {
   isSubmitting: boolean;
 }
 
-const initialFormState: TaskData & { startDateObj?: Date; dueDateObj?: Date; tagsString?: string } = {
-  title: "",
-  description: "",
-  priority: "Medium",
-  status: "To Do",
-  startDateObj: undefined,
-  dueDateObj: undefined,
-  channel: "",
-  assignee: "",
-  tagsString: "",
-  tags: [],
-};
+const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus: TaskStatus): TaskData & { startDateObj?: Date; dueDateObj?: Date; tagsString?: string } => {
+    if (!taskToEdit) {
+        return {
+            title: "",
+            description: "",
+            priority: "Medium",
+            status: defaultStatus,
+            startDateObj: undefined,
+            dueDateObj: undefined,
+            channel: "",
+            assignee: "",
+            tagsString: "",
+            tags: [],
+        };
+    }
 
-export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFormProps) {
-  const { taskStatuses } = useAppData();
-  
-  // Initialize state with default status from context
-  const [formData, setFormData] = useState({
-      ...initialFormState,
-      status: taskStatuses[0] || 'To Do'
-  });
-
-  useEffect(() => {
-    if (taskToEdit) {
-      let startDateObject: Date | undefined = undefined;
-      if (taskToEdit.startDate) {
+    let startDateObject: Date | undefined = undefined;
+    if (taskToEdit.startDate) {
         try {
-          const parsed = parseISO(taskToEdit.startDate);
-          if (isValid(parsed)) startDateObject = parsed;
+            const parsed = parseISO(taskToEdit.startDate);
+            if (isValid(parsed)) startDateObject = parsed;
         } catch (e) {}
-      }
-      
-      let dueDateObject: Date | undefined = undefined;
-      if (taskToEdit.dueDate) {
-        try {
-          const parsed = parseISO(taskToEdit.dueDate);
-          if (isValid(parsed)) dueDateObject = parsed;
-        } catch (e) {}
-      }
+    }
 
-      setFormData({
+    let dueDateObject: Date | undefined = undefined;
+    if (taskToEdit.dueDate) {
+        try {
+            const parsed = parseISO(taskToEdit.dueDate);
+            if (isValid(parsed)) dueDateObject = parsed;
+        } catch (e) {}
+    }
+
+    return {
         title: taskToEdit.title,
         description: taskToEdit.description || "",
         priority: taskToEdit.priority,
@@ -73,14 +65,17 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
         assignee: taskToEdit.assignee || "",
         tagsString: (taskToEdit.tags || []).join(", "),
         tags: taskToEdit.tags || [],
-      });
-    } else {
-      // For new tasks, ensure the default status is the first one from the user's custom list
-      setFormData({
-        ...initialFormState,
-        status: taskStatuses[0] || 'To Do'
-      });
-    }
+    };
+};
+
+
+export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFormProps) {
+  const { taskStatuses } = useAppData();
+  const [formData, setFormData] = useState(() => getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do'));
+
+  // This effect is now only needed to reset the form if the taskToEdit prop changes while the modal is open.
+  useEffect(() => {
+      setFormData(getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do'));
   }, [taskToEdit, taskStatuses]);
 
   const handleChange = (field: keyof typeof formData, value: any) => {
