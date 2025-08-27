@@ -35,6 +35,7 @@ const fromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>): Task => {
     tags: data.tags || [],
     completed: data.completed || (data.status === 'Done'), // Infer completed from status if not present
     archived: data.archived || false, // Add archived field
+    order: data.order, // Add order field
     createdAt: data.createdAt, // This will be a Firestore Timestamp
     updatedAt: data.updatedAt, // This will be a Firestore Timestamp
     userId: data.userId,
@@ -49,8 +50,13 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
   }
   try {
     const tasksRef = collection(db, TASK_COLLECTION);
-    // Fetch all tasks for the user, filtering will be done on the client
-    const q = query(tasksRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    // Fetch all tasks for the user, sorting by order first, then by creation date.
+    const q = query(
+        tasksRef, 
+        where('userId', '==', userId), 
+        orderBy('order', 'asc'), 
+        orderBy('createdAt', 'desc')
+    );
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(fromFirestore);
   } catch (error) {
@@ -71,6 +77,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
       userId,
       completed: taskData.status === 'Done' ? true : (taskData.completed || false),
       archived: false, // New tasks are never archived
+      order: taskData.order ?? Date.now(), // Use provided order or timestamp for sorting
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
@@ -94,6 +101,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
         userId,
         archived: false,
         completed: docData.completed,
+        order: docData.order,
         // createdAt and updatedAt are Timestamps from server, not immediately available.
         // For optimistic UI, we can use client-side new Date() if needed, but fromFirestore handles real values.
     } as Task; // Cast as Task, acknowledging serverTimestamps aren't here yet.
@@ -148,6 +156,11 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
     if (taskUpdate.hasOwnProperty('archived')) {
         updateData.archived = taskUpdate.archived;
     }
+    
+    if (taskUpdate.hasOwnProperty('order')) {
+        updateData.order = taskUpdate.order;
+    }
+
 
     // Ensure we don't try to update userId or createdAt directly
     delete updateData.userId;

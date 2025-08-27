@@ -17,6 +17,7 @@ export interface Task {
   tags?: string[];
   completed: boolean;
   archived: boolean; // Added for archiving
+  order?: number; // Added for explicit sorting
   createdAt: Timestamp; // Firestore server timestamp
   updatedAt: Timestamp; // Firestore server timestamp
   userId: string;
