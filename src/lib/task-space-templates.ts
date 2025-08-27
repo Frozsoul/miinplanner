@@ -18,6 +18,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 0,
         "description": "Try editing, moving, or deleting this task to familiarize yourself with the board. Add new tasks to kick off your project!",
+        "channel": "App",
         "tags": ["welcome", "tutorial"]
       }
     ]
@@ -33,6 +34,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Urgent",
         "order": 0,
         "description": "List all income and expenses. Use a budgeting app or spreadsheet for clarity.",
+        "channel": "App",
         "tags": ["budget", "finance"]
       },
       {
@@ -41,6 +43,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 1,
         "description": "Check bank statements and cancel subscriptions you no longer use (e.g., streaming, gym).",
+        "channel": "Website",
         "tags": ["savings"]
       },
       {
@@ -49,6 +52,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 2,
         "description": "Set up a weekly transfer of $25-$50 to a savings account.",
+        "channel": "Bank",
         "tags": ["savings", "automation"]
       },
       {
@@ -57,6 +61,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 3,
         "description": "Avoid eating out to save money. Plan meals in advance.",
+        "channel": "In-Person",
         "tags": ["weekly", "savings"]
       },
       {
@@ -65,6 +70,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 4,
         "description": "Compare weekly spending to your budget and adjust as needed.",
+        "channel": "App",
         "tags": ["weekly", "budget"]
       },
       {
@@ -73,6 +79,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 5,
         "description": "Assess savings progress and tweak budget if overspending.",
+        "channel": "App",
         "tags": ["checkpoint", "finance"]
       },
       {
@@ -81,6 +88,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 6,
         "description": "Evaluate total savings and plan for the next month.",
+        "channel": "App",
         "tags": ["milestone", "finance"]
       },
       {
@@ -89,6 +97,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Low",
         "order": 7,
         "description": "Pick 5 consecutive days to spend only on essentials (e.g., rent, utilities).",
+        "channel": "In-Person",
         "tags": ["challenge", "savings"]
       }
     ]
@@ -104,6 +113,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 0,
         "description": "Write a 1-2 sentence premise summarizing your book’s theme and genre.",
+        "channel": "Document",
         "tags": ["planning", "creative"]
       },
       {
@@ -112,6 +122,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 1,
         "description": "Create profiles for main characters (e.g., backstory, motivations).",
+        "channel": "Document",
         "tags": ["characters", "planning"]
       },
       {
@@ -120,6 +131,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 2,
         "description": "Map out the major plot points in a 3-act structure.",
+        "channel": "Document",
         "tags": ["structure", "planning"]
       },
       {
@@ -128,6 +140,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 3,
         "description": "Break down the story into chapters with key scenes.",
+        "channel": "Document",
         "tags": ["structure", "planning"]
       },
       {
@@ -136,6 +149,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 4,
         "description": "Start drafting the first chapter to set the tone.",
+        "channel": "Document",
         "tags": ["writing", "milestone"]
       },
       {
@@ -144,6 +158,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 5,
         "description": "Finish the first act of your manuscript.",
+        "channel": "Document",
         "tags": ["writing", "milestone"]
       },
       {
@@ -152,6 +167,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 6,
         "description": "Complete the second act, focusing on character development.",
+        "channel": "Document",
         "tags": ["writing"]
       },
       {
@@ -160,6 +176,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 7,
         "description": "Wrap up the first draft with a strong conclusion.",
+        "channel": "Document",
         "tags": ["writing", "milestone"]
       },
       {
@@ -168,6 +185,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 8,
         "description": "Review the draft for plot holes and character consistency.",
+        "channel": "Document",
         "tags": ["editing"]
       },
       {
@@ -176,6 +194,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 9,
         "description": "Send the draft to 3-5 beta readers for feedback.",
+        "channel": "Email",
         "tags": ["feedback", "editing"]
       },
       {
@@ -184,6 +203,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 10,
         "description": "Incorporate beta reader suggestions to improve the manuscript.",
+        "channel": "Document",
         "tags": ["editing", "revision"]
       },
       {
@@ -192,6 +212,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 11,
         "description": "Perform a line-by-line proofread for grammar and style.",
+        "channel": "Document",
         "tags": ["editing", "final"]
       }
     ]
@@ -207,6 +228,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 0,
         "description": "Define 3 specific goals (e.g., run 5k, lift 10% heavier, eat 5 veggie servings daily).",
+        "channel": "App",
         "tags": ["fitness", "planning"]
       },
       {
@@ -215,6 +237,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 1,
         "description": "Plan 45-minute workouts for Monday, Wednesday, and Friday.",
+        "channel": "App",
         "tags": ["workout", "schedule"]
       },
       {
@@ -223,6 +246,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 2,
         "description": "Create a meal plan for 5 healthy lunches and shop for ingredients.",
+        "channel": "App",
         "tags": ["nutrition", "planning"]
       },
       {
@@ -231,6 +255,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 3,
         "description": "Go for a 30-minute walk on Tuesday and Thursday.",
+        "channel": "In-Person",
         "tags": ["workout", "cardio"]
       },
       {
@@ -239,6 +264,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Low",
         "order": 4,
         "description": "Track water intake to stay hydrated.",
+        "channel": "App",
         "tags": ["nutrition", "daily"]
       },
       {
@@ -247,6 +273,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 5,
         "description": "Assess goal completion and plan next week’s fitness goals.",
+        "channel": "App",
         "tags": ["review", "fitness"]
       }
     ]
@@ -262,6 +289,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Urgent",
         "order": 0,
         "description": "Use Google Search Console to check for indexing errors.",
+        "channel": "Website",
         "tags": ["seo", "technical"]
       },
       {
@@ -270,6 +298,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 1,
         "description": "Run PageSpeed Insights and address critical issues.",
+        "channel": "Website",
         "tags": ["seo", "technical"]
       },
       {
@@ -278,6 +307,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 2,
         "description": "Use Google’s Mobile-Friendly Test to ensure responsiveness.",
+        "channel": "Website",
         "tags": ["seo", "technical"]
       },
       {
@@ -286,6 +316,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 3,
         "description": "Ensure unique, keyword-rich titles and meta descriptions for all pages.",
+        "channel": "Website",
         "tags": ["seo", "on-page"]
       },
       {
@@ -294,6 +325,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 4,
         "description": "Verify proper use of H1, H2 tags for content structure.",
+        "channel": "Website",
         "tags": ["seo", "on-page"]
       },
       {
@@ -302,6 +334,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 5,
         "description": "Use a tool like Screaming Frog to identify and fix broken links.",
+        "channel": "Website",
         "tags": ["seo", "on-page"]
       },
       {
@@ -310,6 +343,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 6,
         "description": "Identify and eliminate low-value or duplicate content.",
+        "channel": "Website",
         "tags": ["seo", "content"]
       },
       {
@@ -318,6 +352,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 7,
         "description": "Find high-potential pages to refresh and republish.",
+        "channel": "Website",
         "tags": ["seo", "content"]
       },
       {
@@ -326,6 +361,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 8,
         "description": "Summarize findings and prioritize fixes in a detailed report.",
+        "channel": "Document",
         "tags": ["seo", "reporting"]
       }
     ]
@@ -341,6 +377,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 0,
         "description": "Define measurable goals (e.g., 20% traffic increase) and KPIs.",
+        "channel": "Document",
         "tags": ["strategy", "content"]
       },
       {
@@ -349,6 +386,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 1,
         "description": "Generate 10+ blog post and video ideas aligned with goals.",
+        "channel": "Document",
         "tags": ["strategy", "content"]
       },
       {
@@ -357,6 +395,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 2,
         "description": "Plan content releases for the next 90 days.",
+        "channel": "App",
         "tags": ["strategy", "planning"]
       },
       {
@@ -365,6 +404,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 3,
         "description": "Draft and edit 4 high-quality blog posts.",
+        "channel": "Document",
         "tags": ["content", "writing"]
       },
       {
@@ -373,6 +413,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 4,
         "description": "Record and edit 2 engaging video tutorials.",
+        "channel": "Video",
         "tags": ["content", "video"]
       },
       {
@@ -381,6 +422,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 5,
         "description": "Create visuals for all content pieces using Canva or similar.",
+        "channel": "Design",
         "tags": ["content", "design"]
       },
       {
@@ -389,6 +431,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 6,
         "description": "Plan and schedule posts across platforms (e.g., Twitter, LinkedIn).",
+        "channel": "Social Media",
         "tags": ["promotion", "social"]
       },
       {
@@ -397,6 +440,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "Medium",
         "order": 7,
         "description": "Feature new content in a monthly newsletter.",
+        "channel": "Email",
         "tags": ["promotion", "email"]
       },
       {
@@ -405,6 +449,7 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
         "priority": "High",
         "order": 8,
         "description": "Review KPIs (traffic, engagement) and adjust strategy.",
+        "channel": "Analytics",
         "tags": ["analysis", "content"]
       }
     ]
