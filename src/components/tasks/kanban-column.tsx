@@ -31,13 +31,6 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
     disabled: isArchivedColumn,
   });
 
-  const handleArchiveAll = () => {
-    // We only archive tasks from the 'Done' column
-    if (status === 'Done') {
-        tasks.forEach(task => onArchiveToggle(task));
-    }
-  };
-  
   const taskIds = tasks.map(t => t.id);
 
   return (
@@ -47,12 +40,6 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
           {status}
           <span className="ml-2 text-sm font-normal bg-primary/10 text-primary rounded-full px-2 py-0.5">{tasks.length}</span>
         </h3>
-        {status === 'Done' && !isArchivedColumn && tasks.length > 0 && (
-            <Button size="sm" variant="ghost" onClick={handleArchiveAll} title="Archive all tasks in this column">
-                <Archive className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Archive All</span>
-            </Button>
-        )}
       </div>
        <SortableContext id={status} items={taskIds} strategy={verticalListSortingStrategy}>
           <ScrollArea 
