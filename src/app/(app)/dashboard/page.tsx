@@ -3,7 +3,6 @@
 import { useAppData } from "@/contexts/app-data-context";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickAddTask } from "@/components/dashboard/QuickAddTask";
-import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListChecks, CheckCircle, Clock, Users, BarChart3, CalendarClock, Send, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -33,9 +32,6 @@ export default function DashboardPage() {
   }, []);
 
   const activeTasks = tasks.filter(task => !task.archived);
-  const tasksToDo = activeTasks.filter(task => task.status === 'To Do').length;
-  const tasksInProgress = activeTasks.filter(task => task.status === 'In Progress').length;
-  const tasksDone = activeTasks.filter(task => task.status === 'Done').length;
   
   const upcomingTasks = activeTasks
     .filter(task => {
@@ -87,13 +83,6 @@ export default function DashboardPage() {
         icon={LayoutDashboardIcon}
         actionButtons={<QuickAddTask />} 
       />
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard title="Active Tasks" value={activeTasks.length} icon={ListChecks} description="All non-archived tasks" />
-        <SummaryCard title="Tasks To Do" value={tasksToDo} icon={Clock} description="Pending tasks" className="bg-destructive/80 text-destructive-foreground" />
-        <SummaryCard title="In Progress" value={tasksInProgress} icon={Users} description="Currently active tasks" className="bg-accent/80 text-accent-foreground" />
-        <SummaryCard title="Completed" value={tasksDone} icon={CheckCircle} description="Finished active tasks" className="bg-primary/90 text-primary-foreground" />
-      </div>
       
       <TaskSpacesSection />
 
