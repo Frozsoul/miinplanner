@@ -27,19 +27,18 @@ export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle }: T
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[30%]">Title</TableHead>
+            <TableHead className="w-[40%]">Title</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Due Date</TableHead>
             <TableHead>Channel</TableHead>
-            <TableHead>Assignee</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {tasks.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                 No tasks found. Add a new task to get started!
               </TableCell>
             </TableRow>
@@ -60,7 +59,6 @@ export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle }: T
                   <InlineDatePicker task={task} />
                 </TableCell>
                 <TableCell>{task.channel || "N/A"}</TableCell>
-                <TableCell>{task.assignee || "N/A"}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

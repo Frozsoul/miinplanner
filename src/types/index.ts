@@ -13,7 +13,6 @@ export interface Task {
   startDate?: string; // Stored as ISO string
   dueDate?: string; // Stored as ISO string
   channel?: string;
-  assignee?: string;
   tags?: string[];
   completed: boolean;
   archived: boolean; // Added for archiving

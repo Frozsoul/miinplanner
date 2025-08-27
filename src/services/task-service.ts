@@ -31,7 +31,6 @@ const fromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>): Task => {
     startDate: data.startDate ? (data.startDate as Timestamp).toDate().toISOString() : undefined,
     dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate().toISOString() : undefined,
     channel: data.channel || undefined,
-    assignee: data.assignee || undefined,
     tags: data.tags || [],
     completed: data.completed || (data.status === 'Done'), // Infer completed from status if not present
     archived: data.archived || false, // Add archived field
@@ -85,7 +84,6 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
       tags: taskData.tags || [],
       status: taskData.status || 'To Do',
       channel: taskData.channel || null,
-      assignee: taskData.assignee || null,
     };
     
     if (!taskData.description) {
@@ -148,9 +146,6 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
     }
     if (taskUpdate.hasOwnProperty('channel')) {
       updateData.channel = taskUpdate.channel || null;
-    }
-    if (taskUpdate.hasOwnProperty('assignee')) {
-      updateData.assignee = taskUpdate.assignee || null;
     }
 
     if (taskUpdate.hasOwnProperty('archived')) {

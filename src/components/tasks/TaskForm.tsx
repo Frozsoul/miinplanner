@@ -32,7 +32,6 @@ const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus:
             startDateObj: undefined,
             dueDateObj: undefined,
             channel: "",
-            assignee: "",
             tagsString: "",
             tags: [],
         };
@@ -62,7 +61,6 @@ const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus:
         startDateObj: startDateObject,
         dueDateObj: dueDateObject,
         channel: taskToEdit.channel || "",
-        assignee: taskToEdit.assignee || "",
         tagsString: (taskToEdit.tags || []).join(", "),
         tags: taskToEdit.tags || [],
     };
@@ -92,7 +90,6 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
       startDate: formData.startDateObj?.toISOString(),
       dueDate: formData.dueDateObj?.toISOString(),
       channel: formData.channel,
-      assignee: formData.assignee,
       tags: formData.tagsString?.split(',').map(tag => tag.trim()).filter(tag => tag) || [],
     };
     onSave(taskPayload);
@@ -128,15 +125,9 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
           </Select>
         </div>
       </div>
-       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-            <Label htmlFor="channel">Channel</Label>
-            <Input id="channel" value={formData.channel} onChange={e => handleChange('channel', e.target.value)} placeholder="e.g., Blog, Social Media" />
-        </div>
-        <div className="space-y-1.5">
-            <Label htmlFor="assignee">Assignee</Label>
-            <Input id="assignee" value={formData.assignee} onChange={e => handleChange('assignee', e.target.value)} placeholder="e.g., John Doe" />
-        </div>
+       <div className="space-y-1.5">
+        <Label htmlFor="channel">Channel</Label>
+        <Input id="channel" value={formData.channel} onChange={e => handleChange('channel', e.target.value)} placeholder="e.g., Blog, Social Media" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">

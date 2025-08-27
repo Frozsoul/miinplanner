@@ -33,7 +33,6 @@ const initialFormState: Partial<TaskData> & { startDateObj?: Date, dueDateObj?: 
   dueDateObj: undefined,
   tags: [],
   channel: "",
-  assignee: "",
 };
 
 export function QuickAddTask() {
@@ -68,7 +67,6 @@ export function QuickAddTask() {
       dueDate: formData.dueDateObj?.toISOString(),
       tags: [], // Tags can be added later via full edit
       channel: formData.channel,
-      assignee: formData.assignee,
     };
 
     try {
