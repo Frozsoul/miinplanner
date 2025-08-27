@@ -7,7 +7,7 @@ import { useAppData } from "@/contexts/app-data-context";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Play, Download, Loader2, ListChecks, Library, ArrowRight } from "lucide-react";
+import { Play, Download, Loader2, ListChecks, Library, ArrowRight, Sparkles } from "lucide-react";
 import type { TaskSpace } from "@/types";
 import {
   AlertDialog,
@@ -89,7 +89,14 @@ export function TaskSpacesSection() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">You haven&apos;t saved any task spaces yet. Go to settings to save your current setup!</p>
+            <div className="text-center text-muted-foreground p-4 border-2 border-dashed rounded-lg">
+                <Sparkles className="mx-auto h-8 w-8 text-primary mb-2" />
+                <h4 className="font-semibold text-foreground mb-1">Start Your Journey</h4>
+                <p className="text-sm mb-4">Create tasks and build your first workflow. Once you're happy with it, you can save it here as a reusable space!</p>
+                <Button asChild>
+                    <Link href="/tasks">Create Your First Task <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                </Button>
+            </div>
           )}
         </CardContent>
         <CardFooter>
