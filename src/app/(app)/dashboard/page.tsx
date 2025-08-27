@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { format, parseISO, isValid } from "date-fns";
 import { useEffect } from "react";
 import { MotivationalQuote } from "@/components/dashboard/MotivationalQuote";
+import { TaskSpacesSection } from "@/components/dashboard/TaskSpacesSection";
 
 
 const LayoutDashboardIcon = BarChart3;
@@ -93,6 +94,8 @@ export default function DashboardPage() {
         <SummaryCard title="In Progress" value={tasksInProgress} icon={Users} description="Currently active tasks" className="bg-accent/80 text-accent-foreground" />
         <SummaryCard title="Completed" value={tasksDone} icon={CheckCircle} description="Finished active tasks" className="bg-primary/90 text-primary-foreground" />
       </div>
+      
+      <TaskSpacesSection />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="shadow-sm">
