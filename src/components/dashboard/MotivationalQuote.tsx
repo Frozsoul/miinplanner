@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Info } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dashboardQuotes, tasksQuotes, calendarQuotes } from "@/lib/quotes";
 import type { GenerateQuoteInput } from "@/types";
@@ -30,7 +30,7 @@ export function MotivationalQuote({ context }: MotivationalQuoteProps) {
   if (!quote) {
     return (
         <div className="flex items-center gap-2 text-sm text-muted-foreground italic mt-1">
-            <Info className="h-4 w-4 text-primary flex-shrink-0" />
+            <Lightbulb className="h-4 w-4 text-primary flex-shrink-0" />
             <Skeleton className="h-4 w-full max-w-sm" />
         </div>
     );
@@ -38,7 +38,7 @@ export function MotivationalQuote({ context }: MotivationalQuoteProps) {
 
   return (
     <p className="text-sm text-muted-foreground italic flex items-center gap-2 mt-1">
-       <Info className="h-4 w-4 text-primary flex-shrink-0" />
+       <Lightbulb className="h-4 w-4 text-primary flex-shrink-0" />
        {`"${quote}"`}
     </p>
   );
