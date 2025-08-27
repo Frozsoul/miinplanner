@@ -37,6 +37,8 @@ const initialFormState: TaskData & { startDateObj?: Date; dueDateObj?: Date; tag
 
 export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFormProps) {
   const { taskStatuses } = useAppData();
+  
+  // Initialize state with default status from context
   const [formData, setFormData] = useState({
       ...initialFormState,
       status: taskStatuses[0] || 'To Do'
@@ -73,6 +75,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFor
         tags: taskToEdit.tags || [],
       });
     } else {
+      // For new tasks, ensure the default status is the first one from the user's custom list
       setFormData({
         ...initialFormState,
         status: taskStatuses[0] || 'To Do'
