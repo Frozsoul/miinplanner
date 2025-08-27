@@ -5,13 +5,28 @@ import { useTheme } from "next-themes";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Monitor, Sun, Moon, Palette, Leaf, Droplets, Sunrise, CheckCircle, Shield, Loader2 } from "lucide-react";
+import { Settings, Monitor, Sun, Moon, Palette, Leaf, Droplets, Sunrise, CheckCircle, Shield, Loader2, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { TaskSpacesManager } from "@/components/settings/TaskSpacesManager";
 import { StatusManager } from "@/components/settings/StatusManager"; // Import the new component
+import { taskSpaceTemplates } from "@/lib/task-space-templates";
+import { useAppData } from "@/contexts/app-data-context";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import type { TaskSpace } from "@/types";
+
 
 const colorThemes = [
     { name: 'miin', label: 'Miin', icon: Palette },
@@ -26,6 +41,8 @@ export default function SettingsPage() {
   const { userProfile, loading, updateUserPlan } = useAuth();
   const { toast } = useToast();
   const [isUpdatingPlan, setIsUpdatingPlan] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const { loadTaskSpaceTemplate } = useAppData();
 
 
   React.useEffect(() => {
@@ -68,6 +85,12 @@ export default function SettingsPage() {
     } finally {
         setIsUpdatingPlan(false);
     }
+  };
+  
+  const handleLoadTemplate = async (template: Omit<TaskSpace, 'id'>) => {
+    setIsLoading(true);
+    await loadTaskSpaceTemplate(template);
+    setIsLoading(false);
   };
 
 
@@ -140,10 +163,53 @@ export default function SettingsPage() {
              )}
           </CardContent>
         </Card>
+        
+        <Card>
+            <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Library />Template Library</CardTitle>
+            <CardDescription>
+                Get started quickly by loading a pre-built template. Loading a template will replace your current tasks and statuses.
+            </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {taskSpaceTemplates.map((template) => (
+                <Card key={template.name} className="flex flex-col">
+                <CardHeader>
+                    <CardTitle className="text-lg">{template.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                    <p className="text-sm text-muted-foreground">{template.description}</p>
+                </CardContent>
+                <CardFooter>
+                    <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="w-full" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Library className="h-4 w-4" />}
+                        <span className="ml-2">Load</span>
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Load Template: &quot;{template.name}&quot;?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will replace all of your current tasks and custom statuses. This action cannot be undone.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleLoadTemplate(template)}>Load Template</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                    </AlertDialog>
+                </CardFooter>
+                </Card>
+            ))}
+            </CardContent>
+        </Card>
+
+        <TaskSpacesManager />
 
         <StatusManager />
-        
-        <TaskSpacesManager />
 
         <Card>
           <CardHeader>
@@ -220,5 +286,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    

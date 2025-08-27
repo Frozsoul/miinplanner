@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { List, Save, Upload, Download, Trash2, Play, Loader2, ListChecks, Library } from "lucide-react";
+import { List, Save, Upload, Download, Trash2, Play, Loader2, ListChecks } from "lucide-react";
 import type { TaskSpace } from "@/types";
 import {
   AlertDialog,
@@ -32,7 +32,6 @@ export function TaskSpacesManager() {
     loadTaskSpace, 
     deleteTaskSpace,
     importTaskSpace,
-    loadTaskSpaceTemplate
   } = useAppData();
   const { toast } = useToast();
   const [newSpaceName, setNewSpaceName] = useState("");
@@ -58,12 +57,6 @@ export function TaskSpacesManager() {
   const handleLoad = async (space: TaskSpace) => {
     setIsLoading(true);
     await loadTaskSpace(space.id);
-    setIsLoading(false);
-  };
-
-  const handleLoadTemplate = async (template: Omit<TaskSpace, 'id'>) => {
-    setIsLoading(true);
-    await loadTaskSpaceTemplate(template);
     setIsLoading(false);
   };
 
@@ -125,139 +118,92 @@ export function TaskSpacesManager() {
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ListChecks />Task Spaces</CardTitle>
-          <CardDescription>
-            Save, load, or share your entire set of tasks and custom statuses.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h4 className="font-semibold text-sm mb-2">Saved Spaces</h4>
-            {taskSpaces.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No saved spaces yet. Save your current tasks to create one.</p>
-            ) : (
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                {taskSpaces.map(space => (
-                  <div key={space.id} className="flex justify-between items-center p-2 border rounded-md">
-                    <span className="text-sm font-medium">{space.name}</span>
-                    <div className="flex gap-1">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isLoading}><Play className="h-4 w-4" /></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Load Task Space?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will replace all of your current tasks and statuses with the ones from &quot;{space.name}&quot;. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleLoad(space)}>Load Space</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Task Space?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete &quot;{space.name}&quot;? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(space)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm mb-2">Save Current Tasks</h4>
-            <div className="flex gap-2">
-              <Input 
-                placeholder="Enter new space name..."
-                value={newSpaceName}
-                onChange={(e) => setNewSpaceName(e.target.value)}
-                disabled={isLoading}
-              />
-              <Button onClick={handleSave} disabled={isLoading || !newSpaceName.trim() || tasks.length === 0}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-                <span className="ml-2">Save</span>
-              </Button>
+    <Card>
+    <CardHeader>
+        <CardTitle className="flex items-center gap-2"><ListChecks />Task Spaces</CardTitle>
+        <CardDescription>
+        Save, load, or share your entire set of tasks and custom statuses.
+        </CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-6">
+        <div>
+        <h4 className="font-semibold text-sm mb-2">Saved Spaces</h4>
+        {taskSpaces.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No saved spaces yet. Save your current tasks to create one.</p>
+        ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+            {taskSpaces.map(space => (
+                <div key={space.id} className="flex justify-between items-center p-2 border rounded-md">
+                <span className="text-sm font-medium">{space.name}</span>
+                <div className="flex gap-1">
+                    <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isLoading}><Play className="h-4 w-4" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Load Task Space?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will replace all of your current tasks and statuses with the ones from &quot;{space.name}&quot;. This action cannot be undone.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleLoad(space)}>Load Space</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Task Space?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{space.name}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(space)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+                </div>
+            ))}
             </div>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm mb-2">Import / Export</h4>
-            <div className="flex gap-2">
-                <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" style={{ display: 'none' }} />
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
-                  <Upload className="h-4 w-4 mr-2" /> Import from File
-                </Button>
-                <Button variant="outline" onClick={handleExport} disabled={tasks.length === 0} className="w-full">
-                  <Download className="h-4 w-4 mr-2" /> Export to File
-                </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Library />Template Library</CardTitle>
-          <CardDescription>
-            Get started quickly by loading a pre-built template. Loading a template will replace your current tasks and statuses.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {taskSpaceTemplates.map((template) => (
-            <Card key={template.name} className="flex flex-col">
-              <CardHeader>
-                <CardTitle className="text-lg">{template.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground">{template.description}</p>
-              </CardContent>
-              <CardFooter>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="w-full" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Download className="h-4 w-4" />}
-                      <span className="ml-2">Load</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Load Template: &quot;{template.name}&quot;?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will replace all of your current tasks and custom statuses. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleLoadTemplate(template)}>Load Template</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardFooter>
-            </Card>
-          ))}
-        </CardContent>
-      </Card>
-    </>
+        )}
+        </div>
+        <div className="space-y-2">
+        <h4 className="font-semibold text-sm mb-2">Save Current Tasks</h4>
+        <div className="flex gap-2">
+            <Input 
+            placeholder="Enter new space name..."
+            value={newSpaceName}
+            onChange={(e) => setNewSpaceName(e.target.value)}
+            disabled={isLoading}
+            />
+            <Button onClick={handleSave} disabled={isLoading || !newSpaceName.trim() || tasks.length === 0}>
+            {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
+            <span className="ml-2">Save</span>
+            </Button>
+        </div>
+        </div>
+        <div className="space-y-2">
+        <h4 className="font-semibold text-sm mb-2">Import / Export</h4>
+        <div className="flex gap-2">
+            <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" style={{ display: 'none' }} />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                <Upload className="h-4 w-4 mr-2" /> Import from File
+            </Button>
+            <Button variant="outline" onClick={handleExport} disabled={tasks.length === 0} className="w-full">
+                <Download className="h-4 w-4 mr-2" /> Export to File
+            </Button>
+        </div>
+        </div>
+    </CardContent>
+    </Card>
   );
 }
-
-    
