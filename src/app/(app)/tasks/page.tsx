@@ -59,6 +59,8 @@ export default function TasksPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [channelFilter, setChannelFilter] = useState<string[]>([]);
   
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
   const [showArchived, setShowArchived] = useState(false);
@@ -68,6 +70,22 @@ export default function TasksPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    tasks.forEach(task => {
+      task.tags?.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags).sort();
+  }, [tasks]);
+
+  const allChannels = useMemo(() => {
+    const channels = new Set<string>();
+    tasks.forEach(task => {
+      if (task.channel) channels.add(task.channel);
+    });
+    return Array.from(channels).sort();
+  }, [tasks]);
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       // Filter by archived state first
@@ -78,9 +96,12 @@ export default function TasksPage() {
                             (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesStatus = statusFilter.length === 0 || statusFilter.includes(task.status);
       const matchesPriority = priorityFilter.length === 0 || priorityFilter.includes(task.priority);
-      return matchesSearch && matchesStatus && matchesPriority;
+      const matchesChannel = channelFilter.length === 0 || (task.channel && channelFilter.includes(task.channel));
+      const matchesTags = tagFilter.length === 0 || (task.tags && task.tags.some(tag => tagFilter.includes(tag)));
+      
+      return matchesSearch && matchesStatus && matchesPriority && matchesChannel && matchesTags;
     });
-  }, [tasks, searchTerm, statusFilter, priorityFilter, showArchived]);
+  }, [tasks, searchTerm, statusFilter, priorityFilter, channelFilter, tagFilter, showArchived]);
 
   const openFormModal = (taskToEdit?: Task) => {
     setEditingTask(taskToEdit || null);
@@ -204,8 +225,8 @@ export default function TasksPage() {
 
       <Card className="mb-6 shadow-sm border">
         <CardContent className="p-4 flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                 <div className="md:col-span-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
+                 <div className="lg:col-span-1">
                     <Label htmlFor="search-tasks" className="block text-sm font-medium text-muted-foreground mb-1.5">Search</Label>
                     <Input
                         id="search-tasks"
@@ -230,6 +251,24 @@ export default function TasksPage() {
                         options={TASK_PRIORITIES.map(p => ({ value: p, label: p }))}
                         selected={priorityFilter}
                         onChange={setPriorityFilter}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="channel-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Channel</Label>
+                    <MultiSelect
+                        title="Channel"
+                        options={allChannels.map(c => ({ value: c, label: c }))}
+                        selected={channelFilter}
+                        onChange={setChannelFilter}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="tag-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Tag</Label>
+                    <MultiSelect
+                        title="Tag"
+                        options={allTags.map(t => ({ value: t, label: t }))}
+                        selected={tagFilter}
+                        onChange={setTagFilter}
                     />
                 </div>
             </div>
@@ -343,6 +382,7 @@ function MultiSelect({ options, selected, onChange, className, title = "Select" 
           variant="outline"
           role="combobox"
           className={cn("w-full justify-between", className)}
+          disabled={options.length === 0}
         >
           <span className="truncate">{getButtonLabel()}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -353,24 +393,26 @@ function MultiSelect({ options, selected, onChange, className, title = "Select" 
             <p className="text-sm font-medium">{title}</p>
         </div>
         <Separator />
-        <div className="p-1">
-          {options.map((option) => (
-            <div
-              key={option.value}
-              onClick={() => handleSelect(option.value)}
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
-            >
-              <Checkbox
-                id={`multiselect-${title}-${option.value}`}
-                checked={selected.includes(option.value)}
-                readOnly
-              />
-              <Label htmlFor={`multiselect-${title}-${option.value}`} className="font-normal cursor-pointer flex-1">
-                {option.label}
-              </Label>
+        <ScrollArea className="max-h-60">
+            <div className="p-1">
+            {options.map((option) => (
+                <div
+                key={option.value}
+                onClick={() => handleSelect(option.value)}
+                className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+                >
+                <Checkbox
+                    id={`multiselect-${title}-${option.value}`}
+                    checked={selected.includes(option.value)}
+                    readOnly
+                />
+                <Label htmlFor={`multiselect-${title}-${option.value}`} className="font-normal cursor-pointer flex-1">
+                    {option.label}
+                </Label>
+                </div>
+            ))}
             </div>
-          ))}
-        </div>
+        </ScrollArea>
         {selected.length > 0 && (
             <>
                 <Separator />
@@ -390,3 +432,6 @@ function MultiSelect({ options, selected, onChange, className, title = "Select" 
     </Popover>
   );
 }
+
+
+    
