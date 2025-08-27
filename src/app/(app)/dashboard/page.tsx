@@ -10,7 +10,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { format, parseISO, isValid } from "date-fns";
 import { useEffect } from "react";
-import { DashboardAIInsight } from "@/components/dashboard/DashboardAIInsight";
+import { MotivationalQuote } from "@/components/dashboard/MotivationalQuote";
 
 
 const LayoutDashboardIcon = BarChart3;
@@ -82,12 +82,10 @@ export default function DashboardPage() {
     <div className="px-4 sm:px-6 md:py-6 space-y-6">
       <PageHeader 
         title="Dashboard" 
-        description="Welcome back! Here's an overview of your MiinPlanner workspace."
+        description={<MotivationalQuote context="dashboard" />}
         icon={LayoutDashboardIcon}
         actionButtons={<QuickAddTask />} 
       />
-
-      <DashboardAIInsight pageContext="dashboard" />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <SummaryCard title="Active Tasks" value={activeTasks.length} icon={ListChecks} description="All non-archived tasks" />

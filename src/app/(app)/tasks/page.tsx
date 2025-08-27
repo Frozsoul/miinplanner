@@ -33,7 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TaskCardList } from "@/components/tasks/TaskCardList";
-import { DashboardAIInsight } from "@/components/dashboard/DashboardAIInsight";
+import { MotivationalQuote } from "@/components/dashboard/MotivationalQuote";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -182,18 +182,17 @@ export default function TasksPage() {
   return (
     <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
-          <ListChecks className="h-7 w-7 text-primary"/> Task Manager
-        </h1>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div>
+          <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
+            <ListChecks className="h-7 w-7 text-primary"/> Task Manager
+          </h1>
+          <MotivationalQuote context="tasks" />
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto self-end sm:self-center">
             <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Task
             </Button>
         </div>
-      </div>
-
-      <div className="mb-6">
-        <DashboardAIInsight pageContext="tasks" />
       </div>
 
       <Card className="mb-6 shadow-sm border">

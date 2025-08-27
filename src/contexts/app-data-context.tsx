@@ -2,16 +2,13 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask, TaskStatus, DashboardGreeting, GreetingContext, TaskSpace } from '@/types';
+import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask, TaskStatus, TaskSpace } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getSocialMediaPosts, addSocialMediaPost as addPostService, updateSocialMediaPost as updatePostService, deleteSocialMediaPost as deletePostService } from '@/services/social-media-post-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService } from '@/services/task-space-service';
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
-import { generateDashboardGreeting as aiGenerateDashboardGreeting } from '@/ai/flows/generate-dashboard-greeting';
-import { generateTaskManagerGreeting as aiGenerateTaskManagerGreeting } from '@/ai/flows/generate-task-manager-greeting';
-import { generateCalendarGreeting as aiGenerateCalendarGreeting } from '@/ai/flows/generate-calendar-greeting';
 
 import { generateSocialMediaPost as aiGenerateSocialMediaPost, type GenerateSocialMediaPostInput } from '@/ai/flows/generate-social-media-post';
 import { useToast } from '@/hooks/use-toast';
@@ -46,11 +43,8 @@ interface AppDataContextType {
 
   // AI Insights
   insights: AIInsights | SimpleInsights | null;
-  greetings: Partial<Record<GreetingContext, DashboardGreeting>>;
   isLoadingAi: boolean;
-  isLoadingGreeting: Partial<Record<GreetingContext, boolean>>;
   generateInsights: () => Promise<void>;
-  fetchGreeting: (context: GreetingContext) => Promise<void>;
   
   // Social Media Posts
   socialMediaPosts: SocialMediaPost[];
@@ -79,9 +73,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   // AI Insights State
   const [insights, setInsights] = useState<AIInsights | SimpleInsights | null>(null);
-  const [greetings, setGreetings] = useState<Partial<Record<GreetingContext, DashboardGreeting>>>({});
-  const [isLoadingGreeting, setIsLoadingGreeting] = useState<Partial<Record<GreetingContext, boolean>>>({});
-
+  
   // Statuses State
   const [taskStatuses, setTaskStatuses] = useState<TaskStatus[]>(DEFAULT_TASK_STATUSES);
 
@@ -439,69 +431,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       setIsLoadingAi(false);
     }
   };
-  
-  const fetchGreeting = useCallback(async (context: GreetingContext) => {
-    if (tasks.length === 0) return;
-
-    setIsLoadingGreeting(prev => ({ ...prev, [context]: true }));
-    const today = new Date().toDateString();
-
-    if (greetings[context]?.date === today) {
-      setIsLoadingGreeting(prev => ({ ...prev, [context]: false }));
-      return;
-    }
-
-    const insightTasks: InsightTask[] = tasks.filter(t => !t.archived).map(t => ({
-      id: t.id,
-      title: t.title,
-      status: t.status,
-      priority: t.priority,
-      createdAt: t.createdAt.toDate().toISOString(),
-      updatedAt: (t.updatedAt || t.createdAt).toDate().toISOString(),
-      dueDate: t.dueDate,
-    }));
-
-    if (insightTasks.length === 0) {
-        setGreetings(prev => ({
-            ...prev,
-            [context]: { greeting: "Welcome! Add some tasks to get started.", date: today }
-        }));
-        setIsLoadingGreeting(prev => ({ ...prev, [context]: false }));
-        return;
-    }
-    
-    const input: InsightGenerationInput = {
-      tasks: insightTasks,
-      currentDate: new Date().toISOString(),
-    };
-
-    try {
-      let greetingText = "";
-      switch (context) {
-        case 'dashboard':
-          greetingText = await aiGenerateDashboardGreeting(input);
-          break;
-        case 'tasks':
-          greetingText = await aiGenerateTaskManagerGreeting(input);
-          break;
-        case 'calendar':
-          greetingText = await aiGenerateCalendarGreeting(input);
-          break;
-        default:
-          greetingText = "Welcome back! Ready to tackle your day?";
-      }
-      setGreetings(prev => ({ ...prev, [context]: { greeting: greetingText, date: today } }));
-    } catch (error) {
-      console.error(`AppDataContext: Failed to fetch ${context} greeting:`, error);
-      setGreetings(prev => ({
-          ...prev,
-          [context]: { greeting: "Welcome back! Ready to tackle your day?", date: today }
-      }));
-    } finally {
-      setIsLoadingGreeting(prev => ({ ...prev, [context]: false }));
-    }
-  }, [tasks, greetings]);
-
 
   // --- Social Media Post Functions ---
   const fetchSocialMediaPosts = useCallback(async () => {
@@ -620,11 +549,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       deleteTaskSpace,
       importTaskSpace,
       insights, 
-      greetings,
       isLoadingAi, 
-      isLoadingGreeting,
       generateInsights,
-      fetchGreeting,
       socialMediaPosts,
       isLoadingSocialMediaPosts,
       fetchSocialMediaPosts,
