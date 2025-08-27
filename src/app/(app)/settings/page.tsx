@@ -79,7 +79,7 @@ export default function SettingsPage() {
         icon={Settings}
       />
 
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
          <Card>
           <CardHeader>
             <CardTitle>Plan & Billing</CardTitle>
@@ -220,3 +220,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    

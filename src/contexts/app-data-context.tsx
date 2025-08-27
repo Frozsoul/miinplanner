@@ -40,6 +40,7 @@ interface AppDataContextType {
   loadTaskSpace: (spaceId: string) => Promise<void>;
   deleteTaskSpace: (spaceId: string) => Promise<void>;
   importTaskSpace: (space: Omit<TaskSpace, 'id'>) => Promise<void>;
+  loadTaskSpaceTemplate: (template: Omit<TaskSpace, 'id'>) => Promise<void>;
 
   // AI Insights
   insights: AIInsights | SimpleInsights | null;
@@ -343,6 +344,21 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: "Error", description: "Could not load task space.", variant: "destructive" });
     }
   };
+  
+  const loadTaskSpaceTemplate = async (template: Omit<TaskSpace, 'id'>) => {
+    if (!user?.uid) {
+      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
+      return;
+    }
+    try {
+      // This is a client-side only operation until the user saves it
+      const newSpace = await importTaskSpace(template); // Use import logic to replace current tasks
+      toast({ title: "Success", description: `Template "${template.name}" loaded.` });
+    } catch (error) {
+      console.error("AppDataContext: Failed to load task space template:", error);
+      toast({ title: "Error", description: "Could not load template.", variant: "destructive" });
+    }
+  };
 
   const importTaskSpace = async (space: Omit<TaskSpace, 'id'>) => {
     if (!user?.uid) {
@@ -548,6 +564,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       loadTaskSpace,
       deleteTaskSpace,
       importTaskSpace,
+      loadTaskSpaceTemplate,
       insights, 
       isLoadingAi, 
       generateInsights,
@@ -571,3 +588,5 @@ export const useAppData = (): AppDataContextType => {
   }
   return context;
 };
+
+    
