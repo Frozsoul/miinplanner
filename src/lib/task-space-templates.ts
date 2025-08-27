@@ -81,6 +81,25 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
       { title: "Review content performance at end of quarter", status: "Analysis", priority: "High", order: 8 },
     ],
   },
+  {
+    name: "Email Marketing Campaign",
+    description: "A comprehensive workflow for launching a successful email marketing campaign, from concept to analysis.",
+    taskStatuses: ['Planning', 'Copywriting', 'Design', 'Setup & Testing', 'Sent & Analyzing'],
+    tasks: [
+        { title: "Define campaign goal and target audience", status: "Planning", priority: "High", order: 0 },
+        { title: "Choose main promotion and call-to-action (CTA)", status: "Planning", priority: "High", order: 1 },
+        { title: "Write 5-10 subject line variations for A/B testing", status: "Copywriting", priority: "Medium", order: 2 },
+        { title: "Write primary email body copy", status: "Copywriting", priority: "High", order: 3 },
+        { title: "Proofread and edit final copy", status: "Copywriting", priority: "Medium", order: 4 },
+        { title: "Design or select email template", status: "Design", priority: "High", order: 5 },
+        { title: "Create or source required graphics and images", status: "Design", priority: "Medium", order: 6 },
+        { title: "Build email in marketing automation platform", status: "Setup & Testing", priority: "High", order: 7 },
+        { title: "Send test emails to team and check for rendering issues", status: "Setup & Testing", priority: "Urgent", order: 8 },
+        { title: "Schedule final email for deployment", status: "Setup & Testing", priority: "High", order: 9 },
+        { title: "Monitor open rates and click-through rates (first 24 hours)", status: "Sent & Analyzing", priority: "High", order: 10 },
+        { title: "Compile final campaign performance report after 7 days", status: "Sent & Analyzing", priority: "Medium", order: 11 },
+    ],
+  },
 ];
 
     
