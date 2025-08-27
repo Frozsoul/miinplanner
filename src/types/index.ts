@@ -97,6 +97,11 @@ export interface ContentIdea {
   targetAudience?: string;
 }
 
+// This is now only used for typing the MotivationalQuote component's 'context' prop.
+export interface GenerateQuoteInput {
+  context: 'dashboard' | 'tasks' | 'calendar';
+}
+
 // User Profile and Plan Types
 export type UserPlan = 'free' | 'premium';
 
