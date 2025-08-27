@@ -1,11 +1,20 @@
 
 import type { TaskSpace, TaskData, TaskStatus } from "@/types";
+import { DEFAULT_TASK_STATUSES } from "@/lib/constants";
 
 interface TaskSpaceTemplate extends Omit<TaskSpace, 'id' | 'createdAt'> {
   description: string;
 }
 
 export const taskSpaceTemplates: TaskSpaceTemplate[] = [
+  {
+    name: "Default Workspace",
+    description: "A clean slate with the standard workflow. Load this to reset your board to the default settings.",
+    taskStatuses: DEFAULT_TASK_STATUSES,
+    tasks: [
+      { title: "Welcome! This is your first task.", status: "To Do", priority: "Medium", order: 0, description: "You can edit this task, drag it to another status, or delete it." },
+    ],
+  },
   {
     name: "Learn a New Skill",
     description: "A structured plan to help you learn a new skill, from initial research to building your first project.",
@@ -105,3 +114,5 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
     ],
   },
 ];
+
+    
