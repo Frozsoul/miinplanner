@@ -6,7 +6,7 @@ import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppData } from "@/contexts/app-data-context";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown, Archive, ArchiveRestore } from "lucide-react";
+import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown, Archive, ArchiveRestore, Library } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,7 @@ import { Switch } from "@/components/ui/switch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TaskCardList } from "@/components/tasks/TaskCardList";
 import { MotivationalQuote } from "@/components/dashboard/MotivationalQuote";
+import Link from "next/link";
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -189,6 +190,12 @@ export default function TasksPage() {
           <MotivationalQuote context="tasks" />
         </div>
         <div className="flex gap-2 w-full sm:w-auto self-end sm:self-center">
+             <Button variant="outline" asChild>
+                <Link href="/settings">
+                    <Library className="mr-2 h-4 w-4" />
+                    Manage Spaces
+                </Link>
+             </Button>
             <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Task
             </Button>
