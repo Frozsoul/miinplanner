@@ -50,6 +50,19 @@ export const taskSpaceTemplates: TaskSpaceTemplate[] = [
     ],
   },
   {
+    name: "Weekly Fitness Planner",
+    description: "A simple template to plan and track your weekly fitness and health goals.",
+    taskStatuses: ['Goals', 'Workout Schedule', 'Meal Plan', 'Completed'],
+    tasks: [
+        { title: "Define top 3 goals for this week (e.g., run 5k, lift heavier, eat clean)", status: "Goals", priority: "High", order: 0 },
+        { title: "Schedule workouts for Monday, Wednesday, Friday", status: "Workout Schedule", priority: "High", order: 1 },
+        { title: "Plan and shop for healthy lunches for the week", status: "Meal Plan", priority: "Medium", order: 2 },
+        { title: "Go for a 30-minute walk on Tuesday and Thursday", status: "Workout Schedule", priority: "Medium", order: 3 },
+        { title: "Drink 8 glasses of water daily", status: "Meal Plan", priority: "Low", tags: ["daily"], order: 4 },
+        { title: "Review weekly progress and set goals for next week", status: "Goals", priority: "Medium", order: 5 },
+    ]
+  },
+  {
     name: "SEO Audit Checklist",
     description: "A step-by-step guide for performing a basic but effective SEO audit on your website.",
     taskStatuses: ['Technical SEO', 'On-Page SEO', 'Content Audit', 'Reporting'],
