@@ -145,7 +145,6 @@ export default function SettingsPage() {
                              <ul className="space-y-2 text-sm text-muted-foreground">
                                 <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Everything in Free</li>
                                 <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Full AI Insights</li>
-                                <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> AI Content Studio</li>
                                 <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> AI Chatbot Assistant</li>
                             </ul>
                         </CardContent>

@@ -4,7 +4,7 @@
 import { useEffect, useMemo } from "react";
 import { useAppData } from "@/contexts/app-data-context";
 import { CalendarView } from "@/components/calendar/CalendarView";
-import type { Task, SocialMediaPost } from "@/types";
+import type { Task } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast"; 
 import { parseISO, format, isValid } from "date-fns";
@@ -14,16 +14,12 @@ export default function CalendarPage() {
   const { 
     tasks, 
     fetchTasks, 
-    socialMediaPosts, 
-    fetchSocialMediaPosts, 
     isLoadingTasks, 
-    isLoadingSocialMediaPosts 
   } = useAppData();
   const { toast } = useToast(); 
 
   useEffect(() => {
     fetchTasks();
-    fetchSocialMediaPosts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
@@ -38,17 +34,9 @@ export default function CalendarPage() {
     });
   };
 
-  const handlePostClick = (post: SocialMediaPost) => {
-    console.log("Post clicked:", post);
-    toast({
-      title: `Post for ${post.platform}`,
-      description: `Status: ${post.status}, Content: ${post.content.substring(0,30)}...`,
-    });
-  };
+  const isLoading = isLoadingTasks;
 
-  const isLoading = isLoadingTasks || isLoadingSocialMediaPosts;
-
-  if (isLoading && tasks.length === 0 && socialMediaPosts.length === 0) {
+  if (isLoading && tasks.length === 0) {
     return (
       <div className="px-4 sm:px-6 md:py-6 flex justify-center items-center min-h-[calc(100vh-12rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -64,9 +52,7 @@ export default function CalendarPage() {
       </div>
       <CalendarView 
         tasks={activeTasks} 
-        posts={socialMediaPosts}
         onTaskClick={handleTaskClick}
-        onPostClick={handlePostClick}
       />
     </div>
   );

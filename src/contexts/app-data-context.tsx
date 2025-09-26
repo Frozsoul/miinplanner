@@ -2,15 +2,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Task, TaskPriority, TaskData, SocialMediaPost, SocialMediaPostData, AIInsights, SimpleInsights, InsightTask, TaskStatus, TaskSpace } from '@/types';
+import type { Task, TaskPriority, TaskData, AIInsights, SimpleInsights, InsightTask, TaskStatus, TaskSpace } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
-import { getSocialMediaPosts, addSocialMediaPost as addPostService, updateSocialMediaPost as updatePostService, deleteSocialMediaPost as deletePostService } from '@/services/social-media-post-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService } from '@/services/task-space-service';
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
-
-import { generateSocialMediaPost as aiGenerateSocialMediaPost, type GenerateSocialMediaPostInput } from '@/ai/flows/generate-social-media-post';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
 
@@ -46,15 +43,6 @@ interface AppDataContextType {
   insights: AIInsights | SimpleInsights | null;
   isLoadingAi: boolean;
   generateInsights: () => Promise<void>;
-  
-  // Social Media Posts
-  socialMediaPosts: SocialMediaPost[];
-  isLoadingSocialMediaPosts: boolean;
-  fetchSocialMediaPosts: () => Promise<void>;
-  addSocialMediaPost: (postData: SocialMediaPostData) => Promise<SocialMediaPost | null>;
-  updateSocialMediaPost: (postId: string, postUpdate: Partial<SocialMediaPostData>) => Promise<void>;
-  deleteSocialMediaPost: (postId: string) => Promise<void>;
-  generateSocialMediaPost: (input: GenerateSocialMediaPostInput) => Promise<string | null>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -77,10 +65,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   
   // Statuses State
   const [taskStatuses, setTaskStatuses] = useState<TaskStatus[]>(DEFAULT_TASK_STATUSES);
-
-  // Social Media Post State
-  const [socialMediaPosts, setSocialMediaPosts] = useState<SocialMediaPost[]>([]);
-  const [isLoadingSocialMediaPosts, setIsLoadingSocialMediaPosts] = useState(true);
 
   // Generic AI Loading State
   const [isLoadingAi, setIsLoadingAi] = useState(false);
@@ -310,7 +294,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
           startDate: taskData.startDate || null,
           dueDate: taskData.dueDate || null,
           channel: taskData.channel || null,
-          assignee: taskData.assignee || null,
           tags: taskData.tags || [],
           archived: taskData.archived || false,
         };
@@ -448,100 +431,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // --- Social Media Post Functions ---
-  const fetchSocialMediaPosts = useCallback(async () => {
-    if (user?.uid) {
-      setIsLoadingSocialMediaPosts(true);
-      try {
-        const posts = await getSocialMediaPosts(user.uid);
-        setSocialMediaPosts(posts);
-      } catch (error) {
-        console.error("AppDataContext: Failed to fetch social media posts:", error);
-        toast({ title: "Error", description: "Could not fetch social media posts.", variant: "destructive" });
-      } finally {
-        setIsLoadingSocialMediaPosts(false);
-      }
-    } else {
-      setSocialMediaPosts([]);
-      setIsLoadingSocialMediaPosts(false);
-    }
-  }, [user, toast]);
-
-   const addSocialMediaPost = async (postData: SocialMediaPostData): Promise<SocialMediaPost | null> => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return null;
-    }
-    setIsLoadingSocialMediaPosts(true);
-    try {
-      const newPost = await addPostService(user.uid, postData);
-      await fetchSocialMediaPosts();
-      toast({ title: "Success", description: "Social media post added." });
-      return newPost;
-    } catch (error) {
-      console.error("AppDataContext: Failed to add social media post:", error);
-      toast({ title: "Error", description: "Could not add social media post.", variant: "destructive" });
-      return null;
-    } finally {
-      setIsLoadingSocialMediaPosts(false);
-    }
-  };
-
-  const updateSocialMediaPost = async (postId: string, postUpdate: Partial<SocialMediaPostData>) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    setIsLoadingSocialMediaPosts(true);
-    try {
-      await updatePostService(user.uid, postId, postUpdate);
-      await fetchSocialMediaPosts();
-      toast({ title: "Success", description: "Social media post updated." });
-    } catch (error) {
-      console.error("AppDataContext: Failed to update social media post:", error);
-      toast({ title: "Error", description: "Could not update social media post.", variant: "destructive" });
-    } finally {
-      setIsLoadingSocialMediaPosts(false);
-    }
-  };
-
-  const deleteSocialMediaPost = async (postId: string) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    setIsLoadingSocialMediaPosts(true);
-    try {
-      await deletePostService(user.uid, postId);
-      await fetchSocialMediaPosts();
-      toast({ title: "Success", description: "Social media post deleted." });
-    } catch (error) {
-      console.error("AppDataContext: Failed to delete social media post:", error);
-      toast({ title: "Error", description: "Could not delete social media post.", variant: "destructive" });
-    } finally {
-      setIsLoadingSocialMediaPosts(false);
-    }
-  };
-  
-  const generateSocialMediaPost = async (input: GenerateSocialMediaPostInput): Promise<string | null> => {
-    setIsLoadingAi(true);
-    try {
-      const result = await aiGenerateSocialMediaPost(input);
-      return result.postContent;
-    } catch (error) {
-      console.error("AppDataContext: AI social media post generation failed:", error);
-      toast({ title: "AI Error", description: "Could not generate post content.", variant: "destructive" });
-      return null;
-    } finally {
-      setIsLoadingAi(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSocialMediaPosts();
-  }, [fetchSocialMediaPosts]);
-
-
   return (
     <AppDataContext.Provider value={{
       isLoadingAppData,
@@ -568,13 +457,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       insights, 
       isLoadingAi, 
       generateInsights,
-      socialMediaPosts,
-      isLoadingSocialMediaPosts,
-      fetchSocialMediaPosts,
-      addSocialMediaPost,
-      updateSocialMediaPost,
-      deleteSocialMediaPost,
-      generateSocialMediaPost,
     }}>
       {children}
     </AppDataContext.Provider>
@@ -588,5 +470,3 @@ export const useAppData = (): AppDataContextType => {
   }
   return context;
 };
-
-    

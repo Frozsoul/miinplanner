@@ -5,21 +5,19 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Task, SocialMediaPost, TaskPriority, PostStatus } from "@/types";
+import type { Task, TaskPriority } from "@/types";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay,isSameMonth, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import { ListChecks, Send } from "lucide-react";
+import { ListChecks } from "lucide-react";
 
 interface CalendarViewProps {
   tasks: Task[];
-  posts: SocialMediaPost[];
   onTaskClick?: (task: Task) => void;
-  onPostClick?: (post: SocialMediaPost) => void;
 }
 
 const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: CalendarViewProps) {
+export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
@@ -50,20 +48,6 @@ export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: Calenda
         return match;
     });
   }, [tasks, selectedDate]);
-
-  const postsForSelectedDate = useMemo(() => {
-    if (!selectedDate) return [];
-    return posts.filter(post => {
-        if (!post.scheduledDate) return false;
-        try {
-            const scheduledDate = parseISO(post.scheduledDate);
-            return isSameDay(scheduledDate, selectedDate);
-        } catch (e) {
-            console.error("Error parsing post scheduled date:", post.scheduledDate, e);
-            return false;
-        }
-    });
-  }, [posts, selectedDate]);
 
   const handleMonthChange = (month: Date) => {
     setCurrentMonth(month);
@@ -128,7 +112,6 @@ export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: Calenda
                   }
                   return match;
               });
-              const postsOnDay = posts.filter(p => p.scheduledDate && isSameDay(parseISO(p.scheduledDate), day));
               const isSelected = selectedDate && isSameDay(day, selectedDate);
               const isToday = isSameDay(day, new Date());
 
@@ -150,17 +133,12 @@ export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: Calenda
                     {format(day, "d")}
                   </span>
                   <div className="mt-1 space-y-0.5 text-xs flex-grow overflow-y-auto w-full no-scrollbar">
-                    {tasksOnDay.slice(0,1).map(task => (
+                    {tasksOnDay.slice(0,2).map(task => (
                        <div key={task.id} className="p-0.5 rounded bg-primary/10 text-primary truncate text-[10px] sm:text-xs" title={task.title}>
                          <ListChecks className="inline h-3 w-3 mr-0.5 sm:mr-1"/>Task
                        </div>
                     ))}
-                     {postsOnDay.slice(0,1).map(post => (
-                       <div key={post.id} className="p-0.5 rounded bg-accent/20 text-accent-foreground truncate text-[10px] sm:text-xs" title={post.content.substring(0,20)}>
-                         <Send className="inline h-3 w-3 mr-0.5 sm:mr-1"/>Post
-                       </div>
-                    ))}
-                    {(tasksOnDay.length + postsOnDay.length > 2) && <div className="text-muted-foreground text-[10px] text-center">...more</div>}
+                    {(tasksOnDay.length > 2) && <div className="text-muted-foreground text-[10px] text-center">...more</div>}
                   </div>
                 </div>
               );
@@ -185,8 +163,8 @@ export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: Calenda
               <p className="text-muted-foreground">No date selected.</p>
             ) : (
               <>
-                {tasksForSelectedDate.length === 0 && postsForSelectedDate.length === 0 ? (
-                  <p className="text-muted-foreground">No events or tasks for this day.</p>
+                {tasksForSelectedDate.length === 0 ? (
+                  <p className="text-muted-foreground">No tasks for this day.</p>
                 ) : (
                   <div className="space-y-4">
                     {tasksForSelectedDate.length > 0 && (
@@ -199,21 +177,6 @@ export function CalendarView({ tasks, posts, onTaskClick, onPostClick }: Calenda
                                 onClick={() => onTaskClick?.(task)}>
                               <p className="font-medium text-sm">{task.title}</p>
                               <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs mt-1">{task.priority}</Badge>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {postsForSelectedDate.length > 0 && (
-                       <div>
-                        <h4 className="font-semibold mb-2 text-accent-foreground flex items-center gap-2"><Send />Social Posts</h4>
-                        <ul className="space-y-2">
-                          {postsForSelectedDate.map(post => (
-                            <li key={post.id} 
-                                className="p-3 border rounded-md hover:bg-muted/30 cursor-pointer transition-colors"
-                                onClick={() => onPostClick?.(post)}>
-                              <p className="font-medium text-sm">{post.platform}: {post.content.substring(0, 50)}...</p>
-                              <Badge variant="outline" className="text-xs mt-1">{post.status}</Badge>
                             </li>
                           ))}
                         </ul>

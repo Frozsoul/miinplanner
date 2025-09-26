@@ -5,9 +5,9 @@ import { useState, useRef, useEffect } from "react";
 import type { ChatMessage } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { suggestMarketingTips, type SuggestMarketingTipsInput } from "@/ai/flows/suggest-marketing-tips";
+import { suggestProductivityTips, type SuggestProductivityTipsInput } from "@/ai/flows/suggest-marketing-tips";
 import { Bot, User, Send, Loader2, Sparkles, BotMessageSquare, Shield } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -49,8 +49,8 @@ export default function ChatbotPage() {
     setIsLoading(true);
 
     try {
-      const aiInput: SuggestMarketingTipsInput = { query: input };
-      const aiResponse = await suggestMarketingTips(aiInput);
+      const aiInput: SuggestProductivityTipsInput = { query: input };
+      const aiResponse = await suggestProductivityTips(aiInput);
       
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -105,7 +105,7 @@ export default function ChatbotPage() {
               <Shield className="h-4 w-4" />
               <AlertTitle>Premium Feature</AlertTitle>
               <AlertDescription>
-                Gain access to the AI assistant, Content Studio, and advanced insights by upgrading your account.
+                Gain access to the AI assistant and advanced insights by upgrading your account.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -122,7 +122,7 @@ export default function ChatbotPage() {
 
   return (
     <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
-      <h1 className="text-3xl font-headline font-bold mb-8 text-center">AI Marketing Assistant</h1>
+      <h1 className="text-3xl font-headline font-bold mb-8 text-center">AI Productivity Assistant</h1>
       <Card className="flex-1 flex flex-col shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Sparkles className="text-accent" /> Chat with MiinBot</CardTitle>
@@ -162,8 +162,8 @@ export default function ChatbotPage() {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                 <BotMessageSquare className="h-16 w-16 mb-4" />
-                <p className="text-lg font-medium">Ask me anything about marketing!</p>
-                <p className="text-sm">e.g., "How can I improve my email open rates?"</p>
+                <p className="text-lg font-medium">Ask me anything about productivity!</p>
+                <p className="text-sm">e.g., "How can I better manage my time?"</p>
               </div>
             )}
           </ScrollArea>
@@ -173,7 +173,7 @@ export default function ChatbotPage() {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your marketing question here..."
+              placeholder="Type your productivity question here..."
               className="flex-1 resize-none"
               rows={1}
               onKeyDown={(e) => {

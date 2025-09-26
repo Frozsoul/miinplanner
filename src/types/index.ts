@@ -123,25 +123,3 @@ export interface LoginFormData {
 export interface SignupFormData extends LoginFormData {
   confirmPassword?: string;
 }
-
-// Content Studio Types
-export type Platform = 'X' | 'LinkedIn' | 'Instagram' | 'General';
-export type PostStatus = 'Draft' | 'Scheduled' | 'Posted' | 'Needs Approval';
-
-export interface SocialMediaPost {
-  id: string; // Firestore document ID
-  userId: string;
-  platform: Platform;
-  content: string;
-  status: PostStatus;
-  scheduledDate?: string; // ISO string
-  imageUrl?: string;
-  notes?: string;
-  createdAt: Timestamp; // Firestore server timestamp
-  updatedAt: Timestamp; // Firestore server timestamp
-  // Optional fields if generated via AI
-  topic?: string;
-  tone?: string;
-}
-
-export type SocialMediaPostData = Omit<SocialMediaPost, 'id' | 'createdAt' | 'updatedAt' | 'userId'>;

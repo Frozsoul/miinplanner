@@ -2,65 +2,65 @@
 'use server';
 
 /**
- * @fileOverview Provides marketing tips and workflow optimization suggestions via an AI chatbot.
+ * @fileOverview Provides productivity tips and workflow optimization suggestions via an AI chatbot.
  *
- * - suggestMarketingTips - A function that suggests marketing tips and workflow optimizations.
- * - SuggestMarketingTipsInput - The input type for the suggestMarketingTips function.
- * - SuggestMarketingTipsOutput - The return type for the suggestMarketingTips function.
+ * - suggestProductivityTips - A function that suggests productivity tips and workflow optimizations.
+ * - SuggestProductivityTipsInput - The input type for the suggestProductivityTips function.
+ * - SuggestProductivityTipsOutput - The return type for the suggestProductivityTips function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const SuggestMarketingTipsInputSchema = z.object({
-  query: z.string().describe('The user query for marketing tips and workflow optimizations.'),
+const SuggestProductivityTipsInputSchema = z.object({
+  query: z.string().describe('The user query for productivity tips and workflow optimizations.'),
 });
-export type SuggestMarketingTipsInput = z.infer<typeof SuggestMarketingTipsInputSchema>;
+export type SuggestProductivityTipsInput = z.infer<typeof SuggestProductivityTipsInputSchema>;
 
-const SuggestMarketingTipsOutputSchema = z.object({
-  tips: z.string().describe('Marketing tips and workflow optimization suggestions.'),
+const SuggestProductivityTipsOutputSchema = z.object({
+  tips: z.string().describe('Productivity tips and workflow optimization suggestions.'),
 });
-export type SuggestMarketingTipsOutput = z.infer<typeof SuggestMarketingTipsOutputSchema>;
+export type SuggestProductivityTipsOutput = z.infer<typeof SuggestProductivityTipsOutputSchema>;
 
-export async function suggestMarketingTips(input: SuggestMarketingTipsInput): Promise<SuggestMarketingTipsOutput> {
-  return suggestMarketingTipsFlow(input);
+export async function suggestProductivityTips(input: SuggestProductivityTipsInput): Promise<SuggestProductivityTipsOutput> {
+  return suggestProductivityTipsFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'suggestMarketingTipsPrompt',
-  input: {schema: SuggestMarketingTipsInputSchema},
-  output: {schema: SuggestMarketingTipsOutputSchema},
-  prompt: `You are an AI assistant specialized in providing marketing tips and workflow optimizations.
+  name: 'suggestProductivityTipsPrompt',
+  input: {schema: SuggestProductivityTipsInputSchema},
+  output: {schema: SuggestProductivityTipsOutputSchema},
+  prompt: `You are an AI assistant specialized in providing productivity tips and workflow optimizations for a planner app.
 
-  Based on the user's query, provide relevant and actionable suggestions to improve their marketing strategies and efficiency.
+  Based on the user's query, provide relevant and actionable suggestions to improve their planning, task management, and efficiency.
 
   Query: {{{query}}}
   `,
 });
 
-const suggestMarketingTipsFlow = ai.defineFlow(
+const suggestProductivityTipsFlow = ai.defineFlow(
   {
-    name: 'suggestMarketingTipsFlow',
-    inputSchema: SuggestMarketingTipsInputSchema,
-    outputSchema: SuggestMarketingTipsOutputSchema,
+    name: 'suggestProductivityTipsFlow',
+    inputSchema: SuggestProductivityTipsInputSchema,
+    outputSchema: SuggestProductivityTipsOutputSchema,
   },
-  async (input) : Promise<SuggestMarketingTipsOutput> => {
-    let modelOutput: z.infer<typeof SuggestMarketingTipsOutputSchema> | undefined | null = undefined;
+  async (input) : Promise<SuggestProductivityTipsOutput> => {
+    let modelOutput: z.infer<typeof SuggestProductivityTipsOutputSchema> | undefined | null = undefined;
     try {
-      console.log('[MiinPlanner suggestMarketingTipsFlow] Attempting to call prompt with input:', JSON.stringify(input));
+      console.log('[MiinPlanner suggestProductivityTipsFlow] Attempting to call prompt with input:', JSON.stringify(input));
       const response = await prompt(input);
       modelOutput = response.output;
-      console.log('[MiinPlanner suggestMarketingTipsFlow] Prompt call successful, output:', JSON.stringify(modelOutput));
+      console.log('[MiinPlanner suggestProductivityTipsFlow] Prompt call successful, output:', JSON.stringify(modelOutput));
     } catch (e: any) {
-      console.error('[MiinPlanner suggestMarketingTipsFlow] Critical error during prompt execution:', e.message, e.stack);
+      console.error('[MiinPlanner suggestProductivityTipsFlow] Critical error during prompt execution:', e.message, e.stack);
       // Ensure modelOutput remains null/undefined to trigger fallback
       modelOutput = null;
     }
 
     if (!modelOutput || !modelOutput.tips) {
-      console.warn('[MiinPlanner suggestMarketingTipsFlow] AI did not return valid tips or an error occurred. Using fallback.');
+      console.warn('[MiinPlanner suggestProductivityTipsFlow] AI did not return valid tips or an error occurred. Using fallback.');
       return {
-        tips: "I'm sorry, I encountered an issue while processing your request for marketing tips. Please try rephrasing your query or try again later.",
+        tips: "I'm sorry, I encountered an issue while processing your request for productivity tips. Please try rephrasing your query or try again later.",
       };
     }
     return modelOutput;

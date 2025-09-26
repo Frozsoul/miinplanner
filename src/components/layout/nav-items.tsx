@@ -7,7 +7,6 @@ import {
   CalendarDays,
   BotMessageSquare,
   Lightbulb,
-  FileText,
   Shield,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -25,7 +24,6 @@ const allNavItems: NavItem[] = [
   { href: "/tasks", icon: ListChecks, label: "Task Manager" },
   { href: "/calendar", icon: CalendarDays, label: "Calendar" },
   { href: "/insights", icon: Lightbulb, label: "AI Insights", isPremium: true },
-  { href: "/content", icon: FileText, label: "Content Studio", isPremium: true },
   { href: "/chatbot", icon: BotMessageSquare, label: "AI Chatbot", isPremium: true },
 ];
 
