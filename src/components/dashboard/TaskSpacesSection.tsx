@@ -24,6 +24,7 @@ import { taskSpaceTemplates } from "@/lib/task-space-templates";
 
 export function TaskSpacesSection() {
   const { 
+    tasks,
     taskSpaces, 
     fetchTaskSpaces, 
     loadTaskSpace, 
@@ -93,9 +94,15 @@ export function TaskSpacesSection() {
                 <Sparkles className="mx-auto h-8 w-8 text-primary mb-2" />
                 <h4 className="font-semibold text-foreground mb-1">Start Your Journey</h4>
                 <p className="text-sm mb-4">Create tasks and build your first workflow. Once you're happy with it, you can save it here as a reusable space!</p>
-                <Button asChild>
+                {tasks.length > 0 ? (
+                   <Button asChild>
+                    <Link href="/settings/workflow">Save Your First Space <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                  </Button>
+                ) : (
+                   <Button asChild>
                     <Link href="/tasks">Create Your First Task <ArrowRight className="ml-2 h-4 w-4"/></Link>
-                </Button>
+                  </Button>
+                )}
             </div>
           )}
         </CardContent>
