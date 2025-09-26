@@ -8,6 +8,7 @@ import {
   BotMessageSquare,
   Lightbulb,
   Shield,
+  Library,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -23,6 +24,7 @@ const allNavItems: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/tasks", icon: ListChecks, label: "Task Manager" },
   { href: "/calendar", icon: CalendarDays, label: "Calendar" },
+  { href: "/library", icon: Library, label: "Library" },
   { href: "/insights", icon: Lightbulb, label: "AI Insights", isPremium: true },
   { href: "/chatbot", icon: BotMessageSquare, label: "AI Chatbot", isPremium: true },
 ];

@@ -212,7 +212,7 @@ export default function TasksPage() {
         </div>
         <div className="flex gap-2 w-full sm:w-auto self-end sm:self-center">
              <Button variant="outline" asChild>
-                <Link href="/settings">
+                <Link href="/settings/workflow">
                     <Library className="mr-2 h-4 w-4" />
                     Manage Spaces
                 </Link>

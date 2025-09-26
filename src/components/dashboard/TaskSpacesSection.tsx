@@ -101,7 +101,7 @@ export function TaskSpacesSection() {
         </CardContent>
         <CardFooter>
            <Button variant="link" asChild className="p-0 h-auto">
-              <Link href="/settings">Manage All Spaces <ArrowRight className="ml-1 h-4 w-4"/></Link>
+              <Link href="/settings/workflow">Manage All Spaces <ArrowRight className="ml-1 h-4 w-4"/></Link>
             </Button>
         </CardFooter>
       </Card>
@@ -145,7 +145,7 @@ export function TaskSpacesSection() {
         </CardContent>
          <CardFooter>
            <Button variant="link" asChild className="p-0 h-auto">
-              <Link href="/settings">View All Templates <ArrowRight className="ml-1 h-4 w-4"/></Link>
+              <Link href="/library">View All Templates <ArrowRight className="ml-1 h-4 w-4"/></Link>
             </Button>
         </CardFooter>
       </Card>
