@@ -23,6 +23,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   fetchUserProfile: () => Promise<void>;
+  updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
   login: (data: LoginFormData) => Promise<FirebaseUser | null>;
   signup: (data: SignupFormData) => Promise<FirebaseUser | null>;
   loginWithGoogle: () => Promise<FirebaseUser | null>;
@@ -81,6 +82,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, handleUserAuth);
     return () => unsubscribe();
   }, [handleUserAuth]);
+
+  const handleUpdateUserProfile = async (updates: Partial<UserProfile>) => {
+    if (user?.uid) {
+      await updateUserProfile(user.uid, updates);
+      await fetchUserProfile(); // Refresh the profile
+    }
+  };
+
 
   const login = async (data: LoginFormData): Promise<FirebaseUser | null> => {
     setLoading(true);
@@ -169,7 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, fetchUserProfile, login, signup, loginWithGoogle, logout, error, clearError, verificationEmailSent, setVerificationEmailSent }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, fetchUserProfile, updateUserProfile: handleUpdateUserProfile, login, signup, loginWithGoogle, logout, error, clearError, verificationEmailSent, setVerificationEmailSent }}>
       {children}
     </AuthContext.Provider>
   );

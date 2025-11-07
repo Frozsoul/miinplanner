@@ -10,6 +10,7 @@ import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
+import { format } from 'date-fns';
 
 interface AppDataContextType {
   // Global loading state
@@ -47,7 +48,8 @@ interface AppDataContextType {
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
-const MIN_TASKS_FOR_AI = 5; // Minimum number of valid tasks to trigger full AI insights
+const MIN_TASKS_FOR_AI = 5;
+const INSIGHTS_DAILY_LIMIT = 3;
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, userProfile, loading: authLoading, fetchUserProfile } = useAuth();
@@ -335,7 +337,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
     try {
       // This is a client-side only operation until the user saves it
-      const newSpace = await importTaskSpace(template); // Use import logic to replace current tasks
+      await importTaskSpace(template); // Use import logic to replace current tasks
       toast({ title: "Success", description: `Template "${template.name}" loaded.` });
     } catch (error) {
       console.error("AppDataContext: Failed to load task space template:", error);
@@ -382,6 +384,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   // --- AI Insights Functions ---
   const generateInsights = async () => {
+    if (!user?.uid || !userProfile) return;
+
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    let currentCount = userProfile.insightGenerationCount || 0;
+    const lastDate = userProfile.lastInsightGenerationDate;
+
+    if (lastDate !== todayStr) {
+      currentCount = 0; // Reset count for a new day
+    }
+
+    if (currentCount >= INSIGHTS_DAILY_LIMIT) {
+      toast({
+        title: "Daily Limit Reached",
+        description: `You can generate AI insights ${INSIGHTS_DAILY_LIMIT} times per day. Please try again tomorrow.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoadingAi(true);
     setInsights(null);
 
@@ -404,22 +425,30 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const insightTasks: InsightTask[] = validTasksForAnalysis.map(t => ({
-      id: t.id,
-      title: t.title,
-      status: t.status,
-      priority: t.priority,
-      createdAt: t.createdAt.toDate().toISOString(),
-      updatedAt: (t.updatedAt || t.createdAt).toDate().toISOString(),
-      dueDate: t.dueDate,
-    }));
-
     try {
+      const insightTasks: InsightTask[] = validTasksForAnalysis.map(t => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        createdAt: t.createdAt.toDate().toISOString(),
+        updatedAt: (t.updatedAt || t.createdAt).toDate().toISOString(),
+        dueDate: t.dueDate,
+      }));
+
       const input: InsightGenerationInput = {
         tasks: insightTasks,
         currentDate: new Date().toISOString(),
       };
       const aiResult = await aiGenerateInsights(input);
+      
+      // Update usage count in Firestore
+      await updateUserProfile(user.uid, {
+        insightGenerationCount: currentCount + 1,
+        lastInsightGenerationDate: todayStr,
+      });
+      await fetchUserProfile(); // Refresh profile state
+
       setInsights({ ...aiResult, type: 'full' });
       toast({ title: "AI Insights Generated", description: "Your productivity report is ready." });
     } catch (error) {

@@ -83,7 +83,7 @@ export interface SimpleInsights {
 
 export interface ChatMessage {
   id:string;
-  sender: 'user' | 'ai';
+  sender: 'user' | 'ai' | 'system';
   text: string;
   timestamp: Date;
 }
@@ -102,7 +102,7 @@ export interface GenerateQuoteInput {
 }
 
 // User Profile and Plan Types
-export type UserPlan = 'free' | 'premium';
+export type UserPlan = 'free'; // Only 'free' plan now
 
 export interface UserProfile {
   id: string; // Should match Firebase Auth UID
@@ -111,6 +111,12 @@ export interface UserProfile {
   plan: UserPlan;
   createdAt: Date | Timestamp;
   taskStatuses?: TaskStatus[]; // Add custom statuses
+  
+  // AI Usage Limits
+  insightGenerationCount?: number;
+  lastInsightGenerationDate?: string; // YYYY-MM-DD
+  chatbotMessageCount?: number;
+  lastChatbotMessageDate?: string; // YYYY-MM-DD
 }
 
 
