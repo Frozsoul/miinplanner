@@ -27,7 +27,6 @@ interface AuthContextType {
   signup: (data: SignupFormData) => Promise<FirebaseUser | null>;
   loginWithGoogle: () => Promise<FirebaseUser | null>;
   logout: () => Promise<void>;
-  updateUserPlan: (plan: 'free' | 'premium') => Promise<void>;
   error: AuthError | null;
   clearError: () => void;
   verificationEmailSent: boolean;
@@ -164,19 +163,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   };
-  
-  const updateUserPlan = async (plan: 'free' | 'premium') => {
-      if (!user?.uid) throw new Error("User not authenticated");
-      await updateUserProfile(user.uid, { plan });
-      setUserProfile(prev => prev ? { ...prev, plan } : null);
-  };
 
   const clearError = () => {
     setError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, fetchUserProfile, login, signup, loginWithGoogle, logout, updateUserPlan, error, clearError, verificationEmailSent, setVerificationEmailSent }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, fetchUserProfile, login, signup, loginWithGoogle, logout, error, clearError, verificationEmailSent, setVerificationEmailSent }}>
       {children}
     </AuthContext.Provider>
   );

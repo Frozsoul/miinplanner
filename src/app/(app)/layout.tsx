@@ -40,9 +40,8 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, userProfile, loading, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const navItems = useNavItems();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -66,18 +65,8 @@ export default function AppLayout({
     await logout();
   };
 
-  const handleNavItemClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isPremiumFeature?: boolean) => {
-    if (isPremiumFeature && userProfile?.plan !== 'premium') {
-      e.preventDefault();
-      toast({
-        title: "Premium Feature",
-        description: "Please upgrade to a premium plan to access this feature.",
-        variant: "destructive"
-      });
-      router.push('/settings');
-    } else {
-       router.push(href);
-    }
+  const handleNavItemClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    router.push(href);
   };
 
 
@@ -101,12 +90,9 @@ export default function AppLayout({
                       asChild
                       isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard" && item.href !== "/")}
                       tooltip={item.label}
-                      className={cn(
-                        "justify-start",
-                        item.isPremium && userProfile?.plan !== 'premium' && 'text-muted-foreground'
-                      )}
+                      className="justify-start"
                     >
-                      <Link href={item.href} onClick={(e) => handleNavItemClick(e, item.href, item.isPremium)}>
+                      <Link href={item.href} onClick={(e) => handleNavItemClick(e, item.href)}>
                         <item.icon className="h-5 w-5" />
                         <span>{item.label}</span>
                       </Link>

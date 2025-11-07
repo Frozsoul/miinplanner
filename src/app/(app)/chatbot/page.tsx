@@ -8,35 +8,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { suggestProductivityTips, type SuggestProductivityTipsInput } from "@/ai/flows/suggest-marketing-tips";
-import { Bot, User, Send, Loader2, Sparkles, BotMessageSquare, Shield } from "lucide-react";
+import { Bot, User, Send, Loader2, Sparkles, BotMessageSquare } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ChatbotPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const isPremium = userProfile?.plan === 'premium';
-
-  useEffect(() => {
-    if (!authLoading && !isPremium) {
-      // Optional: Redirect if not premium and trying to access
-      // router.push('/settings');
-    }
-  }, [userProfile, authLoading, isPremium, router]);
-
-
   const handleSendMessage = async () => {
-    if (input.trim() === "" || !isPremium) return;
+    if (input.trim() === "") return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -87,45 +73,13 @@ export default function ChatbotPage() {
     );
   }
 
-  if (!isPremium) {
-    return (
-      <div className="px-4 sm:px-6 md:py-6 flex flex-col items-center justify-center text-center">
-        <Card className="max-w-md shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary" />
-              Upgrade to Premium
-            </CardTitle>
-            <CardDescription>
-              The AI Chatbot is a premium feature. Unlock it by upgrading your plan.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert>
-              <Shield className="h-4 w-4" />
-              <AlertTitle>Premium Feature</AlertTitle>
-              <AlertDescription>
-                Gain access to the AI assistant and advanced insights by upgrading your account.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-          <CardFooter>
-            <Button asChild className="w-full">
-              <Link href="/settings">View Plans</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
-
   return (
     <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
       <h1 className="text-3xl font-headline font-bold mb-8 text-center">AI Productivity Assistant</h1>
       <Card className="flex-1 flex flex-col shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Sparkles className="text-accent" /> Chat with MiinBot</CardTitle>
+          <CardDescription>Your personal AI assistant for boosting productivity and optimizing workflows.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden">
           <ScrollArea className="h-[calc(100vh-20rem)] pr-4" ref={scrollAreaRef}> {/* Adjust height as needed */}
