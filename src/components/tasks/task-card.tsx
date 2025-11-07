@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Task } from "@/types";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Play } from "lucide-react";
+import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -92,7 +91,7 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
             <InlineDatePicker task={task} />
             {task.channel && (
               <div className="flex items-center gap-1.5">
-                <Play className="h-3.5 w-3.5" />
+                <Megaphone className="h-3.5 w-3.5" />
                 <span>{task.channel}</span>
               </div>
             )}
