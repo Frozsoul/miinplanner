@@ -14,6 +14,18 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 import { useToast } from "@/hooks/use-toast";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
@@ -53,6 +65,8 @@ export default function TasksPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -106,11 +120,24 @@ export default function TasksPage() {
   const openFormModal = (taskToEdit?: Task) => {
     setEditingTask(taskToEdit || null);
     setIsFormOpen(true);
+    setIsFormDirty(false); // Reset dirty state on open
   };
 
   const closeFormModal = () => {
     setEditingTask(null);
     setIsFormOpen(false);
+    setIsFormDirty(false);
+  };
+
+  const handleFormOpenChange = (open: boolean) => {
+    if (!open && isFormDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      setIsFormOpen(open);
+      if (!open) {
+        closeFormModal();
+      }
+    }
   };
 
   const openDetailModal = (task: Task) => {
@@ -202,149 +229,167 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
-            <ListChecks className="h-7 w-7 text-primary"/> Task Manager
-          </h1>
-          <MotivationalQuote context="tasks" />
+    <>
+      <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div>
+            <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
+              <ListChecks className="h-7 w-7 text-primary"/> Task Manager
+            </h1>
+            <MotivationalQuote context="tasks" />
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto self-end sm:self-center">
+               <Button variant="outline" asChild>
+                  <Link href="/settings/workflow">
+                      <Library className="mr-2 h-4 w-4" />
+                      Manage Spaces
+                  </Link>
+               </Button>
+              <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add New Task
+              </Button>
+          </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto self-end sm:self-center">
-             <Button variant="outline" asChild>
-                <Link href="/settings/workflow">
-                    <Library className="mr-2 h-4 w-4" />
-                    Manage Spaces
-                </Link>
-             </Button>
-            <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Task
-            </Button>
-        </div>
-      </div>
 
-      <Card className="mb-6 shadow-sm border">
-        <CardContent className="p-4 flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
-                 <div className="lg:col-span-1">
-                    <Label htmlFor="search-tasks" className="block text-sm font-medium text-muted-foreground mb-1.5">Search</Label>
-                    <Input
-                        id="search-tasks"
-                        placeholder="Keywords..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="status-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Status</Label>
-                     <MultiSelect
-                        title="Status"
-                        options={taskStatuses.map(s => ({ value: s, label: s }))}
-                        selected={statusFilter}
-                        onChange={setStatusFilter}
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="priority-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Priority</Label>
-                    <MultiSelect
-                        title="Priority"
-                        options={TASK_PRIORITIES.map(p => ({ value: p, label: p }))}
-                        selected={priorityFilter}
-                        onChange={setPriorityFilter}
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="channel-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Channel</Label>
-                    <MultiSelect
-                        title="Channel"
-                        options={allChannels.map(c => ({ value: c, label: c }))}
-                        selected={channelFilter}
-                        onChange={setChannelFilter}
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="tag-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Tag</Label>
-                    <MultiSelect
-                        title="Tag"
-                        options={allTags.map(t => ({ value: t, label: t }))}
-                        selected={tagFilter}
-                        onChange={setTagFilter}
-                    />
-                </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 items-center sm:justify-between w-full xl:w-auto xl:justify-start pt-5 xl:pt-0">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-archived"
-                  checked={showArchived}
-                  onCheckedChange={setShowArchived}
-                />
-                <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                  {showArchived ? <ArchiveRestore className="inline-block h-4 w-4 mr-1" /> : <Archive className="inline-block h-4 w-4 mr-1" />}
-                  {showArchived ? 'Viewing Archived' : 'View Archived'}
-                </Label>
+        <Card className="mb-6 shadow-sm border">
+          <CardContent className="p-4 flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
+                   <div className="lg:col-span-1">
+                      <Label htmlFor="search-tasks" className="block text-sm font-medium text-muted-foreground mb-1.5">Search</Label>
+                      <Input
+                          id="search-tasks"
+                          placeholder="Keywords..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                  </div>
+                  <div>
+                      <Label htmlFor="status-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Status</Label>
+                       <MultiSelect
+                          title="Status"
+                          options={taskStatuses.map(s => ({ value: s, label: s }))}
+                          selected={statusFilter}
+                          onChange={setStatusFilter}
+                      />
+                  </div>
+                  <div>
+                      <Label htmlFor="priority-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Priority</Label>
+                      <MultiSelect
+                          title="Priority"
+                          options={TASK_PRIORITIES.map(p => ({ value: p, label: p }))}
+                          selected={priorityFilter}
+                          onChange={setPriorityFilter}
+                      />
+                  </div>
+                  <div>
+                      <Label htmlFor="channel-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Channel</Label>
+                      <MultiSelect
+                          title="Channel"
+                          options={allChannels.map(c => ({ value: c, label: c }))}
+                          selected={channelFilter}
+                          onChange={setChannelFilter}
+                      />
+                  </div>
+                  <div>
+                      <Label htmlFor="tag-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Tag</Label>
+                      <MultiSelect
+                          title="Tag"
+                          options={allTags.map(t => ({ value: t, label: t }))}
+                          selected={tagFilter}
+                          onChange={setTagFilter}
+                      />
+                  </div>
               </div>
-              <Separator orientation="vertical" className="h-6 hidden sm:block xl:ml-4" />
-              <div className="flex-shrink-0">
-                <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="kanban">
-                  <ToggleGroupItem value="list" aria-label="List view">
-                    <List className="h-4 w-4"/>
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="kanban" aria-label="Kanban board view">
-                    <LayoutGrid className="h-4 w-4" />
-                  </ToggleGroupItem>
-                </ToggleGroup>
+              <div className="flex flex-col sm:flex-row gap-4 items-center sm:justify-between w-full xl:w-auto xl:justify-start pt-5 xl:pt-0">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-archived"
+                    checked={showArchived}
+                    onCheckedChange={setShowArchived}
+                  />
+                  <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                    {showArchived ? <ArchiveRestore className="inline-block h-4 w-4 mr-1" /> : <Archive className="inline-block h-4 w-4 mr-1" />}
+                    {showArchived ? 'Viewing Archived' : 'View Archived'}
+                  </Label>
+                </div>
+                <Separator orientation="vertical" className="h-6 hidden sm:block xl:ml-4" />
+                <div className="flex-shrink-0">
+                  <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="kanban">
+                    <ToggleGroupItem value="list" aria-label="List view">
+                      <List className="h-4 w-4"/>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="kanban" aria-label="Kanban board view">
+                      <LayoutGrid className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
               </div>
-            </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {isLoadingTasks && tasks.length > 0 && (
-        <div className="flex justify-center items-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" /> <span className="ml-2">Refreshing tasks...</span>
+        {isLoadingTasks && tasks.length > 0 && (
+          <div className="flex justify-center items-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" /> <span className="ml-2">Refreshing tasks...</span>
+          </div>
+        )}
+
+        <div className="flex-grow min-h-0">
+          {renderContent()}
+
+          {!isLoadingTasks && tasks.length > 0 && filteredTasks.length === 0 && (
+            <Card className="mt-4">
+              <CardContent className="pt-6 text-center text-muted-foreground">
+                No tasks found matching your filters.
+              </CardContent>
+            </Card>
+          )}
         </div>
-      )}
 
-      <div className="flex-grow min-h-0">
-        {renderContent()}
+        <Dialog open={isFormOpen} onOpenChange={handleFormOpenChange}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingTask ? "Edit Task" : "Add New Task"}</DialogTitle>
+              <DialogDescription>
+                {editingTask ? "Update the details of your task." : "Fill in the details for your new task."}
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh] p-1 pr-4">
+              <TaskForm
+                taskToEdit={editingTask}
+                onSave={handleSaveTask}
+                onCancel={closeFormModal}
+                isSubmitting={isSubmitting}
+                onDirtyChange={setIsFormDirty}
+              />
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
 
-        {!isLoadingTasks && tasks.length > 0 && filteredTasks.length === 0 && (
-          <Card className="mt-4">
-            <CardContent className="pt-6 text-center text-muted-foreground">
-              No tasks found matching your filters.
-            </CardContent>
-          </Card>
+         <AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Discard Unsaved Changes?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        You have unsaved changes in the task form. Are you sure you want to close it and lose your progress?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+                    <AlertDialogAction onClick={closeFormModal}>Discard Changes</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        {viewingTask && (
+          <TaskDetailModal
+              task={viewingTask}
+              isOpen={isDetailModalOpen}
+              onClose={closeDetailModal}
+              onArchiveToggle={handleArchiveToggle}
+          />
         )}
       </div>
-
-      <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) closeFormModal(); else setIsFormOpen(isOpen); }}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingTask ? "Edit Task" : "Add New Task"}</DialogTitle>
-            <DialogDescription>
-              {editingTask ? "Update the details of your task." : "Fill in the details for your new task."}
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[70vh] p-1 pr-4">
-            <TaskForm
-              taskToEdit={editingTask}
-              onSave={handleSaveTask}
-              onCancel={closeFormModal}
-              isSubmitting={isSubmitting}
-            />
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      {viewingTask && (
-        <TaskDetailModal
-            task={viewingTask}
-            isOpen={isDetailModalOpen}
-            onClose={closeDetailModal}
-            onArchiveToggle={handleArchiveToggle}
-        />
-      )}
-    </div>
+    </>
   );
 }
 
@@ -432,6 +477,3 @@ function MultiSelect({ options, selected, onChange, className, title = "Select" 
     </Popover>
   );
 }
-
-
-    

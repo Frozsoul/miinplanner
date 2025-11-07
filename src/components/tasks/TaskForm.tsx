@@ -6,13 +6,14 @@ import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/componentsui/select";
 import { DatePicker } from "@/components/tasks/date-picker";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { parseISO, isValid } from "date-fns";
 import { TASK_PRIORITIES } from "@/lib/constants";
 import { useAppData } from "@/contexts/app-data-context";
+import isEqual from 'lodash.isequal';
 
 
 interface TaskFormProps {
@@ -20,6 +21,7 @@ interface TaskFormProps {
   onSave: (taskData: TaskData) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus: TaskStatus): TaskData & { startDateObj?: Date; dueDateObj?: Date; tagsString?: string } => {
@@ -67,14 +69,24 @@ const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus:
 };
 
 
-export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting }: TaskFormProps) {
+export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting, onDirtyChange }: TaskFormProps) {
   const { taskStatuses } = useAppData();
-  const [formData, setFormData] = useState(() => getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do'));
+  const [initialState, setInitialState] = useState(() => getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do'));
+  const [formData, setFormData] = useState(initialState);
 
-  // This effect is now only needed to reset the form if the taskToEdit prop changes while the modal is open.
   useEffect(() => {
-      setFormData(getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do'));
+    const newInitialState = getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do');
+    setInitialState(newInitialState);
+    setFormData(newInitialState);
+    onDirtyChange?.(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskToEdit, taskStatuses]);
+  
+  useEffect(() => {
+    const isDirty = !isEqual(initialState, formData);
+    onDirtyChange?.(isDirty);
+  }, [formData, initialState, onDirtyChange]);
+
 
   const handleChange = (field: keyof typeof formData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
