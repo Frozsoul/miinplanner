@@ -1,8 +1,9 @@
+
 "use client";
 import { useAppData } from "@/contexts/app-data-context";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickAddTask } from "@/components/dashboard/QuickAddTask";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListChecks, AlertTriangle, BarChart3, CalendarClock, Send, Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,13 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">No upcoming or overdue tasks. Great job!</p>
           )}
         </CardContent>
+         {tasksToShow.length > 0 && (
+            <CardFooter>
+                <Button asChild variant="secondary" className="w-full">
+                    <Link href="/tasks">Go to Task Manager <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+            </CardFooter>
+        )}
       </Card>
       
       <TaskSpacesSection />
