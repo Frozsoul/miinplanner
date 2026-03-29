@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
@@ -23,6 +22,21 @@ interface TaskFormProps {
   onDirtyChange?: (isDirty: boolean) => void;
 }
 
+const parseTaskDate = (date: any) => {
+  if (!date) return undefined;
+  if (typeof date === 'string') {
+    try {
+      const parsed = parseISO(date);
+      return isValid(parsed) ? parsed : undefined;
+    } catch (e) {
+      return undefined;
+    }
+  }
+  if (date && typeof date.toDate === 'function') return date.toDate();
+  if (date instanceof Date && isValid(date)) return date;
+  return undefined;
+};
+
 const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus: TaskStatus) => {
     if (!taskToEdit) {
         return {
@@ -43,8 +57,8 @@ const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus:
         description: taskToEdit.description || "",
         priority: taskToEdit.priority,
         status: taskToEdit.status,
-        startDateObj: taskToEdit.startDate ? parseISO(taskToEdit.startDate) : undefined,
-        dueDateObj: taskToEdit.dueDate ? parseISO(taskToEdit.dueDate) : undefined,
+        startDateObj: parseTaskDate(taskToEdit.startDate),
+        dueDateObj: parseTaskDate(taskToEdit.dueDate),
         channel: taskToEdit.channel || "",
         tagsString: (taskToEdit.tags || []).join(", "),
         assignedTo: taskToEdit.assignedTo || "",

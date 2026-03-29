@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useMemo } from "react";
 import { Calendar } from "@/components/ui/calendar";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Task, TaskPriority } from "@/types";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay,isSameMonth, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay,isSameMonth, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ListChecks } from "lucide-react";
 
@@ -16,6 +15,21 @@ interface CalendarViewProps {
 }
 
 const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const parseTaskDate = (date: any) => {
+  if (!date) return undefined;
+  if (typeof date === 'string') {
+    try {
+      const parsed = parseISO(date);
+      return isValid(parsed) ? parsed : undefined;
+    } catch (e) {
+      return undefined;
+    }
+  }
+  if (date && typeof date.toDate === 'function') return date.toDate();
+  if (date instanceof Date && isValid(date)) return date;
+  return undefined;
+};
 
 export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -32,20 +46,11 @@ export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
   const tasksForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
     return tasks.filter(task => {
-        let match = false;
-        if (task.dueDate) {
-            try {
-                const dueDate = parseISO(task.dueDate);
-                if (isSameDay(dueDate, selectedDate)) match = true;
-            } catch (e) { console.error("Error parsing task due date:", task.dueDate, e); }
-        }
-        if (!match && task.startDate) {
-             try {
-                const startDate = parseISO(task.startDate);
-                if (isSameDay(startDate, selectedDate)) match = true;
-            } catch (e) { console.error("Error parsing task start date:", task.startDate, e); }
-        }
-        return match;
+        const dueDate = parseTaskDate(task.dueDate);
+        const startDate = parseTaskDate(task.startDate);
+        
+        return (dueDate && isSameDay(dueDate, selectedDate)) || 
+               (startDate && isSameDay(startDate, selectedDate));
     });
   }, [tasks, selectedDate]);
 
@@ -79,7 +84,7 @@ export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
                 mode="single"
                 selected={currentMonth}
                 onMonthChange={handleMonthChange}
-                className="p-0 [&_button]:h-8 [&_button]:w-8" // Adjusted size
+                className="p-0 [&_button]:h-8 [&_button]:w-8"
                 classNames={{
                     caption_label: "text-lg font-medium",
                     nav_button_previous: "absolute left-1",
@@ -103,14 +108,10 @@ export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
             ))}
             {daysInMonth.map(day => {
               const tasksOnDay = tasks.filter(t => {
-                  let match = false;
-                  if (t.dueDate) {
-                      try { if (isSameDay(parseISO(t.dueDate), day)) match = true; } catch(e){}
-                  }
-                  if (!match && t.startDate) {
-                      try { if (isSameDay(parseISO(t.startDate), day)) match = true; } catch(e){}
-                  }
-                  return match;
+                  const dueDate = parseTaskDate(t.dueDate);
+                  const startDate = parseTaskDate(t.startDate);
+                  return (dueDate && isSameDay(dueDate, day)) || 
+                         (startDate && isSameDay(startDate, day));
               });
               const isSelected = selectedDate && isSameDay(day, selectedDate);
               const isToday = isSameDay(day, new Date());
@@ -158,7 +159,7 @@ export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
           <CardDescription>Events and tasks for the selected day.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[calc(theme(aspectRatio.square)_*_5_/_var(--tw-cols)_-_theme(spacing.24))] min-h-[400px]"> {/* Adjusted height */}
+          <ScrollArea className="h-[calc(theme(aspectRatio.square)_*_5_/_var(--tw-cols)_-_theme(spacing.24))] min-h-[400px]">
             {!selectedDate ? (
               <p className="text-muted-foreground">No date selected.</p>
             ) : (

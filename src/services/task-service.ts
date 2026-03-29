@@ -21,16 +21,25 @@ import { FirestorePermissionError } from '@/firebase/errors';
 const TASK_COLLECTION = 'tasks';
 
 // Helper to convert Firestore doc to Task object
-const fromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>): Task => {
+export const taskFromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>): Task => {
   const data = snapshot.data();
+  
+  // Safe date conversion helper
+  const toIsoString = (val: any) => {
+    if (!val) return undefined;
+    if (typeof val.toDate === 'function') return val.toDate().toISOString();
+    if (typeof val === 'string') return val;
+    return undefined;
+  };
+
   return {
     id: snapshot.id,
     title: data.title,
     description: data.description || "",
     priority: data.priority || 'Medium',
     status: data.status || 'To Do',
-    startDate: data.startDate ? (data.startDate as Timestamp).toDate().toISOString() : undefined,
-    dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate().toISOString() : undefined,
+    startDate: toIsoString(data.startDate),
+    dueDate: toIsoString(data.dueDate),
     channel: data.channel || undefined,
     tags: data.tags || [],
     completed: data.completed || (data.status === 'Done'),
@@ -55,7 +64,7 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
         orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(fromFirestore);
+    return querySnapshot.docs.map(taskFromFirestore);
   } catch (err: any) {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({

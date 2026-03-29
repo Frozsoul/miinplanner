@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -19,7 +18,33 @@ export function InlineDatePicker({ task }: InlineDatePickerProps) {
   const { updateTaskField } = useAppData();
   const [isOpen, setIsOpen] = useState(false);
 
-  const currentDate = task.dueDate && isValid(parseISO(task.dueDate)) ? parseISO(task.dueDate) : undefined;
+  // Safe date parsing helper
+  const parseTaskDate = (date: any) => {
+    if (!date) return undefined;
+    
+    // Handle ISO string
+    if (typeof date === 'string') {
+      try {
+        const parsed = parseISO(date);
+        return isValid(parsed) ? parsed : undefined;
+      } catch (e) {
+        return undefined;
+      }
+    }
+    
+    // Handle Firestore Timestamp or Date object
+    if (date && typeof date.toDate === 'function') {
+      return date.toDate();
+    }
+    
+    if (date instanceof Date && isValid(date)) {
+      return date;
+    }
+    
+    return undefined;
+  };
+
+  const currentDate = parseTaskDate(task.dueDate);
 
   const handleDateSelect = (date: Date | undefined) => {
     updateTaskField(task.id, 'dueDate', date?.toISOString());
@@ -63,5 +88,3 @@ export function InlineDatePicker({ task }: InlineDatePickerProps) {
     </Popover>
   );
 }
-
-    

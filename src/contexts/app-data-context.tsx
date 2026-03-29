@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Task, TaskData, AIInsights, SimpleInsights, TaskStatus, TaskSpace, Workspace, WorkspaceMember } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
-import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
+import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService, taskFromFirestore } from '@/services/task-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser } from '@/services/task-space-service';
 import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService } from '@/services/workspace-service';
 import { updateUserProfile } from '@/services/user-service';
@@ -184,12 +184,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const snapshot = await getDocs(q);
-      const fetchedTasks = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt,
-        updatedAt: doc.data().updatedAt,
-      } as Task));
+      const fetchedTasks = snapshot.docs.map(taskFromFirestore);
       
       setTasks(fetchedTasks);
     } catch (error) {

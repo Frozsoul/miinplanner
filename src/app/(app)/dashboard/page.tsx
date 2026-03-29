@@ -1,4 +1,3 @@
-
 "use client";
 import { useAppData } from "@/contexts/app-data-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -16,6 +15,21 @@ import { NewUserDashboard } from "@/components/dashboard/NewUserDashboard";
 
 const LayoutDashboardIcon = BarChart3;
 
+const parseTaskDate = (date: any) => {
+  if (!date) return undefined;
+  if (typeof date === 'string') {
+    try {
+      const parsed = parseISO(date);
+      return isValid(parsed) ? parsed : undefined;
+    } catch (e) {
+      return undefined;
+    }
+  }
+  if (date && typeof date.toDate === 'function') return date.toDate();
+  if (date instanceof Date && isValid(date)) return date;
+  return undefined;
+};
+
 export default function DashboardPage() {
   const { 
     tasks, 
@@ -32,24 +46,26 @@ export default function DashboardPage() {
   
   const upcomingTasks = useMemo(() => activeTasks
     .filter(task => {
-        if (!task.dueDate) return false;
-        try {
-            const dueDate = parseISO(task.dueDate);
-            return isValid(dueDate) && !isPast(dueDate) && task.status !== 'Done';
-        } catch { return false; }
+        const dueDate = parseTaskDate(task.dueDate);
+        return dueDate && !isPast(dueDate) && task.status !== 'Done';
     })
-    .sort((a, b) => (parseISO(a.dueDate!).getTime() - parseISO(b.dueDate!).getTime()))
+    .sort((a, b) => {
+        const dateA = parseTaskDate(a.dueDate)?.getTime() || 0;
+        const dateB = parseTaskDate(b.dueDate)?.getTime() || 0;
+        return dateA - dateB;
+    })
     .slice(0, 5), [activeTasks]);
     
   const overdueTasks = useMemo(() => activeTasks
     .filter(task => {
-        if (!task.dueDate) return false;
-        try {
-            const dueDate = parseISO(task.dueDate);
-            return isValid(dueDate) && isPast(dueDate) && task.status !== 'Done';
-        } catch { return false; }
+        const dueDate = parseTaskDate(task.dueDate);
+        return dueDate && isPast(dueDate) && task.status !== 'Done';
     })
-    .sort((a, b) => (parseISO(a.dueDate!).getTime() - parseISO(b.dueDate!).getTime()))
+    .sort((a, b) => {
+        const dateA = parseTaskDate(a.dueDate)?.getTime() || 0;
+        const dateB = parseTaskDate(b.dueDate)?.getTime() || 0;
+        return dateA - dateB;
+    })
     .slice(0, 5), [activeTasks]);
     
   const tasksToShow = upcomingTasks.length > 0 ? upcomingTasks : overdueTasks;
@@ -90,17 +106,20 @@ export default function DashboardPage() {
         <CardContent>
           {tasksToShow.length > 0 ? (
             <ul className="space-y-3">
-              {tasksToShow.map(task => (
-                <li key={task.id} className="flex justify-between items-center p-3 rounded-md border hover:bg-muted/50 transition-colors">
-                  <div>
-                    <Link href={`/tasks#${task.id}`} className="font-medium hover:underline">{task.title}</Link>
-                    <p className="text-sm text-muted-foreground">
-                      Due: {task.dueDate && isValid(parseISO(task.dueDate)) ? format(parseISO(task.dueDate), "MMM dd, yyyy") : "N/A"} - Priority: {task.priority}
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm" asChild><Link href={`/tasks#${task.id}`}>View</Link></Button>
-                </li>
-              ))}
+              {tasksToShow.map(task => {
+                const dueDate = parseTaskDate(task.dueDate);
+                return (
+                  <li key={task.id} className="flex justify-between items-center p-3 rounded-md border hover:bg-muted/50 transition-colors">
+                    <div>
+                      <Link href={`/tasks#${task.id}`} className="font-medium hover:underline">{task.title}</Link>
+                      <p className="text-sm text-muted-foreground">
+                        Due: {dueDate ? format(dueDate, "MMM dd, yyyy") : "N/A"} - Priority: {task.priority}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" asChild><Link href={`/tasks#${task.id}`}>View</Link></Button>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-muted-foreground">No upcoming or overdue tasks. Great job!</p>
