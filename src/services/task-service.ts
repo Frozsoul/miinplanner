@@ -1,4 +1,3 @@
-
 import { db } from '@/lib/firebase';
 import type { Task, TaskData, TaskStatus, TaskPriority } from '@/types';
 import {
@@ -73,8 +72,14 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
   
   const tasksRef = collection(db, TASK_COLLECTION);
   const docData: any = {
-    ...taskData,
+    title: taskData.title,
+    description: taskData.description || "",
+    priority: taskData.priority || 'Medium',
+    status: taskData.status || 'To Do',
     userId,
+    workspaceId: taskData.workspaceId || null,
+    assignedTo: taskData.assignedTo || null,
+    tags: taskData.tags || [],
     completed: taskData.status === 'Done' ? true : (taskData.completed || false),
     archived: false,
     order: taskData.order ?? Date.now(),
@@ -82,8 +87,6 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     updatedAt: serverTimestamp(),
     startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
     dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
-    tags: taskData.tags || [],
-    status: taskData.status || 'To Do',
     channel: taskData.channel || null,
   };
 
@@ -111,6 +114,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
 export const updateTask = async (userId: string, taskId: string, taskUpdate: Partial<TaskData & { completed?: boolean, archived?: boolean }>): Promise<void> => {
   if (!userId || !taskId) return;
   const taskRef = doc(db, TASK_COLLECTION, taskId);
+  
   const updateData: any = { ...taskUpdate, updatedAt: serverTimestamp() };
   
   if (taskUpdate.startDate) updateData.startDate = Timestamp.fromDate(new Date(taskUpdate.startDate));
@@ -120,6 +124,18 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
   delete updateData.userId;
   delete updateData.createdAt;
   delete updateData.id;
+
+  // Convert optional fields to null if they are undefined to avoid Firestore errors
+  if (updateData.assignedTo === undefined && 'assignedTo' in taskUpdate) updateData.assignedTo = null;
+  if (updateData.workspaceId === undefined && 'workspaceId' in taskUpdate) updateData.workspaceId = null;
+  if (updateData.channel === undefined && 'channel' in taskUpdate) updateData.channel = null;
+
+  // Final sweep: remove any remaining undefined values
+  Object.keys(updateData).forEach(key => {
+    if (updateData[key] === undefined) {
+      delete updateData[key];
+    }
+  });
 
   updateDoc(taskRef, updateData).catch(async (err) => {
     if (err.code === 'permission-denied') {

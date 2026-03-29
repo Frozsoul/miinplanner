@@ -89,16 +89,26 @@ export const applyTasksToUser = async (userId: string, newTasksData: TaskData[])
 
   newTasksData.forEach(taskData => {
     const newTaskRef = doc(collection(db, TASK_COLLECTION));
-    batch.set(newTaskRef, {
-      ...taskData,
+    const docToSet: any = {
+      title: taskData.title,
+      description: taskData.description || "",
+      priority: taskData.priority || 'Medium',
+      status: taskData.status || 'To Do',
       userId,
+      workspaceId: taskData.workspaceId || null,
+      assignedTo: taskData.assignedTo || null,
+      tags: taskData.tags || [],
       completed: taskData.status === 'Done' ? true : (taskData.completed || false),
       archived: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
       dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
-    });
+      channel: taskData.channel || null,
+      order: taskData.order || Date.now(),
+    };
+
+    batch.set(newTaskRef, docToSet);
   });
 
   batch.commit().catch(async (err) => {
