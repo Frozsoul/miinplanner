@@ -9,12 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/tasks/date-picker";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 import { parseISO, isValid } from "date-fns";
 import { TASK_PRIORITIES } from "@/lib/constants";
 import { useAppData } from "@/contexts/app-data-context";
 import isEqual from 'lodash.isequal';
-
 
 interface TaskFormProps {
   taskToEdit?: Task | null;
@@ -24,35 +23,19 @@ interface TaskFormProps {
   onDirtyChange?: (isDirty: boolean) => void;
 }
 
-const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus: TaskStatus): TaskData & { startDateObj?: Date; dueDateObj?: Date; tagsString?: string } => {
+const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus: TaskStatus) => {
     if (!taskToEdit) {
         return {
             title: "",
             description: "",
-            priority: "Medium",
+            priority: "Medium" as TaskPriority,
             status: defaultStatus,
-            startDateObj: undefined,
-            dueDateObj: undefined,
+            startDateObj: undefined as Date | undefined,
+            dueDateObj: undefined as Date | undefined,
             channel: "",
             tagsString: "",
-            tags: [],
+            assignedTo: "",
         };
-    }
-
-    let startDateObject: Date | undefined = undefined;
-    if (taskToEdit.startDate) {
-        try {
-            const parsed = parseISO(taskToEdit.startDate);
-            if (isValid(parsed)) startDateObject = parsed;
-        } catch (e) {}
-    }
-
-    let dueDateObject: Date | undefined = undefined;
-    if (taskToEdit.dueDate) {
-        try {
-            const parsed = parseISO(taskToEdit.dueDate);
-            if (isValid(parsed)) dueDateObject = parsed;
-        } catch (e) {}
     }
 
     return {
@@ -60,33 +43,17 @@ const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus:
         description: taskToEdit.description || "",
         priority: taskToEdit.priority,
         status: taskToEdit.status,
-        startDateObj: startDateObject,
-        dueDateObj: dueDateObject,
+        startDateObj: taskToEdit.startDate ? parseISO(taskToEdit.startDate) : undefined,
+        dueDateObj: taskToEdit.dueDate ? parseISO(taskToEdit.dueDate) : undefined,
         channel: taskToEdit.channel || "",
         tagsString: (taskToEdit.tags || []).join(", "),
-        tags: taskToEdit.tags || [],
+        assignedTo: taskToEdit.assignedTo || "",
     };
 };
 
-
 export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting, onDirtyChange }: TaskFormProps) {
-  const { taskStatuses } = useAppData();
-  const [initialState, setInitialState] = useState(() => getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do'));
-  const [formData, setFormData] = useState(initialState);
-
-  useEffect(() => {
-    const newInitialState = getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do');
-    setInitialState(newInitialState);
-    setFormData(newInitialState);
-    onDirtyChange?.(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskToEdit, taskStatuses]);
-  
-  useEffect(() => {
-    const isDirty = !isEqual(initialState, formData);
-    onDirtyChange?.(isDirty);
-  }, [formData, initialState, onDirtyChange]);
-
+  const { taskStatuses, workspaceMembers, currentWorkspace } = useAppData();
+  const [formData, setFormData] = useState(() => getInitialFormState(taskToEdit, taskStatuses[0] || 'To Do'));
 
   const handleChange = (field: keyof typeof formData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -103,6 +70,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting, onDirtyCh
       dueDate: formData.dueDateObj?.toISOString(),
       channel: formData.channel,
       tags: formData.tagsString?.split(',').map(tag => tag.trim()).filter(tag => tag) || [],
+      assignedTo: formData.assignedTo || undefined,
     };
     onSave(taskPayload);
   };
@@ -113,10 +81,12 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting, onDirtyCh
         <Label htmlFor="title">Title</Label>
         <Input id="title" value={formData.title} onChange={e => handleChange('title', e.target.value)} placeholder="Task title" required />
       </div>
+
       <div className="space-y-1.5">
         <Label htmlFor="description">Description</Label>
         <Textarea id="description" value={formData.description} onChange={e => handleChange('description', e.target.value)} placeholder="Task description (optional)" />
       </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="status">Status</Label>
@@ -137,24 +107,37 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting, onDirtyCh
           </Select>
         </div>
       </div>
-       <div className="space-y-1.5">
-        <Label htmlFor="channel">Channel</Label>
-        <Input id="channel" value={formData.channel} onChange={e => handleChange('channel', e.target.value)} placeholder="e.g., Blog, Social Media" />
-      </div>
+
+      {currentWorkspace && (
+        <div className="space-y-1.5">
+          <Label htmlFor="assignedTo">Assign To</Label>
+          <Select value={formData.assignedTo} onValueChange={(v) => handleChange('assignedTo', v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a team member" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Unassigned</SelectItem>
+              {workspaceMembers.map(member => (
+                <SelectItem key={member.uid} value={member.uid}>
+                  {member.displayName || member.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-            <Label htmlFor="startDate">Start Date (Optional)</Label>
+            <Label htmlFor="startDate">Start Date</Label>
             <DatePicker date={formData.startDateObj} setDate={(date) => handleChange('startDateObj', date)} />
         </div>
         <div className="space-y-1.5">
-            <Label htmlFor="dueDate">Due Date (Optional)</Label>
+            <Label htmlFor="dueDate">Due Date</Label>
             <DatePicker date={formData.dueDateObj} setDate={(date) => handleChange('dueDateObj', date)} />
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="tags">Tags (comma-separated)</Label>
-        <Input id="tags" value={formData.tagsString} onChange={e => handleChange('tagsString', e.target.value)} placeholder="e.g., SEO, urgent, marketing" />
-      </div>
+
       <div className="flex justify-end space-x-2 pt-4">
         <Button variant="outline" type="button" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting || !formData.title}>

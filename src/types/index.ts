@@ -1,48 +1,61 @@
 
 import type { Timestamp } from "firebase/firestore";
 
-export type TaskStatus = string; // No longer a union type, now a generic string
+export type TaskStatus = string;
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
 export interface Task {
-  id: string; // Firestore document ID
+  id: string;
   title: string;
   description?: string;
   priority: TaskPriority;
   status: TaskStatus;
-  startDate?: string; // Stored as ISO string
-  dueDate?: string; // Stored as ISO string
+  startDate?: string;
+  dueDate?: string;
   channel?: string;
   tags?: string[];
   completed: boolean;
-  archived: boolean; // Added for archiving
-  order?: number; // Added for explicit sorting
-  createdAt: Timestamp; // Firestore server timestamp
-  updatedAt: Timestamp; // Firestore server timestamp
+  archived: boolean;
+  order?: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   userId: string;
+  workspaceId?: string; // Associated workspace
+  assignedTo?: string; // UID of assigned user
 }
 
-// For creating/updating tasks, omitting server-generated fields and id
 export type TaskData = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'completed'> & { completed?: boolean };
 
-// Task Spaces
+export interface Workspace {
+  id: string;
+  name: string;
+  ownerId: string;
+  memberUids: string[];
+  createdAt: Date | Timestamp;
+}
+
+export interface WorkspaceMember {
+  uid: string;
+  email: string;
+  displayName?: string;
+}
+
 export interface TaskSpace {
   id: string;
   name: string;
   createdAt: Date | Timestamp;
   tasks: TaskData[];
-  taskStatuses?: TaskStatus[]; // Add statuses to task space
+  taskStatuses?: TaskStatus[];
 }
 
-// AI Insights Types
 export interface InsightTask {
   id: string;
   title: string;
   status: TaskStatus;
   priority: TaskPriority;
-  createdAt: string; // ISO String
-  updatedAt: string; // ISO String
-  dueDate?: string; // ISO String
+  createdAt: string;
+  updatedAt: string;
+  dueDate?: string;
 }
 
 export interface AtRiskTaskInsight {
@@ -88,39 +101,25 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export interface ContentIdea {
-  id: string;
-  text: string;
-  keywords?: string;
-  tone?: string;
-  targetAudience?: string;
-}
-
-// This is now only used for typing the MotivationalQuote component's 'context' prop.
 export interface GenerateQuoteInput {
   context: 'dashboard' | 'tasks' | 'calendar';
 }
 
-// User Profile and Plan Types
-export type UserPlan = 'free'; // Only 'free' plan now
+export type UserPlan = 'free';
 
 export interface UserProfile {
-  id: string; // Should match Firebase Auth UID
+  id: string;
   email: string;
   displayName?: string;
   plan: UserPlan;
   createdAt: Date | Timestamp;
-  taskStatuses?: TaskStatus[]; // Add custom statuses
-  
-  // AI Usage Limits
+  taskStatuses?: TaskStatus[];
   insightGenerationCount?: number;
-  lastInsightGenerationDate?: string; // YYYY-MM-DD
+  lastInsightGenerationDate?: string;
   chatbotMessageCount?: number;
-  lastChatbotMessageDate?: string; // YYYY-MM-DD
+  lastChatbotMessageDate?: string;
 }
 
-
-// Authentication Form Data
 export interface LoginFormData {
   email: string;
   password: string;

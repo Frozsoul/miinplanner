@@ -2,26 +2,26 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Task, TaskPriority, TaskData, AIInsights, SimpleInsights, InsightTask, TaskStatus, TaskSpace } from '@/types';
+import type { Task, TaskPriority, TaskData, AIInsights, SimpleInsights, InsightTask, TaskStatus, TaskSpace, Workspace, WorkspaceMember } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService } from '@/services/task-space-service';
+import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService } from '@/services/workspace-service';
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
 import { format } from 'date-fns';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 
 interface AppDataContextType {
-  // Global loading state
   isLoadingAppData: boolean;
-
-  // Tasks
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   isLoadingTasks: boolean;
   fetchTasks: () => Promise<void>;
-  addTask: (taskData: TaskData) => Promise<Task | null>;
+  addTask: (taskData: TaskData, workspaceId?: string) => Promise<Task | null>;
   updateTask: (taskId: string, taskUpdate: Partial<TaskData>) => Promise<void>;
   updateTaskField: (taskId: string, field: keyof TaskData, value: TaskData[keyof TaskData]) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
@@ -30,6 +30,16 @@ interface AppDataContextType {
   addStatus: (status: TaskStatus) => Promise<void>;
   deleteStatus: (status: TaskStatus) => Promise<void>;
   reorderStatuses: (startIndex: number, endIndex: number) => Promise<void>;
+
+  // Workspaces
+  workspaces: Workspace[];
+  currentWorkspace: Workspace | null;
+  setCurrentWorkspaceById: (id: string) => void;
+  workspaceMembers: WorkspaceMember[];
+  fetchWorkspaces: () => Promise<void>;
+  addWorkspace: (name: string) => Promise<void>;
+  inviteToWorkspace: (email: string) => Promise<void>;
+  removeFromWorkspace: (userId: string) => Promise<void>;
 
   // Task Spaces
   taskSpaces: TaskSpace[];
@@ -40,7 +50,7 @@ interface AppDataContextType {
   importTaskSpace: (space: Omit<TaskSpace, 'id'>) => Promise<void>;
   loadTaskSpaceTemplate: (template: Omit<TaskSpace, 'id'>) => Promise<void>;
 
-  // AI Insights
+  // AI
   insights: AIInsights | SimpleInsights | null;
   isLoadingAi: boolean;
   generateInsights: () => Promise<void>;
@@ -48,29 +58,22 @@ interface AppDataContextType {
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
-const MIN_TASKS_FOR_AI = 5;
-const INSIGHTS_DAILY_LIMIT = 3;
-
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, userProfile, loading: authLoading, fetchUserProfile } = useAuth();
   const { toast } = useToast();
 
-  // Task State
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
-  
-  // Task Spaces State
   const [taskSpaces, setTaskSpaces] = useState<TaskSpace[]>([]);
-
-  // AI Insights State
   const [insights, setInsights] = useState<AIInsights | SimpleInsights | null>(null);
-  
-  // Statuses State
   const [taskStatuses, setTaskStatuses] = useState<TaskStatus[]>(DEFAULT_TASK_STATUSES);
-
-  // Generic AI Loading State
   const [isLoadingAi, setIsLoadingAi] = useState(false);
-  
+
+  // Workspace State
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>([]);
+
   const isLoadingAppData = authLoading || isLoadingTasks;
 
   useEffect(() => {
@@ -81,380 +84,265 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [userProfile]);
 
-
-  // --- Task Functions ---
-  const fetchUserTasks = useCallback(async () => {
-    if (user?.uid) {
-      setIsLoadingTasks(true);
-      try {
-        // Fetches all tasks, including archived ones
-        const userTasks = await getTasks(user.uid);
-        setTasks(userTasks);
-      } catch (error) {
-        console.error("AppDataContext: Failed to fetch tasks:", error);
-        toast({ title: "Error", description: "Could not fetch tasks.", variant: "destructive" });
-      } finally {
-        setIsLoadingTasks(false);
+  // --- Workspace Logic ---
+  const fetchWorkspaces = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const ws = await getUserWorkspaces(user.uid);
+      setWorkspaces(ws);
+      if (ws.length > 0 && !currentWorkspace) {
+        setCurrentWorkspace(ws[0]);
       }
-    } else {
+    } catch (error) {
+      console.error("Failed to fetch workspaces", error);
+    }
+  }, [user, currentWorkspace]);
+
+  useEffect(() => {
+    fetchWorkspaces();
+  }, [fetchWorkspaces]);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (currentWorkspace) {
+        const members = await getWorkspaceMembers(currentWorkspace.memberUids);
+        setWorkspaceMembers(members);
+      } else {
+        setWorkspaceMembers([]);
+      }
+    };
+    fetchMembers();
+  }, [currentWorkspace]);
+
+  const setCurrentWorkspaceById = (id: string) => {
+    const ws = workspaces.find(w => w.id === id);
+    if (ws) {
+      setCurrentWorkspace(ws);
+      fetchTasks();
+    }
+  };
+
+  const addWorkspace = async (name: string) => {
+    if (!user?.uid) return;
+    try {
+      const newWs = await createWorkspace(user.uid, name);
+      setWorkspaces(prev => [...prev, newWs]);
+      setCurrentWorkspace(newWs);
+      toast({ title: "Workspace created", description: `You are now in ${name}.` });
+    } catch (error) {
+      toast({ title: "Error creating workspace", variant: "destructive" });
+    }
+  };
+
+  const inviteToWorkspace = async (email: string) => {
+    if (!currentWorkspace) return;
+    try {
+      await inviteMemberByEmail(currentWorkspace.id, email);
+      toast({ title: "User invited", description: `${email} has been added to the workspace.` });
+      fetchWorkspaces(); // Refresh
+    } catch (error: any) {
+      toast({ title: "Invite failed", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const removeFromWorkspace = async (userId: string) => {
+    if (!currentWorkspace) return;
+    try {
+      await removeMemberService(currentWorkspace.id, userId);
+      toast({ title: "Member removed" });
+      fetchWorkspaces();
+    } catch (error) {
+      toast({ title: "Error removing member", variant: "destructive" });
+    }
+  };
+
+  // --- Task Logic ---
+  const fetchTasks = useCallback(async () => {
+    if (!user?.uid) {
       setTasks([]);
       setIsLoadingTasks(false);
+      return;
     }
-  }, [user, toast]);
 
-  const addTask = async (taskData: TaskData): Promise<Task | null> => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return null;
-    }
     setIsLoadingTasks(true);
     try {
-      const newTask = await addTaskService(user.uid, taskData);
-      await fetchUserTasks(); 
-      toast({ title: "Success", description: "Task added." });
-      return newTask;
+      const tasksRef = collection(db, 'tasks');
+      let q;
+      if (currentWorkspace) {
+        // Fetch tasks for the workspace
+        q = query(
+          tasksRef,
+          where('workspaceId', '==', currentWorkspace.id),
+          orderBy('order', 'asc'),
+          orderBy('createdAt', 'desc')
+        );
+      } else {
+        // Fetch personal tasks (no workspaceId)
+        q = query(
+          tasksRef,
+          where('userId', '==', user.uid),
+          where('workspaceId', '==', null),
+          orderBy('order', 'asc'),
+          orderBy('createdAt', 'desc')
+        );
+      }
+      
+      const snapshot = await getDocs(q);
+      const fetchedTasks = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt,
+        updatedAt: doc.data().updatedAt,
+      } as Task));
+      
+      setTasks(fetchedTasks);
     } catch (error) {
-      console.error("AppDataContext: Failed to add task:", error);
-      toast({ title: "Error", description: "Could not add task.", variant: "destructive" });
-      return null;
+      console.error("Failed to fetch tasks", error);
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  }, [user, currentWorkspace]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const addTask = async (taskData: TaskData, workspaceId?: string): Promise<Task | null> => {
+    if (!user?.uid) return null;
+    setIsLoadingTasks(true);
+    try {
+      const payload = { 
+        ...taskData, 
+        workspaceId: workspaceId || currentWorkspace?.id || null 
+      };
+      const newTask = await addTaskService(user.uid, payload);
+      await fetchTasks();
+      return newTask;
     } finally {
       setIsLoadingTasks(false);
     }
   };
 
   const updateTask = async (taskId: string, taskUpdate: Partial<TaskData>) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    // No full loading state for quick updates like archiving
-    const originalTasks = tasks;
-    // Optimistic update
-    setTasks(prevTasks => prevTasks.map(task => 
-      task.id === taskId ? { ...task, ...taskUpdate } as Task : task
-    ));
+    if (!user?.uid) return;
     try {
       await updateTaskService(user.uid, taskId, taskUpdate);
-      // Optional: re-fetch for consistency, but optimistic update handles UI
-      await fetchUserTasks();
+      await fetchTasks();
     } catch (error) {
-      console.error("AppDataContext: Failed to update task:", error);
-      toast({ title: "Error", description: "Could not update task.", variant: "destructive" });
-      setTasks(originalTasks); // Revert on error
+      console.error(error);
     }
   };
 
-  const updateTaskField = async (taskId: string, field: keyof TaskData, value: TaskData[keyof TaskData] | undefined) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    const originalTasks = [...tasks];
-    
-    // Optimistic UI update
-    setTasks(prevTasks => prevTasks.map(task =>
-      task.id === taskId ? { ...task, [field]: value } as Task : task
-    ));
-
+  const updateTaskField = async (taskId: string, field: keyof TaskData, value: any) => {
+    if (!user?.uid) return;
     try {
-      const payload = { [field]: value };
-      await updateTaskService(user.uid, taskId, payload);
+      await updateTaskService(user.uid, taskId, { [field]: value });
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, [field]: value } : t));
     } catch (error) {
-      console.error(`AppDataContext: Failed to update task field ${field}:`, error);
-      toast({ title: "Error", description: `Could not update task ${field}.`, variant: "destructive" });
-      setTasks(originalTasks); // Revert on failure
+      console.error(error);
     }
   };
 
   const moveTask = async (taskId: string, newStatus: TaskStatus, newIndex: number) => {
-    if (!user?.uid) {
-        toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-        return;
-    }
-
-    setTasks(prevTasks => {
-        const taskToMove = prevTasks.find(t => t.id === taskId);
-        if (!taskToMove) return prevTasks;
-
-        const sourceTasks = prevTasks.filter(t => t.id !== taskId);
-        const newTasks = [...sourceTasks];
-
-        const updatedTask = { ...taskToMove, status: newStatus };
-        newTasks.splice(newIndex, 0, updatedTask);
-
-        return newTasks;
-    });
-
+    if (!user?.uid) return;
     try {
-        await updateTaskService(user.uid, taskId, { status: newStatus });
+      await updateTaskService(user.uid, taskId, { status: newStatus });
+      fetchTasks();
     } catch (error) {
-        console.error("AppDataContext: Failed to move task:", error);
-        toast({ title: "Error", description: "Could not move task. Reverting.", variant: "destructive" });
-        fetchUserTasks(); 
+      console.error(error);
     }
   };
-
 
   const deleteTask = async (taskId: string) => {
-     if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    setIsLoadingTasks(true);
+    if (!user?.uid) return;
     try {
       await deleteTaskService(user.uid, taskId);
-      await fetchUserTasks();
-      toast({ title: "Success", description: "Task deleted." });
-    } finally {
-      setIsLoadingTasks(false);
+      fetchTasks();
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  useEffect(() => {
-    fetchUserTasks();
-  }, [fetchUserTasks]);
-
-  // --- Task Status Functions ---
+  // --- Status Logic ---
   const addStatus = async (status: TaskStatus) => {
     if (!user?.uid) return;
     const newStatuses = [...taskStatuses, status];
-    setTaskStatuses(newStatuses); // Optimistic update
-    try {
-      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
-      toast({ title: "Success", description: `Status "${status}" added.` });
-    } catch (error) {
-      toast({ title: "Error", description: "Could not add status.", variant: "destructive" });
-      setTaskStatuses(taskStatuses); // Revert
-    }
+    setTaskStatuses(newStatuses);
+    await updateUserProfile(user.uid, { taskStatuses: newStatuses });
   };
 
   const deleteStatus = async (statusToDelete: TaskStatus) => {
     if (!user?.uid) return;
-    if (tasks.some(task => task.status === statusToDelete)) {
-      toast({
-        title: "Cannot Delete Status",
-        description: "This status is currently being used by one or more tasks.",
-        variant: "destructive",
-      });
-      return;
-    }
     const newStatuses = taskStatuses.filter(s => s !== statusToDelete);
-    setTaskStatuses(newStatuses); // Optimistic update
-    try {
-      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
-      toast({ title: "Success", description: `Status "${statusToDelete}" deleted.` });
-    } catch (error) {
-      toast({ title: "Error", description: "Could not delete status.", variant: "destructive" });
-      setTaskStatuses(taskStatuses); // Revert
-    }
+    setTaskStatuses(newStatuses);
+    await updateUserProfile(user.uid, { taskStatuses: newStatuses });
   };
 
   const reorderStatuses = async (startIndex: number, endIndex: number) => {
     if (!user?.uid) return;
-    const originalStatuses = [...taskStatuses];
-    const [removed] = originalStatuses.splice(startIndex, 1);
-    originalStatuses.splice(endIndex, 0, removed);
-    
-    setTaskStatuses(originalStatuses); // Optimistic update
-    
-    try {
-      await updateUserProfile(user.uid, { taskStatuses: originalStatuses });
-    } catch (error) {
-      toast({ title: "Error", description: "Could not save new status order.", variant: "destructive" });
-      setTaskStatuses(taskStatuses); // Revert
-    }
+    const newStatuses = [...taskStatuses];
+    const [removed] = newStatuses.splice(startIndex, 1);
+    newStatuses.splice(endIndex, 0, removed);
+    setTaskStatuses(newStatuses);
+    await updateUserProfile(user.uid, { taskStatuses: newStatuses });
   };
 
-  // --- Task Spaces Functions ---
+  // --- Space Logic ---
   const fetchTaskSpaces = useCallback(async () => {
-    if (!user?.uid) {
-      setTaskSpaces([]);
-      return;
-    }
-    try {
-      const spaces = await getTaskSpaces(user.uid);
-      setTaskSpaces(spaces);
-    } catch (error) {
-      console.error("AppDataContext: Failed to fetch task spaces:", error);
-      toast({ title: "Error", description: "Could not fetch task spaces.", variant: "destructive" });
-    }
-  }, [user, toast]);
+    if (!user?.uid) return;
+    const spaces = await getTaskSpaces(user.uid);
+    setTaskSpaces(spaces);
+  }, [user]);
 
   const saveCurrentTaskSpace = async (name: string) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    try {
-      const tasksToSave = tasks.map(({ id, createdAt, updatedAt, userId, ...taskData }) => {
-        // Ensure no undefined values are being sent to Firestore
-        const cleanTaskData: TaskData = {
-          title: taskData.title,
-          description: taskData.description || null,
-          priority: taskData.priority,
-          status: taskData.status,
-          startDate: taskData.startDate || null,
-          dueDate: taskData.dueDate || null,
-          channel: taskData.channel || null,
-          tags: taskData.tags || [],
-          archived: taskData.archived || false,
-        };
-        return cleanTaskData;
-      });
-
-      await saveTaskSpaceService(user.uid, name, tasksToSave, taskStatuses);
-      await fetchTaskSpaces();
-      toast({ title: "Success", description: `Task space "${name}" saved.` });
-    } catch (error) {
-      console.error("AppDataContext: Failed to save task space:", error);
-      toast({ title: "Error", description: "Could not save task space.", variant: "destructive" });
-    }
+    if (!user?.uid) return;
+    const tasksToSave = tasks.map(({ id, createdAt, updatedAt, userId, ...data }) => data);
+    await saveTaskSpaceService(user.uid, name, tasksToSave, taskStatuses);
+    fetchTaskSpaces();
   };
 
   const loadTaskSpace = async (spaceId: string) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    try {
-      const loadedSpace = await loadTasksFromSpace(user.uid, spaceId);
-      if (loadedSpace.taskStatuses) {
-        await updateUserProfile(user.uid, { taskStatuses: loadedSpace.taskStatuses });
-      }
-      await fetchUserProfile(); // Refetch profile to get new statuses
-      await fetchUserTasks(); // This reloads the tasks into the main state
-      toast({ title: "Success", description: "Task space loaded." });
-    } catch (error) {
-      console.error("AppDataContext: Failed to load task space:", error);
-      toast({ title: "Error", description: "Could not load task space.", variant: "destructive" });
-    }
-  };
-  
-  const loadTaskSpaceTemplate = async (template: Omit<TaskSpace, 'id'>) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    try {
-      // This is a client-side only operation until the user saves it
-      await importTaskSpace(template); // Use import logic to replace current tasks
-      toast({ title: "Success", description: `Template "${template.name}" loaded.` });
-    } catch (error) {
-      console.error("AppDataContext: Failed to load task space template:", error);
-      toast({ title: "Error", description: "Could not load template.", variant: "destructive" });
-    }
-  };
-
-  const importTaskSpace = async (space: Omit<TaskSpace, 'id'>) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    try {
-      const newSpace = await saveTaskSpaceService(user.uid, space.name, space.tasks, space.taskStatuses || taskStatuses);
-      const loadedSpace = await loadTasksFromSpace(user.uid, newSpace.id);
-      if (loadedSpace.taskStatuses) {
-        await updateUserProfile(user.uid, { taskStatuses: loadedSpace.taskStatuses });
-      }
-      await fetchUserProfile();
-      await fetchUserTasks();
-      await fetchTaskSpaces();
-      toast({ title: "Success", description: `Imported and loaded "${space.name}".` });
-    } catch (error) {
-      console.error("AppDataContext: Failed to import task space:", error);
-      toast({ title: "Error", description: "Could not import task space.", variant: "destructive" });
-    }
+    if (!user?.uid) return;
+    await loadTasksFromSpace(user.uid, spaceId);
+    fetchTasks();
   };
 
   const deleteTaskSpace = async (spaceId: string) => {
-    if (!user?.uid) {
-      toast({ title: "Error", description: "User not authenticated.", variant: "destructive" });
-      return;
-    }
-    try {
-      await deleteTaskSpaceService(user.uid, spaceId);
-      await fetchTaskSpaces();
-      toast({ title: "Success", description: "Task space deleted." });
-    } catch (error) {
-      console.error("AppDataContext: Failed to delete task space:", error);
-      toast({ title: "Error", description: "Could not delete task space.", variant: "destructive" });
-    }
+    if (!user?.uid) return;
+    await deleteTaskSpaceService(user.uid, spaceId);
+    fetchTaskSpaces();
   };
 
+  const importTaskSpace = async (space: Omit<TaskSpace, 'id'>) => {
+    if (!user?.uid) return;
+    const newSpace = await saveTaskSpaceService(user.uid, space.name, space.tasks, space.taskStatuses || taskStatuses);
+    await loadTasksFromSpace(user.uid, newSpace.id);
+    fetchTasks();
+  };
 
-  // --- AI Insights Functions ---
+  const loadTaskSpaceTemplate = async (template: Omit<TaskSpace, 'id'>) => {
+    if (!user?.uid) return;
+    await importTaskSpace(template);
+  };
+
+  // --- AI Logic ---
   const generateInsights = async () => {
-    if (!user?.uid || !userProfile) return;
-
-    const todayStr = format(new Date(), "yyyy-MM-dd");
-    let currentCount = userProfile.insightGenerationCount || 0;
-    const lastDate = userProfile.lastInsightGenerationDate;
-
-    if (lastDate !== todayStr) {
-      currentCount = 0; // Reset count for a new day
-    }
-
-    if (currentCount >= INSIGHTS_DAILY_LIMIT) {
-      toast({
-        title: "Daily Limit Reached",
-        description: `You can generate AI insights ${INSIGHTS_DAILY_LIMIT} times per day. Please try again tomorrow.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
+    if (!user?.uid) return;
     setIsLoadingAi(true);
-    setInsights(null);
-
-    const validTasksForAnalysis = tasks.filter(task => 
-      task.createdAt && typeof task.createdAt.toDate === 'function' &&
-      task.updatedAt && typeof task.updatedAt.toDate === 'function'
-    );
-    
-    if (validTasksForAnalysis.length < MIN_TASKS_FOR_AI) {
-      const simpleReport: SimpleInsights = {
-        type: 'simple',
-        totalTasks: tasks.filter(t => !t.archived).length,
-        tasksToDo: tasks.filter(t => !t.archived && (t.status === 'To Do' || t.status === 'In Progress')).length,
-        highPriorityTasks: tasks.filter(t => !t.archived && (t.priority === 'High' || t.priority === 'Urgent')).length,
-        message: `You currently have ${validTasksForAnalysis.length} tasks with complete data. Reach ${MIN_TASKS_FOR_AI} to unlock advanced AI analysis, including productivity scores and proactive suggestions!`,
-      };
-      setInsights(simpleReport);
-      toast({ title: "Basic Insights Generated", description: "Add more tasks to unlock the full power of AI." });
-      setIsLoadingAi(false);
-      return;
-    }
-
     try {
-      const insightTasks: InsightTask[] = validTasksForAnalysis.map(t => ({
+      const insightTasks = tasks.map(t => ({
         id: t.id,
         title: t.title,
         status: t.status,
         priority: t.priority,
         createdAt: t.createdAt.toDate().toISOString(),
-        updatedAt: (t.updatedAt || t.createdAt).toDate().toISOString(),
+        updatedAt: t.updatedAt.toDate().toISOString(),
         dueDate: t.dueDate,
       }));
-
-      const input: InsightGenerationInput = {
-        tasks: insightTasks,
-        currentDate: new Date().toISOString(),
-      };
-      const aiResult = await aiGenerateInsights(input);
-      
-      // Update usage count in Firestore
-      await updateUserProfile(user.uid, {
-        insightGenerationCount: currentCount + 1,
-        lastInsightGenerationDate: todayStr,
-      });
-      await fetchUserProfile(); // Refresh profile state
-
+      const aiResult = await aiGenerateInsights({ tasks: insightTasks, currentDate: new Date().toISOString() });
       setInsights({ ...aiResult, type: 'full' });
-      toast({ title: "AI Insights Generated", description: "Your productivity report is ready." });
     } catch (error) {
-      console.error("AppDataContext: AI insight generation failed:", error);
-      toast({ title: "AI Error", description: "Could not generate insights. Please try again.", variant: "destructive" });
-      setInsights(null);
+      console.error(error);
     } finally {
       setIsLoadingAi(false);
     }
@@ -463,39 +351,20 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppDataContext.Provider value={{
       isLoadingAppData,
-      tasks, 
-      setTasks,
-      isLoadingTasks, 
-      fetchTasks: fetchUserTasks,
-      addTask,
-      updateTask,
-      updateTaskField,
-      deleteTask,
-      moveTask,
-      taskStatuses,
-      addStatus,
-      deleteStatus,
-      reorderStatuses,
-      taskSpaces,
-      fetchTaskSpaces,
-      saveCurrentTaskSpace,
-      loadTaskSpace,
-      deleteTaskSpace,
-      importTaskSpace,
-      loadTaskSpaceTemplate,
-      insights, 
-      isLoadingAi, 
-      generateInsights,
+      tasks, setTasks, isLoadingTasks, fetchTasks,
+      addTask, updateTask, updateTaskField, deleteTask, moveTask,
+      taskStatuses, addStatus, deleteStatus, reorderStatuses,
+      workspaces, currentWorkspace, setCurrentWorkspaceById, workspaceMembers, fetchWorkspaces, addWorkspace, inviteToWorkspace, removeFromWorkspace,
+      taskSpaces, fetchTaskSpaces, saveCurrentTaskSpace, loadTaskSpace, deleteTaskSpace, importTaskSpace, loadTaskSpaceTemplate,
+      insights, isLoadingAi, generateInsights,
     }}>
       {children}
     </AppDataContext.Provider>
   );
 };
 
-export const useAppData = (): AppDataContextType => {
+export const useAppData = () => {
   const context = useContext(AppDataContext);
-  if (context === undefined) {
-    throw new Error("useAppData must be used within an AppDataProvider");
-  }
+  if (context === undefined) throw new Error("useAppData must be used within an AppDataProvider");
   return context;
 };
