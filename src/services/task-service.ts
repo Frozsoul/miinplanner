@@ -53,20 +53,39 @@ export const taskFromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>)
   };
 };
 
-export const getTasks = async (userId: string): Promise<Task[]> => {
+/**
+ * Fetches tasks for a user or a workspace.
+ * If workspaceId is provided, it fetches all tasks belonging to that workspace.
+ * Otherwise, it fetches personal tasks (where userId matches and workspaceId is null).
+ */
+export const getTasks = async (userId: string, workspaceId?: string): Promise<Task[]> => {
   if (!userId) return [];
   const tasksRef = collection(db, TASK_COLLECTION);
   try {
-    const q = query(
+    let q;
+    if (workspaceId) {
+      // Team Context: Anyone in the workspace can see all tasks in that workspace
+      q = query(
+        tasksRef, 
+        where('workspaceId', '==', workspaceId),
+        orderBy('order', 'asc'),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      // Personal Context: User sees tasks they created that are NOT in a workspace
+      q = query(
         tasksRef, 
         where('userId', '==', userId), 
+        where('workspaceId', '==', null),
         orderBy('order', 'asc'), 
         orderBy('createdAt', 'desc')
-    );
+      );
+    }
+    
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(taskFromFirestore);
   } catch (err: any) {
-    if (err.code === 'permission-denied' || err.code === 'permission-denied') {
+    if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: tasksRef.path,
         operation: 'list'
@@ -84,7 +103,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     title: taskData.title,
     description: taskData.description || "",
     priority: taskData.priority || 'Medium',
-    status: taskData.status || 'To Do',
+    status: data.status || 'To Do',
     userId,
     workspaceId: taskData.workspaceId || null,
     assignedTo: taskData.assignedTo || null,
@@ -99,7 +118,6 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     channel: taskData.channel || null,
   };
 
-  // Avoid await for mutation
   addDoc(tasksRef, docData).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -143,7 +161,6 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
     }
   });
 
-  // Avoid await for mutation
   updateDoc(taskRef, updateData).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -159,7 +176,6 @@ export const deleteTask = async (userId: string, taskId: string): Promise<void> 
   if (!userId || !taskId) return;
   const taskRef = doc(db, TASK_COLLECTION, taskId);
   
-  // Avoid await for mutation
   deleteDoc(taskRef).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({

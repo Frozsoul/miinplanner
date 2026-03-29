@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppData } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -32,7 +32,8 @@ export default function TeamworkPage() {
     addTask,
     updateTask,
     deleteTask,
-    isLoadingTasks
+    isLoadingTasks,
+    fetchTasks
   } = useAppData();
 
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
@@ -42,6 +43,13 @@ export default function TeamworkPage() {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Load workspace-specific tasks when selection changes
+  useEffect(() => {
+    if (currentWorkspace) {
+      fetchTasks(currentWorkspace.id);
+    }
+  }, [currentWorkspace, fetchTasks]);
 
   const handleCreateWorkspace = async () => {
     if (!newWorkspaceName.trim()) return;
@@ -68,7 +76,7 @@ export default function TeamworkPage() {
     if (editingTask) {
       await updateTask(editingTask.id, data);
     } else {
-      await addTask(data);
+      await addTask(data, currentWorkspace?.id);
     }
     setIsFormOpen(false);
   };
@@ -90,9 +98,8 @@ export default function TeamworkPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Select 
-                value={currentWorkspace?.id} 
-                onValueChange={setCurrentWorkspaceById}
-                disabled={workspaces.length === 0}
+                value={currentWorkspace?.id || "none"} 
+                onValueChange={(val) => setCurrentWorkspaceById(val === "none" ? "" : val)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={workspaces.length === 0 ? "No workspaces yet" : "Select workspace"} />
@@ -106,7 +113,7 @@ export default function TeamworkPage() {
                       ))
                     ) : (
                       <SelectItem value="none" disabled className="text-muted-foreground italic">
-                        No workspaces found
+                        No workspaces yet. Create one below!
                       </SelectItem>
                     )}
                   </SelectGroup>
@@ -191,7 +198,7 @@ export default function TeamworkPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Start Collaborating</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">Create a workspace on the left to start working with your team on shared tasks.</p>
+                  <p className="text-muted-foreground max-w-sm mx-auto">Create or select a workspace on the left to start working with your team on shared tasks.</p>
                 </div>
               </div>
             </Card>

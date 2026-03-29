@@ -3,22 +3,20 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Task, TaskData, AIInsights, SimpleInsights, TaskStatus, TaskSpace, Workspace, WorkspaceMember } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
-import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService, taskFromFirestore } from '@/services/task-service';
+import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser } from '@/services/task-space-service';
 import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService } from '@/services/workspace-service';
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 
 interface AppDataContextType {
   isLoadingAppData: boolean;
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   isLoadingTasks: boolean;
-  fetchTasks: () => Promise<void>;
+  fetchTasks: (workspaceId?: string) => Promise<void>;
   addTask: (taskData: TaskData, workspaceId?: string) => Promise<Task | null>;
   updateTask: (taskId: string, taskUpdate: Partial<TaskData>) => Promise<void>;
   updateTaskField: (taskId: string, field: keyof TaskData, value: TaskData[keyof TaskData]) => Promise<void>;
@@ -87,10 +85,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     if (!user?.uid) return;
     const ws = await getUserWorkspaces(user.uid);
     setWorkspaces(ws);
-    if (ws.length > 0 && !currentWorkspace) {
-      setCurrentWorkspace(ws[0]);
-    }
-  }, [user, currentWorkspace]);
+    // Don't auto-set currentWorkspace here, let the Teamwork page manage its own context
+  }, [user]);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -112,7 +108,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const ws = workspaces.find(w => w.id === id);
     if (ws) {
       setCurrentWorkspace(ws);
-      fetchTasks();
+    } else {
+      setCurrentWorkspace(null);
     }
   };
 
@@ -143,7 +140,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // --- Task Logic ---
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (workspaceId?: string) => {
     if (!user?.uid) {
       setTasks([]);
       setIsLoadingTasks(false);
@@ -151,30 +148,43 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setIsLoadingTasks(true);
-    const fetchedTasks = await getTasks(user.uid);
+    // Pass the workspaceId to filter personal vs team tasks
+    const fetchedTasks = await getTasks(user.uid, workspaceId);
     setTasks(fetchedTasks);
     setIsLoadingTasks(false);
-  }, [user, currentWorkspace]);
+  }, [user]);
 
+  // Initial load: Fetch personal tasks
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
   const addTask = async (taskData: TaskData, workspaceId?: string): Promise<Task | null> => {
     if (!user?.uid) return null;
+    
+    // If workspaceId is provided (e.g. from Teamwork tab), use it.
+    // Otherwise, check if we're currently "in" a workspace context.
+    const targetWorkspaceId = workspaceId || currentWorkspace?.id || null;
+    
     const payload = { 
       ...taskData, 
-      workspaceId: workspaceId || currentWorkspace?.id || null 
+      workspaceId: targetWorkspaceId 
     };
+    
     const newTask = await addTaskService(user.uid, payload);
-    await fetchTasks();
+    
+    // Optimization: Instead of full fetch, we could optimistically update, 
+    // but full fetch ensures sorting and other members' updates are synced.
+    await fetchTasks(targetWorkspaceId === null ? undefined : targetWorkspaceId);
     return newTask;
   };
 
   const updateTask = async (taskId: string, taskUpdate: Partial<TaskData>) => {
     if (!user?.uid) return;
     await updateTaskService(user.uid, taskId, taskUpdate);
-    await fetchTasks();
+    // Determine the context to refresh
+    const task = tasks.find(t => t.id === taskId);
+    await fetchTasks(task?.workspaceId);
   };
 
   const updateTaskField = async (taskId: string, field: keyof TaskData, value: any) => {
@@ -186,13 +196,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const moveTask = async (taskId: string, newStatus: TaskStatus, newIndex: number) => {
     if (!user?.uid) return;
     await updateTaskService(user.uid, taskId, { status: newStatus });
-    fetchTasks();
+    const task = tasks.find(t => t.id === taskId);
+    await fetchTasks(task?.workspaceId);
   };
 
   const deleteTask = async (taskId: string) => {
     if (!user?.uid) return;
+    const task = tasks.find(t => t.id === taskId);
+    const contextId = task?.workspaceId;
     await deleteTaskService(user.uid, taskId);
-    fetchTasks();
+    await fetchTasks(contextId);
   };
 
   // --- Status Logic ---
