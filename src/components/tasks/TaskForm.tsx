@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
@@ -48,7 +49,7 @@ const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus:
             dueDateObj: undefined as Date | undefined,
             channel: "",
             tagsString: "",
-            assignedTo: "",
+            assignedTo: "none",
         };
     }
 
@@ -61,7 +62,7 @@ const getInitialFormState = (taskToEdit: Task | null | undefined, defaultStatus:
         dueDateObj: parseTaskDate(taskToEdit.dueDate),
         channel: taskToEdit.channel || "",
         tagsString: (taskToEdit.tags || []).join(", "),
-        assignedTo: taskToEdit.assignedTo || "",
+        assignedTo: taskToEdit.assignedTo || "none",
     };
 };
 
@@ -84,7 +85,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting, onDirtyCh
       dueDate: formData.dueDateObj?.toISOString(),
       channel: formData.channel,
       tags: formData.tagsString?.split(',').map(tag => tag.trim()).filter(tag => tag) || [],
-      assignedTo: formData.assignedTo || undefined,
+      assignedTo: formData.assignedTo === "none" ? undefined : formData.assignedTo,
     };
     onSave(taskPayload);
   };
@@ -130,7 +131,7 @@ export function TaskForm({ taskToEdit, onSave, onCancel, isSubmitting, onDirtyCh
               <SelectValue placeholder="Select a team member" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Unassigned</SelectItem>
+              <SelectItem value="none">Unassigned</SelectItem>
               {workspaceMembers.map(member => (
                 <SelectItem key={member.uid} value={member.uid}>
                   {member.displayName || member.email}
