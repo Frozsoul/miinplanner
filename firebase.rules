@@ -25,11 +25,11 @@ service cloud.firestore {
 
     // User Profiles
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      // Allow reading profiles if authenticated (needed to see teammates)
+      // but only the owner can write to their own profile.
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
       
-      // Allow listing users to find teammates by email
-      allow list: if isAuthenticated();
-
       match /taskSpaces/{spaceId} {
         allow read, write: if isOwner(userId);
       }
@@ -38,7 +38,6 @@ service cloud.firestore {
     // Workspaces
     match /workspaces/{workspaceId} {
       // Allow list/read if the user is in the memberUids array
-      // This supports the 'array-contains' query for the current user's workspaces
       allow read: if isAuthenticated() && request.auth.uid in resource.data.memberUids;
       
       // Allow creation if setting self as owner and adding self to members
