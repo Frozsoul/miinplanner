@@ -1,17 +1,15 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { Task, TaskPriority, TaskData, AIInsights, SimpleInsights, InsightTask, TaskStatus, TaskSpace, Workspace, WorkspaceMember } from '@/types';
+import type { Task, TaskData, AIInsights, SimpleInsights, TaskStatus, TaskSpace, Workspace, WorkspaceMember } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
-import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService } from '@/services/task-space-service';
+import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser } from '@/services/task-space-service';
 import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService } from '@/services/workspace-service';
 import { updateUserProfile } from '@/services/user-service';
-import { generateInsights as aiGenerateInsights, type InsightGenerationInput } from '@/ai/flows/generate-insights-flow';
+import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
-import { format } from 'date-fns';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 
@@ -59,7 +57,7 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user, userProfile, loading: authLoading, fetchUserProfile } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -169,7 +167,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       const tasksRef = collection(db, 'tasks');
       let q;
       if (currentWorkspace) {
-        // Fetch tasks for the workspace
         q = query(
           tasksRef,
           where('workspaceId', '==', currentWorkspace.id),
@@ -177,7 +174,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
           orderBy('createdAt', 'desc')
         );
       } else {
-        // Fetch personal tasks (no workspaceId)
         q = query(
           tasksRef,
           where('userId', '==', user.uid),
@@ -303,7 +299,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const loadTaskSpace = async (spaceId: string) => {
     if (!user?.uid) return;
-    await loadTasksFromSpace(user.uid, spaceId);
+    const { taskStatuses: newStatuses } = await loadTasksFromSpace(user.uid, spaceId);
+    
+    if (newStatuses) {
+      setTaskStatuses(newStatuses);
+      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    }
+    
     fetchTasks();
   };
 
@@ -315,13 +317,23 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const importTaskSpace = async (space: Omit<TaskSpace, 'id'>) => {
     if (!user?.uid) return;
-    const newSpace = await saveTaskSpaceService(user.uid, space.name, space.tasks, space.taskStatuses || taskStatuses);
-    await loadTasksFromSpace(user.uid, newSpace.id);
+    
+    // Save to library (optimistically)
+    saveTaskSpaceService(user.uid, space.name, space.tasks, space.taskStatuses || taskStatuses);
+    
+    // Apply tasks directly from the provided data to avoid re-fetching issues
+    await applyTasksToUser(user.uid, space.tasks);
+    
+    // Update statuses if they exist in the template
+    if (space.taskStatuses) {
+        setTaskStatuses(space.taskStatuses);
+        await updateUserProfile(user.uid, { taskStatuses: space.taskStatuses });
+    }
+    
     fetchTasks();
   };
 
   const loadTaskSpaceTemplate = async (template: Omit<TaskSpace, 'id'>) => {
-    if (!user?.uid) return;
     await importTaskSpace(template);
   };
 
@@ -339,7 +351,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: t.updatedAt.toDate().toISOString(),
         dueDate: t.dueDate,
       }));
-      const aiResult = await aiGenerateInsights({ tasks: insightTasks, currentDate: new Date().toISOString() });
+      
+      const aiResult = await aiGenerateInsights({ 
+        tasks: insightTasks, 
+        currentDate: new Date().toISOString() 
+      });
       setInsights({ ...aiResult, type: 'full' });
     } catch (error) {
       console.error(error);
