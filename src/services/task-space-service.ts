@@ -15,16 +15,17 @@ import {
   writeBatch,
   getDoc,
 } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const USER_COLLECTION = 'users';
 const TASK_SPACE_COLLECTION = 'taskSpaces';
 const TASK_COLLECTION = 'tasks';
 
-
 export const getTaskSpaces = async (userId: string): Promise<TaskSpace[]> => {
   if (!userId) return [];
+  const spacesRef = collection(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION);
   try {
-    const spacesRef = collection(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION);
     const q = query(spacesRef, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
@@ -32,65 +33,68 @@ export const getTaskSpaces = async (userId: string): Promise<TaskSpace[]> => {
       name: doc.data().name,
       createdAt: (doc.data().createdAt as Timestamp).toDate(),
       tasks: doc.data().tasks || [],
-      taskStatuses: doc.data().taskStatuses, // Load statuses
+      taskStatuses: doc.data().taskStatuses,
     }));
-  } catch (error) {
-    console.error("Error fetching task spaces:", error);
-    throw error;
+  } catch (err: any) {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: spacesRef.path,
+        operation: 'list'
+      }));
+    }
+    return [];
   }
 };
 
 export const saveTaskSpace = async (userId: string, name: string, tasks: TaskData[], taskStatuses: TaskStatus[]): Promise<TaskSpace> => {
   if (!userId) throw new Error("User not authenticated.");
-  try {
-    const spacesRef = collection(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION);
-    const docData = {
-      name,
-      tasks,
-      taskStatuses, // Save statuses
-      createdAt: serverTimestamp(),
-    };
-    const docRef = await addDoc(spacesRef, docData);
-    return {
-      id: docRef.id,
-      name,
-      tasks,
-      taskStatuses,
-      createdAt: new Date(), // Client-side timestamp for immediate UI update
-    };
-  } catch (error) {
-    console.error("Error saving task space:", error);
-    throw error;
-  }
+  const spacesRef = collection(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION);
+  const docData = {
+    name,
+    tasks,
+    taskStatuses,
+    createdAt: serverTimestamp(),
+  };
+
+  addDoc(spacesRef, docData).catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: spacesRef.path,
+        operation: 'create',
+        requestResourceData: docData,
+      }));
+    }
+  });
+
+  return {
+    id: 'optimistic-space-' + Date.now(),
+    name,
+    tasks,
+    taskStatuses,
+    createdAt: new Date(),
+  };
 };
 
 export const loadTasksFromSpace = async (userId: string, spaceId: string): Promise<{tasks: TaskData[], taskStatuses?: TaskStatus[]}> => {
   if (!userId) throw new Error("User not authenticated.");
+  const spaceRef = doc(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION, spaceId);
+  
   try {
-    // 1. Get the tasks from the saved space
-    const spaceRef = doc(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION, spaceId);
     const spaceSnap = await getDoc(spaceRef);
     if (!spaceSnap.exists()) throw new Error("Task space not found.");
     const newTasksData: TaskData[] = spaceSnap.data().tasks || [];
     const newStatuses: TaskStatus[] | undefined = spaceSnap.data().taskStatuses;
 
-    // 2. Get all current tasks for the user to delete them
     const tasksRef = collection(db, TASK_COLLECTION);
     const q = query(tasksRef, where('userId', '==', userId));
     const currentTasksSnapshot = await getDocs(q);
     
-    // 3. Use a batch write to perform all operations atomically
     const batch = writeBatch(db);
+    currentTasksSnapshot.forEach(doc => batch.delete(doc.ref));
 
-    // Delete all current tasks
-    currentTasksSnapshot.forEach(doc => {
-      batch.delete(doc.ref);
-    });
-
-    // Add all new tasks from the space
     newTasksData.forEach(taskData => {
       const newTaskRef = doc(collection(db, TASK_COLLECTION));
-      const docData = {
+      batch.set(newTaskRef, {
         ...taskData,
         userId,
         completed: taskData.status === 'Done' ? true : (taskData.completed || false),
@@ -99,29 +103,39 @@ export const loadTasksFromSpace = async (userId: string, spaceId: string): Promi
         updatedAt: serverTimestamp(),
         startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
         dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
-      };
-      batch.set(newTaskRef, docData);
+      });
     });
 
-    // 4. Commit the batch
-    await batch.commit();
+    batch.commit().catch(async (err) => {
+        if (err.code === 'permission-denied') {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: 'batch-write',
+            operation: 'write'
+          }));
+        }
+    });
 
     return { tasks: newTasksData, taskStatuses: newStatuses };
-
-  } catch (error) {
-    console.error("Error loading task space:", error);
-    throw error;
+  } catch (err: any) {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: spaceRef.path,
+        operation: 'get'
+      }));
+    }
+    throw err;
   }
 };
 
-
 export const deleteTaskSpace = async (userId: string, spaceId: string): Promise<void> => {
-  if (!userId) throw new Error("User not authenticated.");
-  try {
-    const spaceRef = doc(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION, spaceId);
-    await deleteDoc(spaceRef);
-  } catch (error) {
-    console.error("Error deleting task space:", error);
-    throw error;
-  }
+  if (!userId) return;
+  const spaceRef = doc(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION, spaceId);
+  deleteDoc(spaceRef).catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: spaceRef.path,
+        operation: 'delete'
+      }));
+    }
+  });
 };

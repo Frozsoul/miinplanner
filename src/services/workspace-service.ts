@@ -17,21 +17,33 @@ import {
   arrayRemove,
   getDoc,
 } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const WORKSPACE_COLLECTION = 'workspaces';
 const USER_COLLECTION = 'users';
 
 export const createWorkspace = async (userId: string, name: string): Promise<Workspace> => {
   const workspacesRef = collection(db, WORKSPACE_COLLECTION);
-  const docRef = await addDoc(workspacesRef, {
+  const docData = {
     name,
     ownerId: userId,
     memberUids: [userId],
     createdAt: serverTimestamp(),
+  };
+
+  addDoc(workspacesRef, docData).catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: workspacesRef.path,
+        operation: 'create',
+        requestResourceData: docData,
+      }));
+    }
   });
   
   return {
-    id: docRef.id,
+    id: 'optimistic-ws-' + Date.now(),
     name,
     ownerId: userId,
     memberUids: [userId],
@@ -41,28 +53,46 @@ export const createWorkspace = async (userId: string, name: string): Promise<Wor
 
 export const getUserWorkspaces = async (userId: string): Promise<Workspace[]> => {
   const workspacesRef = collection(db, WORKSPACE_COLLECTION);
-  const q = query(workspacesRef, where('memberUids', 'array-contains', userId));
-  const snapshot = await getDocs(q);
-  
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  } as Workspace));
+  try {
+    const q = query(workspacesRef, where('memberUids', 'array-contains', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    } as Workspace));
+  } catch (err: any) {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: workspacesRef.path,
+        operation: 'list'
+      }));
+    }
+    return [];
+  }
 };
 
 export const getWorkspaceMembers = async (memberUids: string[]): Promise<WorkspaceMember[]> => {
   if (memberUids.length === 0) return [];
   
   const members: WorkspaceMember[] = [];
-  // Firestore limit for 'in' queries is 10, but for now we assume small teams
   for (const uid of memberUids) {
-    const userDoc = await getDoc(doc(db, USER_COLLECTION, uid));
-    if (userDoc.exists()) {
-      members.push({
-        uid: userDoc.id,
-        email: userDoc.data().email,
-        displayName: userDoc.data().displayName,
-      });
+    const userRef = doc(db, USER_COLLECTION, uid);
+    try {
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        members.push({
+          uid: userDoc.id,
+          email: userDoc.data().email,
+          displayName: userDoc.data().displayName,
+        });
+      }
+    } catch (err: any) {
+      if (err.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'get'
+        }));
+      }
     }
   }
   return members;
@@ -80,14 +110,30 @@ export const inviteMemberByEmail = async (workspaceId: string, email: string): P
   const userToInvite = snapshot.docs[0];
   const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
   
-  await updateDoc(workspaceRef, {
+  updateDoc(workspaceRef, {
     memberUids: arrayUnion(userToInvite.id)
+  }).catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: workspaceRef.path,
+        operation: 'update',
+        requestResourceData: { memberUids: 'arrayUnion(' + userToInvite.id + ')' }
+      }));
+    }
   });
 };
 
 export const removeMember = async (workspaceId: string, userId: string): Promise<void> => {
   const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
-  await updateDoc(workspaceRef, {
+  updateDoc(workspaceRef, {
     memberUids: arrayRemove(userId)
+  }).catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: workspaceRef.path,
+        operation: 'update',
+        requestResourceData: { memberUids: 'arrayRemove(' + userId + ')' }
+      }));
+    }
   });
 };

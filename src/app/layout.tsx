@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'MiinPlanner',
@@ -30,6 +31,7 @@ export default function RootLayout({
             disableTransitionOnChange
         >
           <AuthProvider>
+            <FirebaseErrorListener />
             {children}
             <Toaster />
           </AuthProvider>
