@@ -1,4 +1,3 @@
-
 import { db } from '@/lib/firebase';
 import type { UserProfile } from '@/types';
 import {
@@ -11,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const USER_COLLECTION = 'users';
 
@@ -43,7 +42,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: userRef.path,
             operation: 'get'
-          }));
+          } satisfies SecurityRuleContext));
         }
         return null;
     }
@@ -61,13 +60,14 @@ export const createUserProfile = async (userData: UserProfile): Promise<void> =>
         chatbotMessageCount: 0,
         lastChatbotMessageDate: '',
     };
+    
     setDoc(userRef, dataToSet, { merge: true }).catch(async (err) => {
         if (err.code === 'permission-denied') {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: userRef.path,
             operation: 'write',
             requestResourceData: dataToSet,
-          }));
+          } satisfies SecurityRuleContext));
         }
     });
 };
@@ -75,13 +75,14 @@ export const createUserProfile = async (userData: UserProfile): Promise<void> =>
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>): Promise<void> => {
     if (!userId) return;
     const userRef = doc(db, USER_COLLECTION, userId);
+    
     updateDoc(userRef, updates).catch(async (err) => {
         if (err.code === 'permission-denied') {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: userRef.path,
             operation: 'update',
             requestResourceData: updates,
-          }));
+          } satisfies SecurityRuleContext));
         }
     });
 };

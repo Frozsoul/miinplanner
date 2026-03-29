@@ -1,4 +1,3 @@
-
 'use client';
 
 import { db } from '@/lib/firebase';
@@ -18,7 +17,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const WORKSPACE_COLLECTION = 'workspaces';
 const USER_COLLECTION = 'users';
@@ -38,7 +37,7 @@ export const createWorkspace = async (userId: string, name: string): Promise<Wor
         path: workspacesRef.path,
         operation: 'create',
         requestResourceData: docData,
-      }));
+      } satisfies SecurityRuleContext));
     }
   });
   
@@ -65,7 +64,7 @@ export const getUserWorkspaces = async (userId: string): Promise<Workspace[]> =>
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: workspacesRef.path,
         operation: 'list'
-      }));
+      } satisfies SecurityRuleContext));
     }
     return [];
   }
@@ -91,7 +90,7 @@ export const getWorkspaceMembers = async (memberUids: string[]): Promise<Workspa
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: userRef.path,
           operation: 'get'
-        }));
+        } satisfies SecurityRuleContext));
       }
     }
   }
@@ -101,39 +100,53 @@ export const getWorkspaceMembers = async (memberUids: string[]): Promise<Workspa
 export const inviteMemberByEmail = async (workspaceId: string, email: string): Promise<void> => {
   const usersRef = collection(db, USER_COLLECTION);
   const q = query(usersRef, where('email', '==', email.toLowerCase().trim()));
-  const snapshot = await getDocs(q);
   
-  if (snapshot.empty) {
-    throw new Error('User not found. They must have a MiinPlanner account first.');
-  }
-  
-  const userToInvite = snapshot.docs[0];
-  const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
-  
-  updateDoc(workspaceRef, {
-    memberUids: arrayUnion(userToInvite.id)
-  }).catch(async (err) => {
+  try {
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+      throw new Error('User not found. They must have a MiinPlanner account first.');
+    }
+    
+    const userToInvite = snapshot.docs[0];
+    const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
+    const updateData = {
+      memberUids: arrayUnion(userToInvite.id)
+    };
+    
+    updateDoc(workspaceRef, updateData).catch(async (err) => {
+      if (err.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: workspaceRef.path,
+          operation: 'update',
+          requestResourceData: updateData
+        } satisfies SecurityRuleContext));
+      }
+    });
+  } catch (err: any) {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: workspaceRef.path,
-        operation: 'update',
-        requestResourceData: { memberUids: 'arrayUnion(' + userToInvite.id + ')' }
-      }));
+        path: usersRef.path,
+        operation: 'list'
+      } satisfies SecurityRuleContext));
+    } else {
+      throw err;
     }
-  });
+  }
 };
 
 export const removeMember = async (workspaceId: string, userId: string): Promise<void> => {
   const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
-  updateDoc(workspaceRef, {
+  const updateData = {
     memberUids: arrayRemove(userId)
-  }).catch(async (err) => {
+  };
+  
+  updateDoc(workspaceRef, updateData).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: workspaceRef.path,
         operation: 'update',
-        requestResourceData: { memberUids: 'arrayRemove(' + userId + ')' }
-      }));
+        requestResourceData: updateData
+      } satisfies SecurityRuleContext));
     }
   });
 };

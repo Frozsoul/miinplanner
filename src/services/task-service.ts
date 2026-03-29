@@ -16,7 +16,7 @@ import {
   QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const TASK_COLLECTION = 'tasks';
 
@@ -66,11 +66,11 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(taskFromFirestore);
   } catch (err: any) {
-    if (err.code === 'permission-denied') {
+    if (err.code === 'permission-denied' || err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: tasksRef.path,
         operation: 'list'
-      }));
+      } satisfies SecurityRuleContext));
     }
     return [];
   }
@@ -99,14 +99,14 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     channel: taskData.channel || null,
   };
 
-  // Avoid block, optimistic UI handling
+  // Avoid await for mutation
   addDoc(tasksRef, docData).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: tasksRef.path,
         operation: 'create',
         requestResourceData: docData,
-      }));
+      } satisfies SecurityRuleContext));
     }
   });
 
@@ -129,30 +129,28 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
   if (taskUpdate.startDate) updateData.startDate = Timestamp.fromDate(new Date(taskUpdate.startDate));
   if (taskUpdate.dueDate) updateData.dueDate = Timestamp.fromDate(new Date(taskUpdate.dueDate));
   
-  // Clean up read-only fields
   delete updateData.userId;
   delete updateData.createdAt;
   delete updateData.id;
 
-  // Convert optional fields to null if they are undefined to avoid Firestore errors
   if (updateData.assignedTo === undefined && 'assignedTo' in taskUpdate) updateData.assignedTo = null;
   if (updateData.workspaceId === undefined && 'workspaceId' in taskUpdate) updateData.workspaceId = null;
   if (updateData.channel === undefined && 'channel' in taskUpdate) updateData.channel = null;
 
-  // Final sweep: remove any remaining undefined values
   Object.keys(updateData).forEach(key => {
     if (updateData[key] === undefined) {
       delete updateData[key];
     }
   });
 
+  // Avoid await for mutation
   updateDoc(taskRef, updateData).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: taskRef.path,
         operation: 'update',
         requestResourceData: updateData,
-      }));
+      } satisfies SecurityRuleContext));
     }
   });
 };
@@ -160,12 +158,14 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
 export const deleteTask = async (userId: string, taskId: string): Promise<void> => {
   if (!userId || !taskId) return;
   const taskRef = doc(db, TASK_COLLECTION, taskId);
+  
+  // Avoid await for mutation
   deleteDoc(taskRef).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: taskRef.path,
         operation: 'delete'
-      }));
+      } satisfies SecurityRuleContext));
     }
   });
 };

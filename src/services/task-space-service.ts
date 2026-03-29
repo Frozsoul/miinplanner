@@ -15,7 +15,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const USER_COLLECTION = 'users';
 const TASK_SPACE_COLLECTION = 'taskSpaces';
@@ -39,7 +39,7 @@ export const getTaskSpaces = async (userId: string): Promise<TaskSpace[]> => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: spacesRef.path,
         operation: 'list'
-      }));
+      } satisfies SecurityRuleContext));
     }
     return [];
   }
@@ -61,7 +61,7 @@ export const saveTaskSpace = async (userId: string, name: string, tasks: TaskDat
         path: spacesRef.path,
         operation: 'create',
         requestResourceData: docData,
-      }));
+      } satisfies SecurityRuleContext));
     }
   });
 
@@ -74,51 +74,57 @@ export const saveTaskSpace = async (userId: string, name: string, tasks: TaskDat
   };
 };
 
-/**
- * Applies a set of tasks to a user's active board by deleting current tasks and adding new ones.
- */
 export const applyTasksToUser = async (userId: string, newTasksData: TaskData[]): Promise<void> => {
   if (!userId) throw new Error("User not authenticated.");
 
   const tasksRef = collection(db, TASK_COLLECTION);
-  const q = query(tasksRef, where('userId', '==', userId));
-  const currentTasksSnapshot = await getDocs(q);
-  
-  const batch = writeBatch(db);
-  currentTasksSnapshot.forEach(doc => batch.delete(doc.ref));
+  try {
+    const q = query(tasksRef, where('userId', '==', userId));
+    const currentTasksSnapshot = await getDocs(q);
+    
+    const batch = writeBatch(db);
+    currentTasksSnapshot.forEach(doc => batch.delete(doc.ref));
 
-  newTasksData.forEach(taskData => {
-    const newTaskRef = doc(collection(db, TASK_COLLECTION));
-    const docToSet: any = {
-      title: taskData.title,
-      description: taskData.description || "",
-      priority: taskData.priority || 'Medium',
-      status: taskData.status || 'To Do',
-      userId,
-      workspaceId: taskData.workspaceId || null,
-      assignedTo: taskData.assignedTo || null,
-      tags: taskData.tags || [],
-      completed: taskData.status === 'Done' ? true : (taskData.completed || false),
-      archived: false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
-      dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
-      channel: taskData.channel || null,
-      order: taskData.order || Date.now(),
-    };
+    newTasksData.forEach(taskData => {
+      const newTaskRef = doc(collection(db, TASK_COLLECTION));
+      const docToSet: any = {
+        title: taskData.title,
+        description: taskData.description || "",
+        priority: taskData.priority || 'Medium',
+        status: taskData.status || 'To Do',
+        userId,
+        workspaceId: taskData.workspaceId || null,
+        assignedTo: taskData.assignedTo || null,
+        tags: taskData.tags || [],
+        completed: taskData.status === 'Done' ? true : (taskData.completed || false),
+        archived: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
+        dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
+        channel: taskData.channel || null,
+        order: taskData.order || Date.now(),
+      };
 
-    batch.set(newTaskRef, docToSet);
-  });
+      batch.set(newTaskRef, docToSet);
+    });
 
-  batch.commit().catch(async (err) => {
+    batch.commit().catch(async (err) => {
+      if (err.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'batch-write',
+          operation: 'write'
+        } satisfies SecurityRuleContext));
+      }
+    });
+  } catch (err: any) {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'batch-write',
-        operation: 'write'
-      }));
+        path: tasksRef.path,
+        operation: 'list'
+      } satisfies SecurityRuleContext));
     }
-  });
+  }
 };
 
 export const loadTasksFromSpace = async (userId: string, spaceId: string): Promise<{tasks: TaskData[], taskStatuses?: TaskStatus[]}> => {
@@ -140,7 +146,7 @@ export const loadTasksFromSpace = async (userId: string, spaceId: string): Promi
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: spaceRef.path,
         operation: 'get'
-      }));
+      } satisfies SecurityRuleContext));
     }
     throw err;
   }
@@ -149,12 +155,13 @@ export const loadTasksFromSpace = async (userId: string, spaceId: string): Promi
 export const deleteTaskSpace = async (userId: string, spaceId: string): Promise<void> => {
   if (!userId) return;
   const spaceRef = doc(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION, spaceId);
+  
   deleteDoc(spaceRef).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: spaceRef.path,
         operation: 'delete'
-      }));
+      } satisfies SecurityRuleContext));
     }
   });
 };

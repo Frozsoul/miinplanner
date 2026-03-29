@@ -85,14 +85,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   // --- Workspace Logic ---
   const fetchWorkspaces = useCallback(async () => {
     if (!user?.uid) return;
-    try {
-      const ws = await getUserWorkspaces(user.uid);
-      setWorkspaces(ws);
-      if (ws.length > 0 && !currentWorkspace) {
-        setCurrentWorkspace(ws[0]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch workspaces", error);
+    const ws = await getUserWorkspaces(user.uid);
+    setWorkspaces(ws);
+    if (ws.length > 0 && !currentWorkspace) {
+      setCurrentWorkspace(ws[0]);
     }
   }, [user, currentWorkspace]);
 
@@ -122,14 +118,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const addWorkspace = async (name: string) => {
     if (!user?.uid) return;
-    try {
-      const newWs = await createWorkspace(user.uid, name);
-      setWorkspaces(prev => [...prev, newWs]);
-      setCurrentWorkspace(newWs);
-      toast({ title: "Workspace created", description: `You are now in ${name}.` });
-    } catch (error) {
-      toast({ title: "Error creating workspace", variant: "destructive" });
-    }
+    const newWs = await createWorkspace(user.uid, name);
+    setWorkspaces(prev => [...prev, newWs]);
+    setCurrentWorkspace(newWs);
+    toast({ title: "Workspace created", description: `You are now in ${name}.` });
   };
 
   const inviteToWorkspace = async (email: string) => {
@@ -145,13 +137,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const removeFromWorkspace = async (userId: string) => {
     if (!currentWorkspace) return;
-    try {
-      await removeMemberService(currentWorkspace.id, userId);
-      toast({ title: "Member removed" });
-      fetchWorkspaces();
-    } catch (error) {
-      toast({ title: "Error removing member", variant: "destructive" });
-    }
+    await removeMemberService(currentWorkspace.id, userId);
+    toast({ title: "Member removed" });
+    fetchWorkspaces();
   };
 
   // --- Task Logic ---
@@ -163,35 +151,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setIsLoadingTasks(true);
-    try {
-      const tasksRef = collection(db, 'tasks');
-      let q;
-      if (currentWorkspace) {
-        q = query(
-          tasksRef,
-          where('workspaceId', '==', currentWorkspace.id),
-          orderBy('order', 'asc'),
-          orderBy('createdAt', 'desc')
-        );
-      } else {
-        q = query(
-          tasksRef,
-          where('userId', '==', user.uid),
-          where('workspaceId', '==', null),
-          orderBy('order', 'asc'),
-          orderBy('createdAt', 'desc')
-        );
-      }
-      
-      const snapshot = await getDocs(q);
-      const fetchedTasks = snapshot.docs.map(taskFromFirestore);
-      
-      setTasks(fetchedTasks);
-    } catch (error) {
-      console.error("Failed to fetch tasks", error);
-    } finally {
-      setIsLoadingTasks(false);
-    }
+    const fetchedTasks = await getTasks(user.uid);
+    setTasks(fetchedTasks);
+    setIsLoadingTasks(false);
   }, [user, currentWorkspace]);
 
   useEffect(() => {
@@ -200,58 +162,37 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const addTask = async (taskData: TaskData, workspaceId?: string): Promise<Task | null> => {
     if (!user?.uid) return null;
-    setIsLoadingTasks(true);
-    try {
-      const payload = { 
-        ...taskData, 
-        workspaceId: workspaceId || currentWorkspace?.id || null 
-      };
-      const newTask = await addTaskService(user.uid, payload);
-      await fetchTasks();
-      return newTask;
-    } finally {
-      setIsLoadingTasks(false);
-    }
+    const payload = { 
+      ...taskData, 
+      workspaceId: workspaceId || currentWorkspace?.id || null 
+    };
+    const newTask = await addTaskService(user.uid, payload);
+    await fetchTasks();
+    return newTask;
   };
 
   const updateTask = async (taskId: string, taskUpdate: Partial<TaskData>) => {
     if (!user?.uid) return;
-    try {
-      await updateTaskService(user.uid, taskId, taskUpdate);
-      await fetchTasks();
-    } catch (error) {
-      console.error(error);
-    }
+    await updateTaskService(user.uid, taskId, taskUpdate);
+    await fetchTasks();
   };
 
   const updateTaskField = async (taskId: string, field: keyof TaskData, value: any) => {
     if (!user?.uid) return;
-    try {
-      await updateTaskService(user.uid, taskId, { [field]: value });
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, [field]: value } : t));
-    } catch (error) {
-      console.error(error);
-    }
+    await updateTaskService(user.uid, taskId, { [field]: value });
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, [field]: value } : t));
   };
 
   const moveTask = async (taskId: string, newStatus: TaskStatus, newIndex: number) => {
     if (!user?.uid) return;
-    try {
-      await updateTaskService(user.uid, taskId, { status: newStatus });
-      fetchTasks();
-    } catch (error) {
-      console.error(error);
-    }
+    await updateTaskService(user.uid, taskId, { status: newStatus });
+    fetchTasks();
   };
 
   const deleteTask = async (taskId: string) => {
     if (!user?.uid) return;
-    try {
-      await deleteTaskService(user.uid, taskId);
-      fetchTasks();
-    } catch (error) {
-      console.error(error);
-    }
+    await deleteTaskService(user.uid, taskId);
+    fetchTasks();
   };
 
   // --- Status Logic ---
@@ -313,13 +254,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const importTaskSpace = async (space: Omit<TaskSpace, 'id'>) => {
     if (!user?.uid) return;
     
-    // Save to library (optimistically)
-    saveTaskSpaceService(user.uid, space.name, space.tasks, space.taskStatuses || taskStatuses);
-    
-    // Apply tasks directly from the provided data to avoid re-fetching issues
     await applyTasksToUser(user.uid, space.tasks);
     
-    // Update statuses if they exist in the template
     if (space.taskStatuses) {
         setTaskStatuses(space.taskStatuses);
         await updateUserProfile(user.uid, { taskStatuses: space.taskStatuses });
@@ -353,7 +289,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       });
       setInsights({ ...aiResult, type: 'full' });
     } catch (error) {
-      console.error(error);
+      // Handled by AI error handling if applicable, or generic catch
     } finally {
       setIsLoadingAi(false);
     }
