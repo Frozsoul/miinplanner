@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -9,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Plus, Loader2, Mail, Trash2, LayoutGrid, List } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, UserPlus, Plus, Loader2, Mail, Trash2, LayoutGrid, List, Info } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskForm } from "@/components/tasks/TaskForm";
@@ -90,26 +89,42 @@ export default function TeamworkPage() {
               <CardTitle className="text-sm font-medium">Your Workspaces</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Select value={currentWorkspace?.id} onValueChange={setCurrentWorkspaceById}>
+              <Select 
+                value={currentWorkspace?.id} 
+                onValueChange={setCurrentWorkspaceById}
+                disabled={workspaces.length === 0}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select workspace" />
+                  <SelectValue placeholder={workspaces.length === 0 ? "No workspaces yet" : "Select workspace"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {workspaces.map(ws => (
-                    <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel>Workspaces</SelectLabel>
+                    {workspaces.length > 0 ? (
+                      workspaces.map(ws => (
+                        <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled className="text-muted-foreground italic">
+                        No workspaces found
+                      </SelectItem>
+                    )}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
               
               <div className="pt-4 border-t space-y-2">
-                <Label className="text-xs uppercase text-muted-foreground">Create New</Label>
+                <Label className="text-xs uppercase text-muted-foreground">Create New Workspace</Label>
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="Workspace name" 
+                    placeholder="e.g., Marketing Team" 
                     value={newWorkspaceName} 
                     onChange={e => setNewWorkspaceName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCreateWorkspace();
+                    }}
                   />
-                  <Button size="icon" onClick={handleCreateWorkspace} disabled={isCreatingWorkspace}>
+                  <Button size="icon" onClick={handleCreateWorkspace} disabled={isCreatingWorkspace || !newWorkspaceName.trim()}>
                     {isCreatingWorkspace ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -118,7 +133,7 @@ export default function TeamworkPage() {
           </Card>
 
           {currentWorkspace && (
-            <Card>
+            <Card className="animate-in fade-in slide-in-from-top-2">
               <CardHeader>
                 <CardTitle className="text-sm font-medium">Team Members</CardTitle>
                 <CardDescription>Members of {currentWorkspace.name}</CardDescription>
@@ -126,7 +141,7 @@ export default function TeamworkPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   {workspaceMembers.map(member => (
-                    <div key={member.uid} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 group">
+                    <div key={member.uid} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 group transition-colors">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">{member.displayName || member.email.split('@')[0]}</span>
                         <span className="text-xs text-muted-foreground">{member.email}</span>
@@ -135,7 +150,7 @@ export default function TeamworkPage() {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 text-destructive"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 text-destructive transition-opacity"
                           onClick={() => removeFromWorkspace(member.uid)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -152,8 +167,11 @@ export default function TeamworkPage() {
                       placeholder="User email" 
                       value={inviteEmail} 
                       onChange={e => setInviteEmail(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleInvite();
+                      }}
                     />
-                    <Button size="icon" onClick={handleInvite} disabled={isInviting}>
+                    <Button size="icon" onClick={handleInvite} disabled={isInviting || !inviteEmail.trim()}>
                       {isInviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -166,24 +184,28 @@ export default function TeamworkPage() {
         {/* Task Area */}
         <div className="lg:col-span-3 space-y-4">
           {!currentWorkspace ? (
-            <Card className="h-[400px] flex items-center justify-center border-dashed">
-              <div className="text-center space-y-2">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground" />
-                <h3 className="text-lg font-medium">No Workspace Selected</h3>
-                <p className="text-sm text-muted-foreground">Select or create a workspace to start collaborating.</p>
+            <Card className="h-[400px] flex items-center justify-center border-dashed bg-muted/20">
+              <div className="text-center space-y-4 p-6">
+                <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Start Collaborating</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto">Create a workspace on the left to start working with your team on shared tasks.</p>
+                </div>
               </div>
             </Card>
           ) : (
-            <>
-              <div className="flex justify-between items-center">
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-4">
-                  <h2 className="text-xl font-bold">{currentWorkspace.name} Tasks</h2>
+                  <h2 className="text-xl font-bold truncate max-w-[200px] sm:max-w-none">{currentWorkspace.name} Tasks</h2>
                   <ToggleGroup type="single" value={viewMode} onValueChange={v => v && setViewMode(v as any)}>
-                    <ToggleGroupItem value="kanban"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
-                    <ToggleGroupItem value="list"><List className="h-4 w-4" /></ToggleGroupItem>
+                    <ToggleGroupItem value="kanban" aria-label="Kanban View"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
+                    <ToggleGroupItem value="list" aria-label="List View"><List className="h-4 w-4" /></ToggleGroupItem>
                   </ToggleGroup>
                 </div>
-                <Button onClick={() => openFormModal()}>
+                <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" /> New Team Task
                 </Button>
               </div>
@@ -214,7 +236,7 @@ export default function TeamworkPage() {
                   )}
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -223,6 +245,9 @@ export default function TeamworkPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingTask ? "Edit Team Task" : "Add Team Task"}</DialogTitle>
+            <DialogDescription>
+              {editingTask ? "Update the details of this collaborative task." : "Create a new task for the entire team to see."}
+            </DialogDescription>
           </DialogHeader>
           <TaskForm 
             taskToEdit={editingTask} 
