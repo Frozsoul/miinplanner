@@ -1,5 +1,5 @@
-
 "use client";
+
 import type { Task } from "@/types";
 import { TaskCard } from "./task-card";
 
