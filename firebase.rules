@@ -20,13 +20,15 @@ service cloud.firestore {
     function isWorkspaceMember(workspaceId) {
       return isAuthenticated() && 
         (workspaceId != null && 
-        get(/databases/miinplanner/documents/workspaces/$(workspaceId)).data.memberUids.hasAny([request.auth.uid]));
+        request.auth.uid in get(/databases/miinplanner/documents/workspaces/$(workspaceId)).data.memberUids);
     }
 
     // User Profiles
     match /users/{userId} {
       allow read, write: if isOwner(userId);
-      allow list: if isAuthenticated(); // Allow email search for invites
+      
+      // Allow listing users to find teammates by email
+      allow list: if isAuthenticated();
 
       match /taskSpaces/{spaceId} {
         allow read, write: if isOwner(userId);
@@ -36,7 +38,7 @@ service cloud.firestore {
     // Workspaces
     match /workspaces/{workspaceId} {
       // Allow list/read if the user is in the memberUids array
-      // This supports the 'array-contains' query in getUserWorkspaces
+      // This supports the 'array-contains' query for the current user's workspaces
       allow read: if isAuthenticated() && request.auth.uid in resource.data.memberUids;
       
       // Allow creation if setting self as owner and adding self to members
