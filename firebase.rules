@@ -28,7 +28,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if isOwner(userId);
       
-      // Allow searching users by email for invitations (needed for Teamwork tab)
+      // Allow searching users by email for invitations
       allow list: if isAuthenticated();
 
       match /taskSpaces/{spaceId} {
@@ -55,7 +55,7 @@ service cloud.firestore {
       // Logic for reading/listing tasks
       allow read: if isAuthenticated() && (
         // Case 1: Personal task - User is the owner and it's not in a workspace
-        (resource.data.get('workspaceId', null) == null && resource.data.userId == request.auth.uid) ||
+        (request.query.limit == 0 || (resource.data.get('workspaceId', null) == null && resource.data.userId == request.auth.uid)) ||
         // Case 2: Team task - User is a member of the associated workspace
         (resource.data.get('workspaceId', null) != null && isWorkspaceMember(resource.data.workspaceId))
       );

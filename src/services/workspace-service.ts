@@ -1,14 +1,13 @@
+
 'use client';
 
 import { db } from '@/lib/firebase';
 import type { Workspace, WorkspaceMember } from '@/types';
 import {
   collection,
-  addDoc,
   getDocs,
   doc,
-  updateDoc,
-  deleteDoc,
+  setDoc,
   query,
   where,
   serverTimestamp,
@@ -22,8 +21,14 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
 const WORKSPACE_COLLECTION = 'workspaces';
 const USER_COLLECTION = 'users';
 
+/**
+ * Creates a new workspace.
+ * Generates a real Firestore ID immediately to prevent race conditions with task creation.
+ */
 export const createWorkspace = async (userId: string, name: string): Promise<Workspace> => {
   const workspacesRef = collection(db, WORKSPACE_COLLECTION);
+  const newWorkspaceRef = doc(workspacesRef); // Generate valid ID on the client
+  
   const docData = {
     name,
     ownerId: userId,
@@ -31,10 +36,11 @@ export const createWorkspace = async (userId: string, name: string): Promise<Wor
     createdAt: serverTimestamp(),
   };
 
-  addDoc(workspacesRef, docData).catch(async (err) => {
+  // Initiate creation without blocking
+  setDoc(newWorkspaceRef, docData).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: workspacesRef.path,
+        path: newWorkspaceRef.path,
         operation: 'create',
         requestResourceData: docData,
       } satisfies SecurityRuleContext));
@@ -42,7 +48,7 @@ export const createWorkspace = async (userId: string, name: string): Promise<Wor
   });
   
   return {
-    id: 'optimistic-ws-' + Date.now(),
+    id: newWorkspaceRef.id, // Use the real ID immediately
     name,
     ownerId: userId,
     memberUids: [userId],
@@ -113,7 +119,7 @@ export const inviteMemberByEmail = async (workspaceId: string, email: string): P
       memberUids: arrayUnion(userToInvite.id)
     };
     
-    updateDoc(workspaceRef, updateData).catch(async (err) => {
+    setDoc(workspaceRef, updateData, { merge: true }).catch(async (err) => {
       if (err.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: workspaceRef.path,
@@ -140,7 +146,7 @@ export const removeMember = async (workspaceId: string, userId: string): Promise
     memberUids: arrayRemove(userId)
   };
   
-  updateDoc(workspaceRef, updateData).catch(async (err) => {
+  setDoc(workspaceRef, updateData, { merge: true }).catch(async (err) => {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: workspaceRef.path,

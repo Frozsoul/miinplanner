@@ -25,7 +25,6 @@ const TASK_COLLECTION = 'tasks';
 export const taskFromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>): Task => {
   const data = snapshot.data();
   
-  // Safe date conversion helper
   const toIsoString = (val: any) => {
     if (!val) return undefined;
     if (typeof val.toDate === 'function') return val.toDate().toISOString();
@@ -60,17 +59,11 @@ export const taskFromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>)
 export const getTasks = async (userId: string, workspaceId?: string): Promise<Task[]> => {
   if (!userId) return [];
 
-  // Important: If we have an optimistic ID from a newly created workspace, 
-  // don't query Firestore yet as it will trigger a permission error (the ID doesn't exist yet).
-  if (workspaceId && workspaceId.startsWith('optimistic-')) {
-    return [];
-  }
-
   const tasksRef = collection(db, TASK_COLLECTION);
   try {
     let q;
     if (workspaceId) {
-      // Team Context: Anyone in the workspace can see all tasks in that workspace
+      // Team Context
       q = query(
         tasksRef, 
         where('workspaceId', '==', workspaceId),
@@ -78,7 +71,7 @@ export const getTasks = async (userId: string, workspaceId?: string): Promise<Ta
         orderBy('createdAt', 'desc')
       );
     } else {
-      // Personal Context: User sees tasks they created that are NOT in a workspace
+      // Personal Context: Ensure workspaceId is explicitly null or missing
       q = query(
         tasksRef, 
         where('userId', '==', userId), 
@@ -111,7 +104,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     priority: taskData.priority || 'Medium',
     status: taskData.status || 'To Do',
     userId,
-    workspaceId: taskData.workspaceId || null,
+    workspaceId: taskData.workspaceId || null, // Ensure explicit null for rules
     assignedTo: taskData.assignedTo || null,
     tags: taskData.tags || [],
     completed: taskData.status === 'Done' ? true : (taskData.completed || false),
@@ -134,7 +127,6 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     }
   });
 
-  // Return optimistic task with valid Timestamps for UI compatibility
   return { 
     id: 'optimistic-id-' + Date.now(), 
     ...taskData,
