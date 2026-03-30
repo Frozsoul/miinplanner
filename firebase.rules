@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -25,7 +24,12 @@ service cloud.firestore {
 
     // User Profiles
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      // Allow any authenticated user to read profiles. 
+      // Necessary for team members to identify each other in workspaces.
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+      
+      // Allow listing users to support finding teammates by email
       allow list: if isAuthenticated();
 
       match /taskSpaces/{spaceId} {
@@ -35,30 +39,34 @@ service cloud.firestore {
 
     // Workspaces
     match /workspaces/{workspaceId} {
+      // Members can read the workspace details
       allow read: if isAuthenticated() && request.auth.uid in resource.data.memberUids;
+      
+      // Any authenticated user can create a workspace (as long as they are the owner and member)
       allow create: if isAuthenticated() && 
                     request.resource.data.ownerId == request.auth.uid &&
                     request.auth.uid in request.resource.data.memberUids;
+      
+      // Only the workspace owner can manage its settings or members
       allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
     }
 
     // Tasks: Collaborative rules
     match /tasks/{taskId} {
-      // Logic for reading/listing tasks
-      // Firestore requires queries to match these rules.
-      allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || 
-        (resource.data.workspaceId != null && isWorkspaceMember(resource.data.workspaceId))
+      // Rule 1: Personal Ownership - Access for the creator
+      allow read, update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid
       );
       
+      // Rule 2: Workspace Membership - Access for any member of the associated workspace
+      allow read, update, delete: if isAuthenticated() && 
+                                    resource.data.workspaceId != null && 
+                                    isWorkspaceMember(resource.data.workspaceId);
+      
+      // Creation rules - allow if owner OR member of the target workspace
       allow create: if isAuthenticated() && (
         request.resource.data.userId == request.auth.uid || 
         (request.resource.data.workspaceId != null && isWorkspaceMember(request.resource.data.workspaceId))
-      );
-      
-      allow update, delete: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || 
-        (resource.data.workspaceId != null && isWorkspaceMember(resource.data.workspaceId))
       );
     }
   }
