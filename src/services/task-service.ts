@@ -59,6 +59,11 @@ export const taskFromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>)
 export const getTasks = async (userId: string, workspaceId?: string): Promise<Task[]> => {
   if (!userId) return [];
 
+  // Skip queries for optimistic client-only IDs
+  if (workspaceId && workspaceId.startsWith('optimistic-')) {
+    return [];
+  }
+
   const tasksRef = collection(db, TASK_COLLECTION);
   try {
     let q;
@@ -71,7 +76,7 @@ export const getTasks = async (userId: string, workspaceId?: string): Promise<Ta
         orderBy('createdAt', 'desc')
       );
     } else {
-      // Personal Context: Ensure workspaceId is explicitly null or missing
+      // Personal Context: User's tasks that aren't in a workspace
       q = query(
         tasksRef, 
         where('userId', '==', userId), 
@@ -90,6 +95,7 @@ export const getTasks = async (userId: string, workspaceId?: string): Promise<Ta
         operation: 'list'
       } satisfies SecurityRuleContext));
     }
+    console.error("Error fetching tasks:", err);
     return [];
   }
 };
@@ -98,13 +104,15 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
   if (!userId) throw new Error("User ID is required");
   
   const tasksRef = collection(db, TASK_COLLECTION);
+  
+  // Clean up data for Firestore
   const docData: any = {
     title: taskData.title,
     description: taskData.description || "",
     priority: taskData.priority || 'Medium',
     status: taskData.status || 'To Do',
     userId,
-    workspaceId: taskData.workspaceId || null, // Ensure explicit null for rules
+    workspaceId: taskData.workspaceId || null, 
     assignedTo: taskData.assignedTo || null,
     tags: taskData.tags || [],
     completed: taskData.status === 'Done' ? true : (taskData.completed || false),
@@ -112,10 +120,18 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     order: taskData.order ?? Date.now(),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-    startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
-    dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
     channel: taskData.channel || null,
   };
+
+  // Safe date parsing
+  if (taskData.startDate) {
+    const d = new Date(taskData.startDate);
+    if (!isNaN(d.getTime())) docData.startDate = Timestamp.fromDate(d);
+  }
+  if (taskData.dueDate) {
+    const d = new Date(taskData.dueDate);
+    if (!isNaN(d.getTime())) docData.dueDate = Timestamp.fromDate(d);
+  }
 
   addDoc(tasksRef, docData).catch(async (err) => {
     if (err.code === 'permission-denied') {
@@ -127,6 +143,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     }
   });
 
+  // Return optimistic object with valid Timestamp methods
   return { 
     id: 'optimistic-id-' + Date.now(), 
     ...taskData,
@@ -145,8 +162,14 @@ export const updateTask = async (userId: string, taskId: string, taskUpdate: Par
   
   const updateData: any = { ...taskUpdate, updatedAt: serverTimestamp() };
   
-  if (taskUpdate.startDate) updateData.startDate = Timestamp.fromDate(new Date(taskUpdate.startDate));
-  if (taskUpdate.dueDate) updateData.dueDate = Timestamp.fromDate(new Date(taskUpdate.dueDate));
+  if (taskUpdate.startDate) {
+    const d = new Date(taskUpdate.startDate);
+    if (!isNaN(d.getTime())) updateData.startDate = Timestamp.fromDate(d);
+  }
+  if (taskUpdate.dueDate) {
+    const d = new Date(taskUpdate.dueDate);
+    if (!isNaN(d.getTime())) updateData.dueDate = Timestamp.fromDate(d);
+  }
   
   delete updateData.userId;
   delete updateData.createdAt;

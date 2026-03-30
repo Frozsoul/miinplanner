@@ -2,11 +2,6 @@
 rules_version = '2';
 
 service cloud.firestore {
-  // Prevent accidental writes to the default database if miinplanner is the target
-  match /databases/(default)/documents/{document=**} {
-    allow read, write: if false;
-  }
-
   match /databases/{database}/documents {
     // Helper functions
     function isAuthenticated() {
@@ -17,18 +12,20 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function getWorkspace(workspaceId) {
+      return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
+    }
+
     function isWorkspaceMember(workspaceId) {
       return isAuthenticated() && 
              workspaceId != null && 
              exists(/databases/$(database)/documents/workspaces/$(workspaceId)) &&
-             request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberUids;
+             request.auth.uid in getWorkspace(workspaceId).memberUids;
     }
 
     // User Profiles
     match /users/{userId} {
       allow read, write: if isOwner(userId);
-      
-      // Allow searching users by email for invitations
       allow list: if isAuthenticated();
 
       match /taskSpaces/{spaceId} {
@@ -38,42 +35,30 @@ service cloud.firestore {
 
     // Workspaces
     match /workspaces/{workspaceId} {
-      // Allow read if the user is a member
       allow read: if isAuthenticated() && request.auth.uid in resource.data.memberUids;
-      
-      // Allow creation if setting self as owner and adding self to members
       allow create: if isAuthenticated() && 
                     request.resource.data.ownerId == request.auth.uid &&
                     request.auth.uid in request.resource.data.memberUids;
-      
-      // Only the owner can update or delete workspace settings
       allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
     }
 
     // Tasks: Collaborative rules
     match /tasks/{taskId} {
       // Logic for reading/listing tasks
+      // Firestore requires queries to match these rules.
       allow read: if isAuthenticated() && (
-        // Case 1: Personal task - User is the owner and it's not in a workspace
-        (request.query.limit == 0 || (resource.data.get('workspaceId', null) == null && resource.data.userId == request.auth.uid)) ||
-        // Case 2: Team task - User is a member of the associated workspace
-        (resource.data.get('workspaceId', null) != null && isWorkspaceMember(resource.data.workspaceId))
+        resource.data.userId == request.auth.uid || 
+        (resource.data.workspaceId != null && isWorkspaceMember(resource.data.workspaceId))
       );
       
-      // Logic for creating tasks
       allow create: if isAuthenticated() && (
-        // Personal task
-        (request.resource.data.get('workspaceId', null) == null && request.resource.data.userId == request.auth.uid) ||
-        // Team task
-        (request.resource.data.get('workspaceId', null) != null && isWorkspaceMember(request.resource.data.workspaceId))
+        request.resource.data.userId == request.auth.uid || 
+        (request.resource.data.workspaceId != null && isWorkspaceMember(request.resource.data.workspaceId))
       );
       
-      // Logic for updating/deleting tasks
       allow update, delete: if isAuthenticated() && (
-        // Personal task
-        (resource.data.get('workspaceId', null) == null && resource.data.userId == request.auth.uid) ||
-        // Team task
-        (resource.data.get('workspaceId', null) != null && isWorkspaceMember(resource.data.workspaceId))
+        resource.data.userId == request.auth.uid || 
+        (resource.data.workspaceId != null && isWorkspaceMember(resource.data.workspaceId))
       );
     }
   }
