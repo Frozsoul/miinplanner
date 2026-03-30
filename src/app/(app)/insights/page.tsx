@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAppData } from "@/contexts/app-data-context";
@@ -7,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Lightbulb, Wand2, Loader2, Info } from "lucide-react";
 import { InsightsDisplay } from "@/components/insights/InsightsDisplay";
 import { SimpleInsightsReport } from "@/components/insights/SimpleInsightsReport";
+import { InsightsChat } from "@/components/insights/InsightsChat";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function InsightsPage() {
-  const { insights, generateInsights, isLoadingAi } = useAppData();
+  const { insights, generateInsights, isLoadingAi, tasks } = useAppData();
   const { loading: authLoading } = useAuth();
 
   const handleGenerate = () => {
@@ -41,7 +41,7 @@ export default function InsightsPage() {
         }
       />
       
-      <div className="container mx-auto">
+      <div className="max-w-5xl mx-auto space-y-8">
         {isLoadingAi && (
           <Card>
             <CardContent className="pt-6">
@@ -66,7 +66,12 @@ export default function InsightsPage() {
 
         {!isLoadingAi && insights && (
           <>
-            {insights.type === 'full' && <InsightsDisplay insights={insights} />}
+            {insights.type === 'full' && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <InsightsDisplay insights={insights} />
+                    <InsightsChat tasks={tasks} />
+                </div>
+            )}
             {insights.type === 'simple' && <SimpleInsightsReport insights={insights} />}
           </>
         )}

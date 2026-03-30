@@ -1,11 +1,9 @@
-
 "use client";
 
 import {
   LayoutDashboard,
   ListChecks,
   CalendarDays,
-  BotMessageSquare,
   Lightbulb,
   Library,
   Users,
@@ -25,7 +23,6 @@ const allNavItems: NavItem[] = [
   { href: "/calendar", icon: CalendarDays, label: "Calendar" },
   { href: "/library", icon: Library, label: "Library" },
   { href: "/insights", icon: Lightbulb, label: "AI Insights" },
-  { href: "/chatbot", icon: BotMessageSquare, label: "AI Chatbot" },
 ];
 
 export const useNavItems = () => {
