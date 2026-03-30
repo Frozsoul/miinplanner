@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Task } from "@/types";
@@ -8,8 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Megaphone, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSortable } from "@nd-kit/sortable";
-import { CSS } from "@nd-kit/utilities";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { InlinePriorityPicker } from "./inline-priority-picker";
 import { InlineDatePicker } from "./inline-date-picker";
 import { useAppData } from "@/contexts/app-data-context";

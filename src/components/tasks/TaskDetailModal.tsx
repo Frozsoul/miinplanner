@@ -23,6 +23,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: Task
   const assignedMember = workspaceMembers.find(m => m.uid === task.assignedTo);
   const memberName = assignedMember?.displayName || assignedMember?.email || "Unassigned";
   const memberInitials = memberName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  const isTeamTask = !!task.workspaceId;
 
   const getPriorityBadgeVariant = (priority: TaskPriority) => {
     switch (priority) {
@@ -118,10 +119,12 @@ export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: Task
                 <span className="text-muted-foreground">{memberName}</span>
               </div>
             </div>
-            <div>
-              <h4 className="font-semibold mb-1">Channel:</h4>
-              <span className="text-muted-foreground">{task.channel || "N/A"}</span>
-            </div>
+            {!isTeamTask && (
+              <div>
+                <h4 className="font-semibold mb-1">Channel:</h4>
+                <span className="text-muted-foreground">{task.channel || "N/A"}</span>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
