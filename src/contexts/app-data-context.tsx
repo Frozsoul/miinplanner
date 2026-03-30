@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
@@ -5,7 +6,7 @@ import type { Task, TaskData, AIInsights, SimpleInsights, TaskStatus, TaskSpace,
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser } from '@/services/task-space-service';
-import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService } from '@/services/workspace-service';
+import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService, deleteWorkspace as deleteWorkspaceService } from '@/services/workspace-service';
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +37,7 @@ interface AppDataContextType {
   addWorkspace: (name: string) => Promise<void>;
   inviteToWorkspace: (email: string) => Promise<void>;
   removeFromWorkspace: (userId: string) => Promise<void>;
+  deleteWorkspace: (id: string) => Promise<void>;
 
   // Task Spaces
   taskSpaces: TaskSpace[];
@@ -137,6 +139,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     await removeMemberService(currentWorkspace.id, userId);
     toast({ title: "Member removed" });
     fetchWorkspaces();
+  };
+
+  const deleteWorkspace = async (id: string) => {
+    if (!user?.uid) return;
+    await deleteWorkspaceService(id);
+    setWorkspaces(prev => prev.filter(w => w.id !== id));
+    if (currentWorkspace?.id === id) {
+      setCurrentWorkspace(null);
+    }
+    toast({ title: "Workspace deleted" });
   };
 
   // --- Task Logic ---
@@ -314,7 +326,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       tasks, setTasks, isLoadingTasks, fetchTasks,
       addTask, updateTask, updateTaskField, deleteTask, moveTask,
       taskStatuses, addStatus, deleteStatus, reorderStatuses,
-      workspaces, currentWorkspace, setCurrentWorkspaceById, workspaceMembers, fetchWorkspaces, addWorkspace, inviteToWorkspace, removeFromWorkspace,
+      workspaces, currentWorkspace, setCurrentWorkspaceById, workspaceMembers, fetchWorkspaces, addWorkspace, inviteToWorkspace, removeFromWorkspace, deleteWorkspace,
       taskSpaces, fetchTaskSpaces, saveCurrentTaskSpace, loadTaskSpace, deleteTaskSpace, importTaskSpace, loadTaskSpaceTemplate,
       insights, isLoadingAi, generateInsights,
     }}>

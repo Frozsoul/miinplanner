@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Plus, Loader2, Mail, Trash2, LayoutGrid, List, Info } from "lucide-react";
+import { Users, UserPlus, Plus, Loader2, Mail, Trash2, LayoutGrid, List, Info, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskList } from "@/components/tasks/TaskList";
@@ -16,6 +17,17 @@ import { TaskForm } from "@/components/tasks/TaskForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { Task, TaskData } from "@/types";
 
 export default function TeamworkPage() {
@@ -28,6 +40,7 @@ export default function TeamworkPage() {
     addWorkspace, 
     inviteToWorkspace, 
     removeFromWorkspace,
+    deleteWorkspace,
     tasks,
     addTask,
     updateTask,
@@ -40,6 +53,7 @@ export default function TeamworkPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
+  const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -65,6 +79,13 @@ export default function TeamworkPage() {
     await inviteToWorkspace(inviteEmail.trim());
     setInviteEmail("");
     setIsInviting(false);
+  };
+
+  const handleDeleteWorkspace = async () => {
+    if (!currentWorkspace) return;
+    setIsDeletingWorkspace(true);
+    await deleteWorkspace(currentWorkspace.id);
+    setIsDeletingWorkspace(false);
   };
 
   const openFormModal = (task?: Task) => {
@@ -97,28 +118,55 @@ export default function TeamworkPage() {
               <CardTitle className="text-sm font-medium">Your Workspaces</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Select 
-                value={currentWorkspace?.id || "none"} 
-                onValueChange={(val) => setCurrentWorkspaceById(val === "none" ? "" : val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={workspaces.length === 0 ? "No workspaces yet" : "Select workspace"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Workspaces</SelectLabel>
-                    {workspaces.length > 0 ? (
-                      workspaces.map(ws => (
-                        <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="none" disabled className="text-muted-foreground italic">
-                        No workspaces yet. Create one below!
-                      </SelectItem>
-                    )}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select 
+                  value={currentWorkspace?.id || "none"} 
+                  onValueChange={(val) => setCurrentWorkspaceById(val === "none" ? "" : val)}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={workspaces.length === 0 ? "No workspaces yet" : "Select workspace"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Workspaces</SelectLabel>
+                      {workspaces.length > 0 ? (
+                        workspaces.map(ws => (
+                          <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled className="text-muted-foreground italic">
+                          No workspaces yet. Create one below!
+                        </SelectItem>
+                      )}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+
+                {currentWorkspace && currentWorkspace.ownerId === user?.uid && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="icon" className="shrink-0 text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Workspace?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete <strong>{currentWorkspace.name}</strong>? This will remove all members and the workspace settings. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteWorkspace} className="bg-destructive hover:bg-destructive/90">
+                          {isDeletingWorkspace ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                          Delete Workspace
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
               
               <div className="pt-4 border-t space-y-2">
                 <Label className="text-xs uppercase text-muted-foreground">Create New Workspace</Label>

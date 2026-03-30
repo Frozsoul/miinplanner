@@ -14,6 +14,7 @@ import {
   arrayUnion,
   arrayRemove,
   getDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -152,6 +153,19 @@ export const removeMember = async (workspaceId: string, userId: string): Promise
         path: workspaceRef.path,
         operation: 'update',
         requestResourceData: updateData
+      } satisfies SecurityRuleContext));
+    }
+  });
+};
+
+export const deleteWorkspace = async (workspaceId: string): Promise<void> => {
+  const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
+  
+  deleteDoc(workspaceRef).catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: workspaceRef.path,
+        operation: 'delete'
       } satisfies SecurityRuleContext));
     }
   });
