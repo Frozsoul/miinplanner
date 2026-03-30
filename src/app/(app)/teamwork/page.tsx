@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Plus, Loader2, Mail, Trash2, LayoutGrid, List, Info, AlertTriangle } from "lucide-react";
+import { Users, UserPlus, Plus, Loader2, Mail, Trash2, LayoutGrid, List, Info, AlertTriangle, CalendarDays } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskList } from "@/components/tasks/TaskList";
@@ -17,6 +17,7 @@ import { TaskForm } from "@/components/tasks/TaskForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CalendarView } from "@/components/calendar/CalendarView";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,7 +55,7 @@ export default function TeamworkPage() {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'calendar'>('kanban');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -258,6 +259,7 @@ export default function TeamworkPage() {
                   <ToggleGroup type="single" value={viewMode} onValueChange={v => v && setViewMode(v as any)}>
                     <ToggleGroupItem value="kanban" aria-label="Kanban View"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
                     <ToggleGroupItem value="list" aria-label="List View"><List className="h-4 w-4" /></ToggleGroupItem>
+                    <ToggleGroupItem value="calendar" aria-label="Calendar View"><CalendarDays className="h-4 w-4" /></ToggleGroupItem>
                   </ToggleGroup>
                 </div>
                 <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
@@ -271,7 +273,7 @@ export default function TeamworkPage() {
                 </div>
               ) : (
                 <div className="min-h-[500px]">
-                  {viewMode === 'kanban' ? (
+                  {viewMode === 'kanban' && (
                     <KanbanBoard 
                       tasks={tasks} 
                       onEditTask={openFormModal} 
@@ -280,14 +282,19 @@ export default function TeamworkPage() {
                       onArchiveToggle={(t) => updateTask(t.id, { archived: !t.archived })}
                       showArchived={false}
                     />
-                  ) : (
+                  )}
+                  {viewMode === 'list' && (
                     <TaskList 
                       tasks={tasks} 
                       onEdit={openFormModal} 
                       onDelete={deleteTask} 
                       onView={openFormModal} 
                       onArchiveToggle={(t) => updateTask(t.id, { archived: !t.archived })}
+                      hideChannel={true}
                     />
+                  )}
+                  {viewMode === 'calendar' && (
+                    <CalendarView tasks={tasks} onTaskClick={openFormModal} />
                   )}
                 </div>
               )}

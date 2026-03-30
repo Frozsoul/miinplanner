@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Task } from "@/types";
@@ -7,8 +8,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Megaphone, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useSortable } from "@nd-kit/sortable";
+import { CSS } from "@nd-kit/utilities";
 import { InlinePriorityPicker } from "./inline-priority-picker";
 import { InlineDatePicker } from "./inline-date-picker";
 import { useAppData } from "@/contexts/app-data-context";
@@ -51,6 +52,7 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
     const assignedMember = workspaceMembers.find(m => m.uid === task.assignedTo);
     const memberName = assignedMember?.displayName || assignedMember?.email || "Unassigned";
     const memberInitials = memberName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    const isTeamTask = !!task.workspaceId;
     
     const cardContent = (
       <>
@@ -110,7 +112,7 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
         </CardHeader>
         <CardContent className="px-4 pb-4 text-xs text-muted-foreground space-y-2">
             <InlineDatePicker task={task} />
-            {task.channel && (
+            {task.channel && !isTeamTask && (
               <div className="flex items-center gap-1.5">
                 <Megaphone className="h-3.5 w-3.5" />
                 <span>{task.channel}</span>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Task } from "@/types";
@@ -20,9 +21,10 @@ interface TaskListProps {
   onDelete: (taskId: string) => void;
   onView?: (task: Task) => void;
   onArchiveToggle: (task: Task) => void;
+  hideChannel?: boolean;
 }
 
-export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle }: TaskListProps) {
+export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle, hideChannel = false }: TaskListProps) {
   const { workspaceMembers } = useAppData();
 
   return (
@@ -35,14 +37,14 @@ export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle }: T
             <TableHead>Priority</TableHead>
             <TableHead>Due Date</TableHead>
             <TableHead>Assignee</TableHead>
-            <TableHead>Channel</TableHead>
+            {!hideChannel && <TableHead>Channel</TableHead>}
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {tasks.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={hideChannel ? 6 : 7} className="h-24 text-center text-muted-foreground">
                 No tasks found. Add a new task to get started!
               </TableCell>
             </TableRow>
@@ -88,7 +90,7 @@ export function TaskList({ tasks, onEdit, onDelete, onView, onArchiveToggle }: T
                       <span className="text-xs text-muted-foreground italic">None</span>
                     )}
                   </TableCell>
-                  <TableCell>{task.channel || "N/A"}</TableCell>
+                  {!hideChannel && <TableCell>{task.channel || "N/A"}</TableCell>}
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
