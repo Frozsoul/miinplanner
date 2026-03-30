@@ -1,3 +1,4 @@
+
 import { db } from '@/lib/firebase';
 import type { Task, TaskData, TaskStatus, TaskPriority } from '@/types';
 import {
@@ -55,11 +56,16 @@ export const taskFromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>)
 
 /**
  * Fetches tasks for a user or a workspace.
- * If workspaceId is provided, it fetches all tasks belonging to that workspace.
- * Otherwise, it fetches personal tasks (where userId matches and workspaceId is null).
  */
 export const getTasks = async (userId: string, workspaceId?: string): Promise<Task[]> => {
   if (!userId) return [];
+
+  // Important: If we have an optimistic ID from a newly created workspace, 
+  // don't query Firestore yet as it will trigger a permission error (the ID doesn't exist yet).
+  if (workspaceId && workspaceId.startsWith('optimistic-')) {
+    return [];
+  }
+
   const tasksRef = collection(db, TASK_COLLECTION);
   try {
     let q;
@@ -103,7 +109,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     title: taskData.title,
     description: taskData.description || "",
     priority: taskData.priority || 'Medium',
-    status: data.status || 'To Do',
+    status: taskData.status || 'To Do',
     userId,
     workspaceId: taskData.workspaceId || null,
     assignedTo: taskData.assignedTo || null,
@@ -128,6 +134,7 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     }
   });
 
+  // Return optimistic task with valid Timestamps for UI compatibility
   return { 
     id: 'optimistic-id-' + Date.now(), 
     ...taskData,
@@ -135,6 +142,8 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     archived: false,
     completed: docData.completed,
     order: docData.order,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   } as Task;
 };
 
