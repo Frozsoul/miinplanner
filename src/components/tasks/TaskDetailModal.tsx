@@ -1,11 +1,12 @@
-
 "use client";
 import type { Task, TaskPriority, TaskStatus } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO, isValid } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Archive, ArchiveRestore } from "lucide-react";
+import { Archive, ArchiveRestore, User } from "lucide-react";
+import { useAppData } from "@/contexts/app-data-context";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -15,7 +16,13 @@ interface TaskDetailModalProps {
 }
 
 export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: TaskDetailModalProps) {
+  const { workspaceMembers } = useAppData();
+  
   if (!task) return null;
+
+  const assignedMember = workspaceMembers.find(m => m.uid === task.assignedTo);
+  const memberName = assignedMember?.displayName || assignedMember?.email || "Unassigned";
+  const memberInitials = memberName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
   const getPriorityBadgeVariant = (priority: TaskPriority) => {
     switch (priority) {
@@ -89,21 +96,45 @@ export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: Task
               <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>
             </div>
           )}
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <span className="font-semibold">Status: </span>
+              <h4 className="font-semibold mb-1">Status:</h4>
               <Badge variant={getStatusBadgeVariant(task.status)} className="capitalize">{task.status}</Badge>
             </div>
             <div>
-              <span className="font-semibold">Priority: </span>
+              <h4 className="font-semibold mb-1">Priority:</h4>
               <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority}</Badge>
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <p><span className="font-semibold">Start Date:</span> {formatDateSafe(task.startDate, "PPP")}</p>
-            <p><span className="font-semibold">Due Date:</span> {formatDateSafe(task.dueDate, "PPP")}</p>
+            <div>
+              <h4 className="font-semibold mb-1">Assigned To:</h4>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-6 w-6 border">
+                  <AvatarFallback className="text-[10px] bg-primary/5">{memberInitials || <User className="h-3 w-3" />}</AvatarFallback>
+                </Avatar>
+                <span className="text-muted-foreground">{memberName}</span>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">Channel:</h4>
+              <span className="text-muted-foreground">{task.channel || "N/A"}</span>
+            </div>
           </div>
-          <p><span className="font-semibold">Channel:</span> {task.channel || "N/A"}</p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-semibold mb-1">Start Date:</h4>
+              <span className="text-muted-foreground">{formatDateSafe(task.startDate, "PPP")}</span>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">Due Date:</h4>
+              <span className="text-muted-foreground">{formatDateSafe(task.dueDate, "PPP")}</span>
+            </div>
+          </div>
+
           {task.tags && task.tags.length > 0 && (
             <div>
               <h4 className="font-semibold mb-1">Tags:</h4>

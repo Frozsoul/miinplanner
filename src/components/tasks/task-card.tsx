@@ -5,12 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Megaphone } from "lucide-react";
+import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Megaphone, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { InlinePriorityPicker } from "./inline-priority-picker";
 import { InlineDatePicker } from "./inline-date-picker";
+import { useAppData } from "@/contexts/app-data-context";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TaskCardProps {
   task: Task;
@@ -23,6 +26,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggle, isOverlay = false }: TaskCardProps) {
+    const { workspaceMembers } = useAppData();
     const { 
         attributes, 
         listeners, 
@@ -43,8 +47,11 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
         transform: CSS.Transform.toString(transform),
         transition,
     };
+
+    const assignedMember = workspaceMembers.find(m => m.uid === task.assignedTo);
+    const memberName = assignedMember?.displayName || assignedMember?.email || "Unassigned";
+    const memberInitials = memberName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     
-    // Use a simpler div structure for the overlay to avoid nested card styles
     const cardContent = (
       <>
         <CardHeader className="p-4">
@@ -83,8 +90,22 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
                 </DropdownMenuContent>
             </DropdownMenu>
             </div>
-            <CardDescription className="text-xs pt-1">
+            <CardDescription className="text-xs pt-1 flex items-center justify-between">
                 <InlinePriorityPicker task={task} />
+                {task.assignedTo && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Avatar className="h-6 w-6 border">
+                          <AvatarFallback className="text-[10px] bg-primary/5">{memberInitials || <User className="h-3 w-3" />}</AvatarFallback>
+                        </Avatar>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Assigned to: {memberName}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
             </CardDescription>
         </CardHeader>
         <CardContent className="px-4 pb-4 text-xs text-muted-foreground space-y-2">
