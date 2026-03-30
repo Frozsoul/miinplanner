@@ -6,7 +6,7 @@ import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppData } from "@/contexts/app-data-context";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown, Archive, ArchiveRestore, Library } from "lucide-react";
+import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown, Archive, ArchiveRestore, Library, CalendarDays } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +46,7 @@ import { Switch } from "@/components/ui/switch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TaskCardList } from "@/components/tasks/TaskCardList";
 import { MotivationalQuote } from "@/components/dashboard/MotivationalQuote";
+import { CalendarView } from "@/components/calendar/CalendarView";
 import Link from "next/link";
 
 export default function TasksPage() {
@@ -76,7 +77,7 @@ export default function TasksPage() {
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [channelFilter, setChannelFilter] = useState<string[]>([]);
   
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'calendar'>('kanban');
   const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
@@ -219,6 +220,9 @@ export default function TasksPage() {
   }
   
   const renderContent = () => {
+    if (viewMode === 'calendar') {
+      return <CalendarView tasks={filteredTasks} onTaskClick={openDetailModal} />;
+    }
     if (viewMode === 'list') {
       if (isMobile) {
         return <TaskCardList tasks={filteredTasks} onEdit={openFormModal} onDelete={handleDeleteTask} onView={openDetailModal} onArchiveToggle={handleArchiveToggle} />;
@@ -314,12 +318,15 @@ export default function TasksPage() {
                 </div>
                 <Separator orientation="vertical" className="h-6 hidden sm:block xl:ml-4" />
                 <div className="flex-shrink-0">
-                  <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as 'list' | 'kanban')}} defaultValue="kanban">
+                  <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as any)}} defaultValue="kanban">
+                    <ToggleGroupItem value="kanban" aria-label="Kanban board view">
+                      <LayoutGrid className="h-4 w-4" />
+                    </ToggleGroupItem>
                     <ToggleGroupItem value="list" aria-label="List view">
                       <List className="h-4 w-4"/>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="kanban" aria-label="Kanban board view">
-                      <LayoutGrid className="h-4 w-4" />
+                    <ToggleGroupItem value="calendar" aria-label="Calendar view">
+                      <CalendarDays className="h-4 w-4" />
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
