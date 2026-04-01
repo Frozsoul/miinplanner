@@ -58,7 +58,8 @@ export default function TasksPage() {
     updateTask: updateTaskContext, 
     deleteTask: deleteTaskContext, 
     isLoadingTasks,
-    taskStatuses
+    taskStatuses,
+    setCurrentWorkspaceById
   } = useAppData();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -81,6 +82,8 @@ export default function TasksPage() {
   const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
+    // Clear workspace context to ensure personal statuses are used
+    setCurrentWorkspaceById("");
     fetchTasks();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

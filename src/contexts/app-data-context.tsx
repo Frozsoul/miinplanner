@@ -6,7 +6,7 @@ import type { Task, TaskData, AIInsights, SimpleInsights, TaskStatus, TaskSpace,
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser } from '@/services/task-space-service';
-import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService, deleteWorkspace as deleteWorkspaceService } from '@/services/workspace-service';
+import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService, deleteWorkspace as deleteWorkspaceService, updateWorkspaceStatuses } from '@/services/workspace-service';
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
@@ -74,20 +74,22 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const isLoadingAppData = authLoading || isLoadingTasks;
 
+  // Sync taskStatuses based on active context (Workspace or Personal Profile)
   useEffect(() => {
-    if (userProfile?.taskStatuses) {
+    if (currentWorkspace) {
+      setTaskStatuses(currentWorkspace.taskStatuses || DEFAULT_TASK_STATUSES);
+    } else if (userProfile?.taskStatuses) {
       setTaskStatuses(userProfile.taskStatuses);
     } else {
       setTaskStatuses(DEFAULT_TASK_STATUSES);
     }
-  }, [userProfile]);
+  }, [currentWorkspace, userProfile]);
 
   // --- Workspace Logic ---
   const fetchWorkspaces = useCallback(async () => {
     if (!user?.uid) return;
     const ws = await getUserWorkspaces(user.uid);
     setWorkspaces(ws);
-    // Don't auto-set currentWorkspace here, let the Teamwork page manage its own context
   }, [user]);
 
   useEffect(() => {
@@ -117,7 +119,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const addWorkspace = async (name: string) => {
     if (!user?.uid) return;
-    const newWs = await createWorkspace(user.uid, name);
+    // Seed new workspace with current personal statuses
+    const initialStatuses = userProfile?.taskStatuses || DEFAULT_TASK_STATUSES;
+    const newWs = await createWorkspace(user.uid, name, initialStatuses);
     setWorkspaces(prev => [...prev, newWs]);
     setCurrentWorkspace(newWs);
     toast({ title: "Workspace created", description: `You are now in ${name}.` });
@@ -160,7 +164,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setIsLoadingTasks(true);
-    // Pass the workspaceId to filter personal vs team tasks
     const fetchedTasks = await getTasks(user.uid, workspaceId);
     setTasks(fetchedTasks);
     setIsLoadingTasks(false);
@@ -174,8 +177,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const addTask = async (taskData: TaskData, workspaceId?: string): Promise<Task | null> => {
     if (!user?.uid) return null;
     
-    // If workspaceId is provided (e.g. from Teamwork tab), use it.
-    // Otherwise, check if we're currently "in" a workspace context.
     const targetWorkspaceId = workspaceId || currentWorkspace?.id || null;
     
     const payload = { 
@@ -184,9 +185,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     const newTask = await addTaskService(user.uid, payload);
-    
-    // Optimization: Instead of full fetch, we could optimistically update, 
-    // but full fetch ensures sorting and other members' updates are synced.
     await fetchTasks(targetWorkspaceId === null ? undefined : targetWorkspaceId);
     return newTask;
   };
@@ -194,7 +192,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const updateTask = async (taskId: string, taskUpdate: Partial<TaskData>) => {
     if (!user?.uid) return;
     await updateTaskService(user.uid, taskId, taskUpdate);
-    // Determine the context to refresh
     const task = tasks.find(t => t.id === taskId);
     await fetchTasks(task?.workspaceId);
   };
@@ -225,14 +222,28 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     if (!user?.uid) return;
     const newStatuses = [...taskStatuses, status];
     setTaskStatuses(newStatuses);
-    await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    
+    if (currentWorkspace) {
+      await updateWorkspaceStatuses(currentWorkspace.id, newStatuses);
+      setWorkspaces(prev => prev.map(ws => ws.id === currentWorkspace.id ? { ...ws, taskStatuses: newStatuses } : ws));
+      setCurrentWorkspace(prev => prev ? { ...prev, taskStatuses: newStatuses } : null);
+    } else {
+      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    }
   };
 
   const deleteStatus = async (statusToDelete: TaskStatus) => {
     if (!user?.uid) return;
     const newStatuses = taskStatuses.filter(s => s !== statusToDelete);
     setTaskStatuses(newStatuses);
-    await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    
+    if (currentWorkspace) {
+      await updateWorkspaceStatuses(currentWorkspace.id, newStatuses);
+      setWorkspaces(prev => prev.map(ws => ws.id === currentWorkspace.id ? { ...ws, taskStatuses: newStatuses } : ws));
+      setCurrentWorkspace(prev => prev ? { ...prev, taskStatuses: newStatuses } : null);
+    } else {
+      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    }
   };
 
   const reorderStatuses = async (startIndex: number, endIndex: number) => {
@@ -241,7 +252,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [removed] = newStatuses.splice(startIndex, 1);
     newStatuses.splice(endIndex, 0, removed);
     setTaskStatuses(newStatuses);
-    await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    
+    if (currentWorkspace) {
+      await updateWorkspaceStatuses(currentWorkspace.id, newStatuses);
+      setWorkspaces(prev => prev.map(ws => ws.id === currentWorkspace.id ? { ...ws, taskStatuses: newStatuses } : ws));
+      setCurrentWorkspace(prev => prev ? { ...prev, taskStatuses: newStatuses } : null);
+    } else {
+      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    }
   };
 
   // --- Space Logic ---
@@ -314,7 +332,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       });
       setInsights({ ...aiResult, type: 'full' });
     } catch (error) {
-      // Handled by AI error handling if applicable, or generic catch
+      // Catch handled by emitter
     } finally {
       setIsLoadingAi(false);
     }

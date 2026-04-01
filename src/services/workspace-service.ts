@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import type { Workspace, WorkspaceMember } from '@/types';
+import type { Workspace, WorkspaceMember, TaskStatus } from '@/types';
 import {
   collection,
   getDocs,
@@ -15,6 +15,7 @@ import {
   arrayRemove,
   getDoc,
   deleteDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -26,7 +27,7 @@ const USER_COLLECTION = 'users';
  * Creates a new workspace.
  * Generates a real Firestore ID immediately to prevent race conditions with task creation.
  */
-export const createWorkspace = async (userId: string, name: string): Promise<Workspace> => {
+export const createWorkspace = async (userId: string, name: string, taskStatuses: TaskStatus[]): Promise<Workspace> => {
   const workspacesRef = collection(db, WORKSPACE_COLLECTION);
   const newWorkspaceRef = doc(workspacesRef); // Generate valid ID on the client
   
@@ -34,6 +35,7 @@ export const createWorkspace = async (userId: string, name: string): Promise<Wor
     name,
     ownerId: userId,
     memberUids: [userId],
+    taskStatuses, // Seed with initial statuses
     createdAt: serverTimestamp(),
   };
 
@@ -53,8 +55,24 @@ export const createWorkspace = async (userId: string, name: string): Promise<Wor
     name,
     ownerId: userId,
     memberUids: [userId],
+    taskStatuses,
     createdAt: new Date(),
   };
+};
+
+export const updateWorkspaceStatuses = async (workspaceId: string, taskStatuses: TaskStatus[]): Promise<void> => {
+  const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
+  const updateData = { taskStatuses };
+  
+  updateDoc(workspaceRef, updateData).catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: workspaceRef.path,
+        operation: 'update',
+        requestResourceData: updateData
+      } satisfies SecurityRuleContext));
+    }
+  });
 };
 
 export const getUserWorkspaces = async (userId: string): Promise<Workspace[]> => {

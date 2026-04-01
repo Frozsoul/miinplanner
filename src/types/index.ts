@@ -31,6 +31,7 @@ export interface Workspace {
   name: string;
   ownerId: string;
   memberUids: string[];
+  taskStatuses?: TaskStatus[]; // Shared statuses for the workspace
   createdAt: Date | Timestamp;
 }
 

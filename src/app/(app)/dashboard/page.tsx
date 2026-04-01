@@ -1,3 +1,4 @@
+
 "use client";
 import { useAppData } from "@/contexts/app-data-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -35,9 +36,12 @@ export default function DashboardPage() {
     tasks, 
     fetchTasks, 
     isLoadingTasks,
+    setCurrentWorkspaceById
   } = useAppData();
 
   useEffect(() => {
+    // Dashboard is personal context, clear any active workspace
+    setCurrentWorkspaceById("");
     fetchTasks();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
