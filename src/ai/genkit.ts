@@ -1,12 +1,6 @@
-
 // src/ai/genkit.ts
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
-
-/**
- * @fileOverview Initializes the Genkit AI instance with Google AI plugin.
- * Leverages the GOOGLE_API_KEY environment variable.
- */
+import { googleAI } from '@genkit-ai/google-genai';
 
 const apiKey = process.env.GOOGLE_API_KEY;
 
@@ -18,5 +12,5 @@ export const ai = genkit({
   plugins: [
     googleAI(apiKey ? { apiKey } : undefined),
   ],
-  model: 'googleai/gemini-2.0-flash', 
+  model: 'googleai/gemini-2.5-flash', // ← current stable model
 });
