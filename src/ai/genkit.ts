@@ -1,6 +1,5 @@
-// src/ai/genkit.ts
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/googleai'; // correct for v1.8.0, already installed
 
 const apiKey = process.env.GOOGLE_API_KEY;
 
@@ -12,5 +11,5 @@ export const ai = genkit({
   plugins: [
     googleAI(apiKey ? { apiKey } : undefined),
   ],
-  model: 'googleai/gemini-2.5-flash', // ← current stable model
+  model: 'googleai/gemini-2.5-flash', // only thing that changed from original
 });

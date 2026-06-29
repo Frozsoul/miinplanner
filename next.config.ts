@@ -1,7 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ['handlebars', 'genkit', '@genkit-ai/googleai'],
   typescript: {
     ignoreBuildErrors: true,
   },
