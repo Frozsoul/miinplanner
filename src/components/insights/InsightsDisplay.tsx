@@ -1,10 +1,10 @@
+
 "use client";
 
 import type { AIInsights } from "@/types";
 import { InsightCard } from "./InsightCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CompletionChart } from "@/components/charts/CompletionChart";
 import { 
     CheckCircle, 
     TrendingUp, 
@@ -25,9 +25,9 @@ interface InsightsDisplayProps {
 export function InsightsDisplay({ insights }: InsightsDisplayProps) {
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg border-primary/20">
+      <Card className="shadow-lg border-primary/20 bg-primary/5">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/>AI Summary & Productivity Score</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/>AI Analysis & Score</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row gap-6 items-center">
             <div className="flex flex-col items-center justify-center gap-2">
@@ -56,10 +56,10 @@ export function InsightsDisplay({ insights }: InsightsDisplayProps) {
                  <p className="text-sm text-muted-foreground font-semibold">Productivity Score</p>
             </div>
             <div className="flex-1">
-                <Alert>
-                    <Sparkles className="h-4 w-4" />
-                    <AlertTitle>AI Analysis</AlertTitle>
-                    <AlertDescription>{insights.summary}</AlertDescription>
+                <Alert className="bg-background border-none shadow-none">
+                    <Sparkles className="h-4 w-4 text-accent" />
+                    <AlertTitle className="font-bold">Executive Summary</AlertTitle>
+                    <AlertDescription className="italic text-lg">{insights.summary}</AlertDescription>
                 </Alert>
             </div>
         </CardContent>
@@ -67,38 +67,38 @@ export function InsightsDisplay({ insights }: InsightsDisplayProps) {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <InsightCard
-          title="Weekly Completions"
-          value={insights.completionRate.weekly}
+          title="Daily Goal Achievement"
+          value={insights.completionRate.daily}
           icon={TrendingUp}
-          description={`${insights.completionRate.daily} tasks completed today`}
+          description="Tasks moved to 'Done' today"
         />
         <InsightCard
-          title="Avg. Completion Time"
-          value={`${insights.averageCompletionTimeHours.toFixed(1)} hrs`}
+          title="Velocity"
+          value={`${insights.averageCompletionTimeHours.toFixed(1)}h`}
           icon={Clock}
-          description="From creation to completion"
+          description="Average turnaround time"
         />
         <InsightCard
-          title="At-Risk Tasks"
+          title="Focus Items"
           value={insights.atRiskTasks.length}
           icon={AlertTriangle}
-          description="Due soon or overdue"
-          className={insights.atRiskTasks.length > 0 ? "bg-destructive/10 border-destructive" : ""}
+          description="At-risk or overdue tasks"
+          className={insights.atRiskTasks.length > 0 ? "bg-destructive/5 border-destructive/20" : ""}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
          <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><List className="text-primary"/>Proactive Suggestions</CardTitle>
-            <CardDescription>Actionable tips from your AI assistant to improve your workflow.</CardDescription>
+            <CardTitle className="flex items-center gap-2"><List className="text-primary"/>AI Proactive Suggestions</CardTitle>
+            <CardDescription>Actionable steps to optimize your current workflow.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
                 {insights.proactiveSuggestions.map((suggestion, index) => (
-                    <li key={index} className="flex items-start gap-3">
+                    <li key={index} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                         <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-muted-foreground">{suggestion}</p>
+                        <p className="text-sm leading-relaxed">{suggestion}</p>
                     </li>
                 ))}
             </ul>
@@ -107,27 +107,27 @@ export function InsightsDisplay({ insights }: InsightsDisplayProps) {
         
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><PauseCircle className="text-primary"/>Stalled Tasks</CardTitle>
-                <CardDescription>Tasks that haven&apos;t been updated recently and may need attention.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><PauseCircle className="text-primary"/>Items Needing Attention</CardTitle>
+                <CardDescription>Stalled tasks identified by MiinBot analysis.</CardDescription>
             </CardHeader>
             <CardContent>
                  {insights.stalledTasks.length > 0 ? (
                     <ul className="space-y-2">
                         {insights.stalledTasks.map(task => (
-                            <li key={task.taskId} className="flex justify-between items-center p-2 border rounded-md">
+                            <li key={task.taskId} className="flex justify-between items-center p-3 border rounded-md">
                                 <div>
                                     <p className="font-medium text-sm">{task.title}</p>
-                                    <p className="text-xs text-muted-foreground">Last updated: {new Date(task.lastUpdate).toLocaleDateString()}</p>
+                                    <p className="text-xs text-muted-foreground">Reason: {task.reason}</p>
                                 </div>
-                                <Button size="sm" variant="outline" asChild><Link href={`/tasks#${task.taskId}`}>View Task</Link></Button>
+                                <Button size="sm" variant="outline" asChild><Link href={`/tasks#${task.taskId}`}>Action</Link></Button>
                             </li>
                         ))}
                     </ul>
                  ) : (
                     <Alert>
                         <Info className="h-4 w-4" />
-                        <AlertTitle>No Stalled Tasks!</AlertTitle>
-                        <AlertDescription>Great job! All your active tasks have been updated recently.</AlertDescription>
+                        <AlertTitle>Clean Slate!</AlertTitle>
+                        <AlertDescription>No tasks seem to be stalled or forgotten at this moment.</AlertDescription>
                     </Alert>
                  )}
             </CardContent>
