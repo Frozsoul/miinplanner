@@ -119,6 +119,8 @@ export interface UserProfile {
   lastInsightGenerationDate?: string;
   chatbotMessageCount?: number;
   lastChatbotMessageDate?: string;
+  marketingPlanCount?: number;
+  lastMarketingPlanDate?: string;
 }
 
 export interface LoginFormData {

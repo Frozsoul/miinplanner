@@ -15,6 +15,7 @@ import {
   serverTimestamp,
   DocumentData,
   QueryDocumentSnapshot,
+  writeBatch,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -154,6 +155,62 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   } as Task;
+};
+
+/**
+ * Adds many tasks in one atomic batch write and waits for it to commit,
+ * so a single refetch afterwards is guaranteed to include them.
+ * Unlike applyTasksToUser, this never deletes existing tasks.
+ */
+export const addTasksBulk = async (userId: string, tasksData: TaskData[]): Promise<number> => {
+  if (!userId) throw new Error("User ID is required");
+  if (tasksData.length === 0) return 0;
+  if (tasksData.length > 450) throw new Error("Too many tasks in one batch.");
+
+  const tasksRef = collection(db, TASK_COLLECTION);
+  const batch = writeBatch(db);
+  const baseOrder = Date.now();
+
+  tasksData.forEach((taskData, i) => {
+    const docData: any = {
+      title: taskData.title,
+      description: taskData.description || "",
+      priority: taskData.priority || 'Medium',
+      status: taskData.status || 'To Do',
+      userId,
+      workspaceId: taskData.workspaceId || null,
+      assignedTo: taskData.assignedTo || null,
+      tags: taskData.tags || [],
+      completed: false,
+      archived: false,
+      order: taskData.order ?? baseOrder + i,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      channel: taskData.channel || null,
+    };
+    if (taskData.startDate) {
+      const d = new Date(taskData.startDate);
+      if (!isNaN(d.getTime())) docData.startDate = Timestamp.fromDate(d);
+    }
+    if (taskData.dueDate) {
+      const d = new Date(taskData.dueDate);
+      if (!isNaN(d.getTime())) docData.dueDate = Timestamp.fromDate(d);
+    }
+    batch.set(doc(tasksRef), docData);
+  });
+
+  try {
+    await batch.commit();
+  } catch (err: any) {
+    if (err.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: tasksRef.path,
+        operation: 'create',
+      } satisfies SecurityRuleContext));
+    }
+    throw err;
+  }
+  return tasksData.length;
 };
 
 export const updateTask = async (userId: string, taskId: string, taskUpdate: Partial<TaskData & { completed?: boolean, archived?: boolean }>): Promise<void> => {

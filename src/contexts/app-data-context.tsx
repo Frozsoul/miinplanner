@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import type { Task, TaskData, AIInsights, SimpleInsights, TaskStatus, TaskSpace, Workspace, WorkspaceMember } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
-import { getTasks, addTask as addTaskService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
+import { getTasks, addTask as addTaskService, addTasksBulk as addTasksBulkService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser } from '@/services/task-space-service';
 import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService, deleteWorkspace as deleteWorkspaceService, updateWorkspaceStatuses } from '@/services/workspace-service';
 import { updateUserProfile } from '@/services/user-service';
@@ -19,6 +19,7 @@ interface AppDataContextType {
   isLoadingTasks: boolean;
   fetchTasks: (workspaceId?: string) => Promise<void>;
   addTask: (taskData: TaskData, workspaceId?: string) => Promise<Task | null>;
+  addTasks: (tasksData: TaskData[]) => Promise<number>;
   updateTask: (taskId: string, taskUpdate: Partial<TaskData>) => Promise<void>;
   updateTaskField: (taskId: string, field: keyof TaskData, value: TaskData[keyof TaskData]) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
@@ -223,6 +224,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     return newTask;
   };
 
+  // Adds tasks to the current board (personal or active workspace) without touching existing ones.
+  const addTasks = async (tasksData: TaskData[]): Promise<number> => {
+    if (!user?.uid) return 0;
+    const targetWorkspaceId = currentWorkspace?.id || null;
+    const count = await addTasksBulkService(
+      user.uid,
+      tasksData.map(t => ({ ...t, workspaceId: targetWorkspaceId ?? undefined })),
+    );
+    await fetchTasks(targetWorkspaceId === null ? undefined : targetWorkspaceId);
+    return count;
+  };
+
   const updateTask = async (taskId: string, taskUpdate: Partial<TaskData>) => {
     if (!user?.uid) return;
     await updateTaskService(user.uid, taskId, taskUpdate);
@@ -378,7 +391,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     <AppDataContext.Provider value={{
       isLoadingAppData,
       tasks, setTasks, isLoadingTasks, fetchTasks,
-      addTask, updateTask, updateTaskField, deleteTask, moveTask,
+      addTask, addTasks, updateTask, updateTaskField, deleteTask, moveTask,
       taskStatuses, addStatus, deleteStatus, reorderStatuses,
       workspaces, currentWorkspace, setCurrentWorkspaceById, workspaceMembers, fetchWorkspaces, addWorkspace, inviteToWorkspace, removeFromWorkspace, deleteWorkspace,
       taskSpaces, fetchTaskSpaces, saveCurrentTaskSpace, loadTaskSpace, deleteTaskSpace, importTaskSpace, loadTaskSpaceTemplate,

@@ -7,6 +7,7 @@ import {
   Lightbulb,
   Library,
   Users,
+  Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -19,6 +20,7 @@ interface NavItem {
 const allNavItems: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/tasks", icon: ListChecks, label: "Task Manager" },
+  { href: "/planner", icon: Sparkles, label: "AI Marketing Planner" },
   { href: "/teamwork", icon: Users, label: "Teamwork" },
   { href: "/library", icon: Library, label: "Library" },
   { href: "/insights", icon: Lightbulb, label: "AI Insights" },
