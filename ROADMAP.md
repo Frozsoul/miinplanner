@@ -14,11 +14,11 @@ Ordered by priority. One item per PR unless items are tiny. Tick items off when 
 
 ## Later: clean up
 - [ ] Delete stub routes: `/chatbot`, `/calendar`, `/reminders`, `/prioritization`, and `src/ai/flows/prioritize-tasks-flow.ts`, `generate-content-ideas.ts`.
-- [ ] Replace off-topic templates (savings challenge, write a book, fitness) with marketing ones: product launch, Tet campaign, Google Business Profile setup, grand opening.
 - [ ] AI Insights: compute completion rate, averages and overdue lists in code; use the model only for the summary and suggestions.
-- [ ] Fix the 57 TypeScript errors and remove `ignoreBuildErrors`.
+- [ ] Fix the remaining 9 TypeScript errors and remove `ignoreBuildErrors`.
 - [ ] Replace the Firebase Studio README.
 
 ## Done
+- [x] Template library rebuilt: 8 marketing playbooks with dated tasks, preview, "Add to board" (append) and optional replace. PR #4
 - [x] Loading a template, saved space or import only replaces the personal board (never workspace tasks), backs it up to Saved Spaces first, and aborts if the backup fails. PR #3
 - [x] AI Marketing Planner (`/planner`), PR #1, 26 Sep 2026
