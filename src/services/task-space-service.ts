@@ -74,56 +74,121 @@ export const saveTaskSpace = async (userId: string, name: string, tasks: TaskDat
   };
 };
 
+const BATCH_LIMIT = 450; // Firestore allows 500 writes per batch; keep headroom.
+
+const toIso = (val: any): string | undefined => {
+  if (!val) return undefined;
+  if (typeof val.toDate === 'function') return val.toDate().toISOString();
+  if (typeof val === 'string') return val;
+  return undefined;
+};
+
+const toTimestamp = (val?: string): Timestamp | null => {
+  if (!val) return null;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : Timestamp.fromDate(d);
+};
+
+const commitInChunks = async (ops: ((batch: ReturnType<typeof writeBatch>) => void)[]) => {
+  for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+    const batch = writeBatch(db);
+    ops.slice(i, i + BATCH_LIMIT).forEach(op => op(batch));
+    await batch.commit();
+  }
+};
+
+/**
+ * Snapshots the user's personal board (tasks not in any workspace) into a new
+ * saved space, so a replace can always be undone from Saved Spaces.
+ * Returns the number of tasks backed up. Throws if the backup could not be written.
+ */
+export const backupPersonalBoard = async (
+  userId: string,
+  label: string,
+  taskStatuses: TaskStatus[],
+): Promise<number> => {
+  if (!userId) throw new Error("User not authenticated.");
+  const q = query(collection(db, TASK_COLLECTION), where('userId', '==', userId), where('workspaceId', '==', null));
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return 0;
+
+  const tasks: TaskData[] = snapshot.docs.map(d => {
+    const data = d.data();
+    const task: any = {
+      title: data.title,
+      description: data.description || "",
+      priority: data.priority || 'Medium',
+      status: data.status || 'To Do',
+      tags: data.tags || [],
+      archived: data.archived || false,
+      completed: data.completed || false,
+      order: data.order ?? 0,
+    };
+    const startDate = toIso(data.startDate);
+    const dueDate = toIso(data.dueDate);
+    if (startDate) task.startDate = startDate;
+    if (dueDate) task.dueDate = dueDate;
+    if (data.channel) task.channel = data.channel;
+    return task as TaskData;
+  });
+
+  await addDoc(collection(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION), {
+    name: label,
+    tasks,
+    taskStatuses,
+    createdAt: serverTimestamp(),
+  });
+  return tasks.length;
+};
+
+/**
+ * Replaces the user's PERSONAL board with the given tasks.
+ * Tasks inside workspaces (shared with teammates) are never touched.
+ * Callers should run backupPersonalBoard first.
+ */
 export const applyTasksToUser = async (userId: string, newTasksData: TaskData[]): Promise<void> => {
   if (!userId) throw new Error("User not authenticated.");
 
   const tasksRef = collection(db, TASK_COLLECTION);
   try {
-    const q = query(tasksRef, where('userId', '==', userId));
+    const q = query(tasksRef, where('userId', '==', userId), where('workspaceId', '==', null));
     const currentTasksSnapshot = await getDocs(q);
-    
-    const batch = writeBatch(db);
-    currentTasksSnapshot.forEach(doc => batch.delete(doc.ref));
 
-    newTasksData.forEach(taskData => {
-      const newTaskRef = doc(collection(db, TASK_COLLECTION));
+    const ops: ((batch: ReturnType<typeof writeBatch>) => void)[] = [];
+    currentTasksSnapshot.forEach(d => ops.push(batch => batch.delete(d.ref)));
+
+    const baseOrder = Date.now();
+    newTasksData.forEach((taskData, i) => {
       const docToSet: any = {
         title: taskData.title,
         description: taskData.description || "",
         priority: taskData.priority || 'Medium',
         status: taskData.status || 'To Do',
         userId,
-        workspaceId: taskData.workspaceId || null,
-        assignedTo: taskData.assignedTo || null,
+        workspaceId: null,
+        assignedTo: null,
         tags: taskData.tags || [],
         completed: taskData.status === 'Done' ? true : (taskData.completed || false),
-        archived: false,
+        archived: taskData.archived || false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        startDate: taskData.startDate ? Timestamp.fromDate(new Date(taskData.startDate)) : null,
-        dueDate: taskData.dueDate ? Timestamp.fromDate(new Date(taskData.dueDate)) : null,
+        startDate: toTimestamp(taskData.startDate),
+        dueDate: toTimestamp(taskData.dueDate),
         channel: taskData.channel || null,
-        order: taskData.order || Date.now(),
+        order: taskData.order ?? baseOrder + i,
       };
-
-      batch.set(newTaskRef, docToSet);
+      ops.push(batch => batch.set(doc(tasksRef), docToSet));
     });
 
-    batch.commit().catch(async (err) => {
-      if (err.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'batch-write',
-          operation: 'write'
-        } satisfies SecurityRuleContext));
-      }
-    });
+    await commitInChunks(ops);
   } catch (err: any) {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: tasksRef.path,
-        operation: 'list'
+        operation: 'write'
       } satisfies SecurityRuleContext));
     }
+    throw err;
   }
 };
 

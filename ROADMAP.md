@@ -3,7 +3,6 @@
 Ordered by priority. One item per PR unless items are tiny. Tick items off when merged.
 
 ## Now: fix the risks
-- [ ] **Stop templates and saved spaces wiping tasks.** `applyTasksToUser` deletes every task where `userId == user`, including tasks inside shared workspaces. Loading a template should add to the board, or at minimum only replace tasks in the current personal board, after a clear confirmation.
 - [ ] **Protect the Gemini endpoints.** The server actions in `src/ai/flows` have no auth check, and the daily limits only run in the browser. Verify the Firebase ID token on the server (firebase-admin), enforce limits there, or turn on App Check.
 - [ ] **Close the user list leak.** `firebase.rules` lets any signed-in user list all `/users` docs, and with them every email. Look up teammates by exact email through a server action instead.
 
@@ -21,4 +20,5 @@ Ordered by priority. One item per PR unless items are tiny. Tick items off when 
 - [ ] Replace the Firebase Studio README.
 
 ## Done
+- [x] Loading a template, saved space or import only replaces the personal board (never workspace tasks), backs it up to Saved Spaces first, and aborts if the backup fails. PR #3
 - [x] AI Marketing Planner (`/planner`), PR #1, 26 Sep 2026

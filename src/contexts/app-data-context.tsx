@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import type { Task, TaskData, AIInsights, SimpleInsights, TaskStatus, TaskSpace, Workspace, WorkspaceMember } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 import { getTasks, addTask as addTaskService, addTasksBulk as addTasksBulkService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
-import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser } from '@/services/task-space-service';
+import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser, backupPersonalBoard } from '@/services/task-space-service';
 import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService, deleteWorkspace as deleteWorkspaceService, updateWorkspaceStatuses } from '@/services/workspace-service';
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insights-flow';
@@ -320,12 +320,55 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     fetchTaskSpaces();
   };
 
+  // Every replace of the personal board is preceded by an automatic backup to Saved Spaces.
+  // If the backup fails, nothing is replaced.
+  const backupBeforeReplace = async (incomingName: string): Promise<boolean> => {
+    if (!user?.uid) return false;
+    try {
+      const stamp = new Date().toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      const count = await backupPersonalBoard(user.uid, `Backup before "${incomingName}" (${stamp})`, userProfile?.taskStatuses || DEFAULT_TASK_STATUSES);
+      if (count > 0) await fetchTaskSpaces();
+      return true;
+    } catch (err) {
+      console.error("Backup before replace failed:", err);
+      toast({
+        title: "Nothing was changed",
+        description: "We couldn't back up your current board, so we stopped before replacing it. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const afterReplace = (name: string) => {
+    toast({
+      title: `Loaded "${name}"`,
+      description: "Your previous personal board was saved to Saved Spaces. Workspace tasks were not touched.",
+    });
+  };
+
+  const replaceFailed = (err: unknown) => {
+    console.error("Replacing the board failed:", err);
+    toast({
+      title: "Couldn't load that board",
+      description: "Your previous board is in Saved Spaces if anything looks wrong.",
+      variant: "destructive",
+    });
+  };
+
   const loadTaskSpace = async (spaceId: string) => {
     if (!user?.uid) return;
-    const { taskStatuses: newStatuses } = await loadTasksFromSpace(user.uid, spaceId);
-    if (newStatuses) {
-      setTaskStatuses(newStatuses);
-      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    const spaceName = taskSpaces.find(s => s.id === spaceId)?.name || "saved space";
+    if (!(await backupBeforeReplace(spaceName))) return;
+    try {
+      const { taskStatuses: newStatuses } = await loadTasksFromSpace(user.uid, spaceId);
+      if (newStatuses) {
+        setTaskStatuses(newStatuses);
+        await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+      }
+      afterReplace(spaceName);
+    } catch (err) {
+      replaceFailed(err);
     }
     fetchTasks();
   };
@@ -338,10 +381,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const importTaskSpace = async (space: Omit<TaskSpace, 'id'>) => {
     if (!user?.uid) return;
-    await applyTasksToUser(user.uid, space.tasks);
-    if (space.taskStatuses) {
-        setTaskStatuses(space.taskStatuses);
-        await updateUserProfile(user.uid, { taskStatuses: space.taskStatuses });
+    if (!(await backupBeforeReplace(space.name))) return;
+    try {
+      await applyTasksToUser(user.uid, space.tasks);
+      if (space.taskStatuses) {
+          setTaskStatuses(space.taskStatuses);
+          await updateUserProfile(user.uid, { taskStatuses: space.taskStatuses });
+      }
+      afterReplace(space.name);
+    } catch (err) {
+      replaceFailed(err);
     }
     fetchTasks();
   };
