@@ -78,7 +78,7 @@ export default function LibraryPage() {
             <CardHeader>
             <CardTitle className="flex items-center gap-2"><Wand2 />Featured Templates</CardTitle>
             <CardDescription>
-                Loading a template will replace your current tasks and statuses. This action cannot be undone.
+                Loading a template replaces your personal board. Your current board is backed up to Saved Spaces automatically.
             </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -102,7 +102,7 @@ export default function LibraryPage() {
                         <AlertDialogHeader>
                         <AlertDialogTitle>Load Template: &quot;{template.name}&quot;?</AlertDialogTitle>
                         <AlertDialogDescription>
-                           This action will replace all your current tasks and statuses. Would you like to save your current workspace first?
+                           This replaces the tasks and statuses on your personal board. Your current board is saved to Saved Spaces first, so you can switch back. Workspace tasks are not affected. You can also save it under your own name first.
                         </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

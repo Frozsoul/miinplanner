@@ -104,7 +104,6 @@ export function TaskSpacesManager() {
 
         setIsLoading(true);
         await importTaskSpace(importedSpace as Omit<TaskSpace, 'id'>);
-        toast({ title: "Success", description: "Task space imported successfully." });
       } catch (error) {
         console.error("Import error:", error);
         toast({ title: "Import Error", description: (error as Error).message, variant: "destructive" });
@@ -142,9 +141,9 @@ export function TaskSpacesManager() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                        <AlertDialogTitle>Load Task Space?</AlertDialogTitle>
+                        <AlertDialogTitle>Load this saved space?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will replace all of your current tasks and statuses with the ones from &quot;{space.name}&quot;. This action cannot be undone.
+                            This replaces the tasks and statuses on your personal board with the ones from &quot;{space.name}&quot;. Your current board is saved to Saved Spaces first, so you can switch back. Workspace tasks are not affected.
                         </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
