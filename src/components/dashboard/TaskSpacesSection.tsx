@@ -4,7 +4,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAppData } from "@/contexts/app-data-context";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Play, Download, Loader2, ListChecks, Library, ArrowRight, Sparkles } from "lucide-react";
@@ -20,7 +19,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { taskSpaceTemplates } from "@/lib/task-space-templates";
+import { taskSpaceTemplates, templateToTasks, type MarketingTemplate } from "@/lib/task-space-templates";
+import { useToast } from "@/hooks/use-toast";
 
 export function TaskSpacesSection() {
   const { 
@@ -28,8 +28,10 @@ export function TaskSpacesSection() {
     taskSpaces, 
     fetchTaskSpaces, 
     loadTaskSpace, 
-    loadTaskSpaceTemplate
+    addTasks,
+    taskStatuses,
   } = useAppData();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const featuredTemplates = taskSpaceTemplates.slice(0, 3);
 
@@ -44,10 +46,17 @@ export function TaskSpacesSection() {
     setIsLoading(false);
   };
 
-  const handleLoadTemplate = async (template: Omit<TaskSpace, 'id'>) => {
+  const handleAddTemplate = async (template: MarketingTemplate) => {
     setIsLoading(true);
-    await loadTaskSpaceTemplate(template);
-    setIsLoading(false);
+    try {
+      const count = await addTasks(templateToTasks(template, new Date(), taskStatuses[0] || "To Do"));
+      toast({ title: `${count} tasks added`, description: `"${template.name}" was added to your board with due dates from today.` });
+    } catch (err) {
+      console.error("Adding template failed:", err);
+      toast({ title: "Couldn't add the template", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -116,43 +125,27 @@ export function TaskSpacesSection() {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Library className="text-primary"/>Template Library</CardTitle>
-          <CardDescription>Start a new project with a pre-built template.</CardDescription>
+          <CardDescription>Add a ready-made marketing playbook to your board.</CardDescription>
         </CardHeader>
         <CardContent>
            <div className="space-y-2">
               {featuredTemplates.map(template => (
-                <div key={template.name} className="flex justify-between items-center p-3 border rounded-md">
+                <div key={template.id} className="flex justify-between items-center p-3 border rounded-md">
                   <div>
                     <p className="font-medium text-sm">{template.name}</p>
                     <p className="text-xs text-muted-foreground">{template.description}</p>
                   </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" disabled={isLoading}>
-                         {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Download className="h-4 w-4" />}
-                        <span className="ml-2">Load</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                     <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Load Template: &quot;{template.name}&quot;?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This replaces the tasks and statuses on your personal board. Your current board is saved to Saved Spaces first, so you can switch back. Workspace tasks are not affected.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleLoadTemplate(template)}>Load Template</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button variant="outline" size="sm" disabled={isLoading} onClick={() => handleAddTemplate(template)}>
+                    {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Download className="h-4 w-4" />}
+                    <span className="ml-2">Add</span>
+                  </Button>
                 </div>
               ))}
             </div>
         </CardContent>
          <CardFooter>
            <Button variant="link" asChild className="p-0 h-auto">
-              <Link href="/library">View All Templates <ArrowRight className="ml-1 h-4 w-4"/></Link>
+              <Link href="/library">View all templates <ArrowRight className="ml-1 h-4 w-4"/></Link>
             </Button>
         </CardFooter>
       </Card>

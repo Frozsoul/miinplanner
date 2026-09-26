@@ -20,7 +20,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { taskSpaceTemplates } from "@/lib/task-space-templates";
 
 export function TaskSpacesManager() {
   const { 
