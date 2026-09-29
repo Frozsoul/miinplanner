@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { runGuarded, type AiResult } from '@/ai/guard';
 
 const ChatTaskSchema = z.object({
   id: z.string(),
@@ -21,8 +22,8 @@ const ChatTaskSchema = z.object({
 });
 
 const SuggestProductivityTipsInputSchema = z.object({
-  query: z.string().describe('The user query for productivity tips and workflow optimizations.'),
-  tasks: z.array(ChatTaskSchema).optional().describe('Contextual task data to help the AI provide specific advice.'),
+  query: z.string().trim().min(1).max(2000).describe('The user query for productivity tips and workflow optimizations.'),
+  tasks: z.array(ChatTaskSchema).max(500).optional().describe('Contextual task data to help the AI provide specific advice.'),
 });
 export type SuggestProductivityTipsInput = z.infer<typeof SuggestProductivityTipsInputSchema>;
 
@@ -31,8 +32,13 @@ const SuggestProductivityTipsOutputSchema = z.object({
 });
 export type SuggestProductivityTipsOutput = z.infer<typeof SuggestProductivityTipsOutputSchema>;
 
-export async function suggestProductivityTips(input: SuggestProductivityTipsInput): Promise<SuggestProductivityTipsOutput> {
-  return suggestProductivityTipsFlow(input);
+/** Requires a Firebase ID token. Counts against the user's daily chat quota. */
+export async function suggestProductivityTips(idToken: string, input: SuggestProductivityTipsInput): Promise<AiResult<SuggestProductivityTipsOutput>> {
+  const parsed = SuggestProductivityTipsInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, code: 'failed', message: 'Messages must be under 2,000 characters.' };
+  }
+  return runGuarded(idToken, 'chat', () => suggestProductivityTipsFlow(parsed.data));
 }
 
 const prompt = ai.definePrompt({

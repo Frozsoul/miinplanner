@@ -419,11 +419,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         dueDate: t.dueDate,
       }));
       
-      const aiResult = await aiGenerateInsights({ 
-        tasks: insightTasks, 
-        currentDate: new Date().toISOString() 
+      const idToken = await user.getIdToken();
+      const aiResult = await aiGenerateInsights(idToken, {
+        tasks: insightTasks,
+        currentDate: new Date().toISOString()
       });
-      setInsights({ ...aiResult, type: 'full' });
+      if (!aiResult.ok) {
+        toast({ title: "AI analysis unavailable", description: aiResult.message, variant: "destructive" });
+        return;
+      }
+      setInsights({ ...aiResult.data, type: 'full' });
     } catch (error: any) {
         console.error("AI Insight Generation Failed:", error);
         toast({ 
