@@ -64,7 +64,8 @@ export default function MarketingPlannerPage() {
     if (!canGenerate || !user) return;
     setIsGenerating(true);
     try {
-      const result = await generateMarketingPlan({
+      const idToken = await user.getIdToken();
+      const response = await generateMarketingPlan(idToken, {
         businessType,
         goal,
         audience: audience.trim() || undefined,
@@ -72,6 +73,14 @@ export default function MarketingPlannerPage() {
         durationDays: Number(durationDays),
         hoursPerWeek: Number(hoursPerWeek) || 5,
       });
+      if (!response.ok) {
+        toast({ title: "Couldn't generate a plan", description: response.message, variant: "destructive" });
+        if (response.code === "limit_reached") {
+          await updateUserProfile({ marketingPlanCount: PLAN_DAILY_LIMIT, lastMarketingPlanDate: todayStr });
+        }
+        return;
+      }
+      const result = response.data;
       setPlan(result);
       setSelected(new Set(result.tasks.map((_, i) => i)));
       await updateUserProfile({ marketingPlanCount: usedToday + 1, lastMarketingPlanDate: todayStr });

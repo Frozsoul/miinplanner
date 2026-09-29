@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { runGuarded, type AiResult } from '@/ai/guard';
 import type { TaskStatus, TaskPriority } from '@/types';
 
 // The input for the flow will be a simplified list of tasks
@@ -26,7 +27,7 @@ const InsightTaskSchema = z.object({
 export type InsightTask = z.infer<typeof InsightTaskSchema>;
 
 const InsightGenerationInputSchema = z.object({
-  tasks: z.array(InsightTaskSchema),
+  tasks: z.array(InsightTaskSchema).max(500),
   currentDate: z.string().describe("The current date in ISO 8601 format, for context."),
 });
 export type InsightGenerationInput = z.infer<typeof InsightGenerationInputSchema>;
@@ -58,8 +59,13 @@ const AIInsightsSchema = z.object({
 export type AIInsights = z.infer<typeof AIInsightsSchema>;
 
 
-export async function generateInsights(input: InsightGenerationInput): Promise<AIInsights> {
-  return generateInsightsFlow(input);
+/** Requires a Firebase ID token. Counts against the user's daily insights quota. */
+export async function generateInsights(idToken: string, input: InsightGenerationInput): Promise<AiResult<AIInsights>> {
+  const parsed = InsightGenerationInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, code: 'failed', message: 'Too many tasks to analyze at once (max 500).' };
+  }
+  return runGuarded(idToken, 'insights', () => generateInsightsFlow(parsed.data));
 }
 
 const prompt = ai.definePrompt({

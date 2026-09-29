@@ -10,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { runGuarded, type AiResult } from '@/ai/guard';
 
 const PLAN_DURATIONS = [7, 14, 30] as const;
 const MAX_TASKS = 30;
@@ -112,6 +113,11 @@ const generateMarketingPlanFlow = ai.defineFlow(
   }
 );
 
-export async function generateMarketingPlan(input: MarketingPlanInput): Promise<MarketingPlan> {
-  return generateMarketingPlanFlow(MarketingPlanInputSchema.parse(input));
+/** Requires a Firebase ID token. Counts against the user's daily plan quota. */
+export async function generateMarketingPlan(idToken: string, input: MarketingPlanInput): Promise<AiResult<MarketingPlan>> {
+  const parsed = MarketingPlanInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, code: 'failed', message: 'Please check the form and try again.' };
+  }
+  return runGuarded(idToken, 'plan', () => generateMarketingPlanFlow(parsed.data));
 }

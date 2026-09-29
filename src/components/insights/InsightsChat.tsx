@@ -85,12 +85,17 @@ export function InsightsChat({ tasks }: InsightsChatProps) {
             dueDate: t.dueDate
         }))
       };
-      const aiResponse = await suggestProductivityTips(aiInput);
-      
+      if (!user) throw new Error("Not signed in");
+      const idToken = await user.getIdToken();
+      const aiResponse = await suggestProductivityTips(idToken, aiInput);
+      if (!aiResponse.ok && aiResponse.code === "limit_reached") {
+        setIsLimitReached(true);
+      }
+
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
-        text: aiResponse.tips,
+        text: aiResponse.ok ? aiResponse.data.tips : aiResponse.message,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMessage]);
