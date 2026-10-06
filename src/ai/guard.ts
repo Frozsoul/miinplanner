@@ -11,9 +11,8 @@
  * callable from the browser on its own.
  */
 
-import { getApps, initializeApp, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { adminDb, uidFromIdToken } from '@/lib/firebase-admin';
 
 export type AiFeature = 'plan' | 'chat' | 'insights';
 
@@ -41,33 +40,16 @@ export class AiGuardError extends Error {
   }
 }
 
-const FIRESTORE_DATABASE_ID = 'miinplanner';
-
-function adminApp(): App {
-  const existing = getApps().find(a => a.name === 'miinplanner-admin');
-  if (existing) return existing;
-  // On Firebase App Hosting, credentials come from the backend's service account
-  // (Application Default Credentials). Token verification only needs the project ID.
-  return initializeApp(
-    { projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID },
-    'miinplanner-admin',
-  );
-}
-
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
 async function verifyUser(idToken: unknown): Promise<string> {
-  if (typeof idToken !== 'string' || idToken.length < 20 || idToken.length > 4096) {
-    throw new AiGuardError('unauthenticated', 'Please sign in again to use AI features.');
-  }
-  try {
-    const decoded = await getAuth(adminApp()).verifyIdToken(idToken);
-    return decoded.uid;
-  } catch {
+  const uid = await uidFromIdToken(idToken);
+  if (!uid) {
     throw new AiGuardError('unauthenticated', 'Your session expired. Please sign in again.');
   }
+  return uid;
 }
 
 /**
@@ -81,7 +63,7 @@ async function consumeQuota(uid: string, feature: AiFeature): Promise<void> {
   const date = todayUtc();
   let allowed = true;
   try {
-    const db = getFirestore(adminApp(), FIRESTORE_DATABASE_ID);
+    const db = adminDb();
     const ref = db.collection('aiUsage').doc(uid);
     await db.runTransaction(async tx => {
       const snap = await tx.get(ref);
