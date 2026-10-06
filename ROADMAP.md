@@ -3,7 +3,7 @@
 Ordered by priority. One item per PR unless items are tiny. Tick items off when merged.
 
 ## Now: fix the risks
-- [ ] **Close the user list leak.** `firebase.rules` lets any signed-in user list all `/users` docs, and with them every email. Look up teammates by exact email through a server action instead.
+- Nothing open. Add new risks here.
 
 ## Next: make the planner the front door
 - [ ] Send new users (no tasks yet) straight to `/planner` after signup instead of the dashboard.
@@ -19,8 +19,10 @@ Ordered by priority. One item per PR unless items are tiny. Tick items off when 
 - [ ] Show remaining AI uses from the server count (`aiUsage/{uid}`, via a small server action) instead of the client-written counters on `users/{uid}`, which a user can edit. Server limits reset at midnight UTC; the UI uses local time.
 - [ ] Turn on App Check (reCAPTCHA Enterprise) for extra protection against scripted signups calling the AI actions.
 - [ ] Remove the `console.log("Firebase Config Used by App")` in `src/lib/firebase.ts`.
+- [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Closed the user list leak: users can only read their own `users/{uid}` doc. Invite by email and member names now go through server actions (`src/services/workspace-members-actions.ts`). Needs the new `firebase.rules` deployed. PR #6
 - [x] Gemini server actions verify the Firebase ID token and enforce daily limits server-side (`aiUsage/{uid}`, plan 3, chat 10, insights 10). PR #5
 - [x] Template library rebuilt: 8 marketing playbooks with dated tasks, preview, "Add to board" (append) and optional replace. PR #4
 - [x] Loading a template, saved space or import only replaces the personal board (never workspace tasks), backs it up to Saved Spaces first, and aborts if the backup fails. PR #3

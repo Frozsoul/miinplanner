@@ -24,13 +24,11 @@ service cloud.firestore {
 
     // User Profiles
     match /users/{userId} {
-      // Allow any authenticated user to read profiles. 
-      // Necessary for team members to identify each other in workspaces.
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
-      
-      // Allow listing users to support finding teammates by email
-      allow list: if isAuthenticated();
+      // Users can only read and write their own profile.
+      // Teammate lookups (invite by email, member names) go through server
+      // actions in src/services/workspace-members-actions.ts, which use
+      // firebase-admin and check workspace membership first.
+      allow read, write: if isOwner(userId);
 
       match /taskSpaces/{spaceId} {
         allow read, write: if isOwner(userId);

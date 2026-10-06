@@ -142,15 +142,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchMembers = async () => {
-      if (currentWorkspace) {
-        const members = await getWorkspaceMembers(currentWorkspace.memberUids);
+      if (currentWorkspace && user) {
+        const idToken = await user.getIdToken();
+        const members = await getWorkspaceMembers(idToken, currentWorkspace.id);
         setWorkspaceMembers(members);
       } else {
         setWorkspaceMembers([]);
       }
     };
     fetchMembers();
-  }, [currentWorkspace]);
+  }, [currentWorkspace, user]);
 
   const setCurrentWorkspaceById = (id: string) => {
     const ws = workspaces.find(w => w.id === id);
@@ -171,9 +172,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const inviteToWorkspace = async (email: string) => {
-    if (!currentWorkspace) return;
+    if (!currentWorkspace || !user) return;
     try {
-      await inviteMemberByEmail(currentWorkspace.id, email);
+      const idToken = await user.getIdToken();
+      const member = await inviteMemberByEmail(idToken, currentWorkspace.id, email);
+      setWorkspaceMembers(prev => (prev.some(m => m.uid === member.uid) ? prev : [...prev, member]));
       toast({ title: "User invited", description: `${email} has been added to the workspace.` });
       fetchWorkspaces(); 
     } catch (error: any) {

@@ -13,15 +13,14 @@ import {
   serverTimestamp,
   arrayUnion,
   arrayRemove,
-  getDoc,
   deleteDoc,
   updateDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { getWorkspaceMembersAction, inviteWorkspaceMemberAction } from '@/services/workspace-members-actions';
 
 const WORKSPACE_COLLECTION = 'workspaces';
-const USER_COLLECTION = 'users';
 
 /**
  * Creates a new workspace.
@@ -95,68 +94,35 @@ export const getUserWorkspaces = async (userId: string): Promise<Workspace[]> =>
   }
 };
 
-export const getWorkspaceMembers = async (memberUids: string[]): Promise<WorkspaceMember[]> => {
-  if (memberUids.length === 0) return [];
-  
-  const members: WorkspaceMember[] = [];
-  for (const uid of memberUids) {
-    const userRef = doc(db, USER_COLLECTION, uid);
-    try {
-      const userDoc = await getDoc(userRef);
-      if (userDoc.exists()) {
-        members.push({
-          uid: userDoc.id,
-          email: userDoc.data().email,
-          displayName: userDoc.data().displayName,
-        });
-      }
-    } catch (err: any) {
-      if (err.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'get'
-        } satisfies SecurityRuleContext));
-      }
-    }
+/**
+ * Loads member profiles through a server action. Firestore rules don't let
+ * users read each other's profile docs, so this can't be done client-side.
+ */
+export const getWorkspaceMembers = async (idToken: string, workspaceId: string): Promise<WorkspaceMember[]> => {
+  let result;
+  try {
+    result = await getWorkspaceMembersAction(idToken, workspaceId);
+  } catch (err) {
+    console.warn('[MiinPlanner] Could not reach the members action:', err);
+    return [];
   }
-  return members;
+  if (!result.ok) {
+    console.warn('[MiinPlanner] Could not load workspace members:', result.message);
+    return [];
+  }
+  return result.data;
 };
 
-export const inviteMemberByEmail = async (workspaceId: string, email: string): Promise<void> => {
-  const usersRef = collection(db, USER_COLLECTION);
-  const q = query(usersRef, where('email', '==', email.toLowerCase().trim()));
-  
-  try {
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-      throw new Error('User not found. They must have a MiinPlanner account first.');
-    }
-    
-    const userToInvite = snapshot.docs[0];
-    const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
-    const updateData = {
-      memberUids: arrayUnion(userToInvite.id)
-    };
-    
-    setDoc(workspaceRef, updateData, { merge: true }).catch(async (err) => {
-      if (err.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: workspaceRef.path,
-          operation: 'update',
-          requestResourceData: updateData
-        } satisfies SecurityRuleContext));
-      }
-    });
-  } catch (err: any) {
-    if (err.code === 'permission-denied') {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: usersRef.path,
-        operation: 'list'
-      } satisfies SecurityRuleContext));
-    } else {
-      throw err;
-    }
+/**
+ * Adds an existing user to the workspace by exact email, via a server action.
+ * Throws with a readable message if the invite fails.
+ */
+export const inviteMemberByEmail = async (idToken: string, workspaceId: string, email: string): Promise<WorkspaceMember> => {
+  const result = await inviteWorkspaceMemberAction(idToken, workspaceId, email);
+  if (!result.ok) {
+    throw new Error(result.message);
   }
+  return result.data;
 };
 
 export const removeMember = async (workspaceId: string, userId: string): Promise<void> => {
