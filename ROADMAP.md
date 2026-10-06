@@ -12,6 +12,7 @@ Ordered by priority. One item per PR unless items are tiny. Tick items off when 
 - [ ] Track key events in GA4 (`sign_up`, `plan_generated`, `plan_added`, `cta_miindigital_click`) so we can see the funnel.
 
 ## Later: clean up
+- [ ] **Pin the `miinplanner` database.** Add `firebase.json` (and `.firebaserc`) so `firebase deploy --only firestore:rules` targets the `miinplanner` database, not `(default)`. Share one database ID constant between `src/lib/firebase.ts` and `src/lib/firebase-admin.ts`. Note the named database in CLAUDE.md.
 - [ ] Delete stub routes: `/chatbot`, `/calendar`, `/reminders`, `/prioritization`, and `src/ai/flows/prioritize-tasks-flow.ts`, `generate-content-ideas.ts`.
 - [ ] AI Insights: compute completion rate, averages and overdue lists in code; use the model only for the summary and suggestions.
 - [ ] Fix the remaining 9 TypeScript errors and remove `ignoreBuildErrors`.
