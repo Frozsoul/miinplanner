@@ -10,6 +10,8 @@ import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMe
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
+import { celebrate } from '@/lib/celebrate';
+import { isDoneStatus } from '@/lib/task-colors';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
 
 interface AppDataContextType {
@@ -239,9 +241,23 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     return count;
   };
 
+  // A small reward when a task moves into the done column. Runs only on a real change.
+  const celebrateIfDone = (taskId: string, newStatus: unknown) => {
+    if (typeof newStatus !== 'string') return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || isDoneStatus(task.status, taskStatuses) || !isDoneStatus(newStatus, taskStatuses)) return;
+    celebrate();
+    const left = tasks.filter(t => t.id !== taskId && !t.archived && !isDoneStatus(t.status, taskStatuses)).length;
+    toast({
+      title: "Task done",
+      description: left === 0 ? "Board clear. Nice work." : `${left} ${left === 1 ? "task" : "tasks"} to go.`,
+    });
+  };
+
   const updateTask = async (taskId: string, taskUpdate: Partial<TaskData>) => {
     if (!user?.uid) return;
     await updateTaskService(user.uid, taskId, taskUpdate);
+    if ('status' in taskUpdate) celebrateIfDone(taskId, taskUpdate.status);
     const task = tasks.find(t => t.id === taskId);
     await fetchTasks(task?.workspaceId);
   };
@@ -249,12 +265,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const updateTaskField = async (taskId: string, field: keyof TaskData, value: any) => {
     if (!user?.uid) return;
     await updateTaskService(user.uid, taskId, { [field]: value });
+    if (field === 'status') celebrateIfDone(taskId, value);
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, [field]: value } : t));
   };
 
   const moveTask = async (taskId: string, newStatus: TaskStatus, newIndex: number) => {
     if (!user?.uid) return;
     await updateTaskService(user.uid, taskId, { status: newStatus });
+    celebrateIfDone(taskId, newStatus);
     const task = tasks.find(t => t.id === taskId);
     await fetchTasks(task?.workspaceId);
   };

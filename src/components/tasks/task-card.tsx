@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Megaphone, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PRIORITY_STRIPE } from "@/lib/task-colors";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { InlinePriorityPicker } from "./inline-priority-picker";
@@ -127,8 +128,10 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
       </>
     );
 
+  const stripe = cn("border-l-4", PRIORITY_STRIPE[task.priority] ?? "border-l-transparent");
+
   if (isOverlay) {
-    return <Card className="shadow-lg scale-[1.02]">{cardContent}</Card>;
+    return <Card className={cn("shadow-lg scale-[1.02] rotate-1", stripe)}>{cardContent}</Card>;
   }
 
   return (
@@ -140,7 +143,9 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
             {...attributes}
             {...listeners}
             className={cn(
-                "bg-card hover:shadow-md transition-shadow duration-200 touch-none",
+                "bg-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 touch-none",
+                stripe,
+                task.archived && "opacity-60",
                 isDragging && "shadow-lg scale-[1.02] opacity-70 z-50 relative"
             )}
         >

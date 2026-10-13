@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { statusDotClass } from "@/lib/task-colors";
+import { useAppData } from "@/contexts/app-data-context";
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
@@ -32,11 +34,13 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
   });
 
   const taskIds = tasks.map(t => t.id);
+  const { taskStatuses } = useAppData();
 
   return (
     <div className="flex flex-col bg-muted/50 rounded-lg h-full min-h-[200px] snap-center">
       <div className="p-4 border-b flex justify-between items-center">
         <h3 className="font-semibold text-lg flex items-center">
+          <span className={cn("mr-2 h-2.5 w-2.5 rounded-full", statusDotClass(status, taskStatuses))} aria-hidden="true" />
           {status}
           <span className="ml-2 text-sm font-normal bg-primary/10 text-primary rounded-full px-2 py-0.5">{tasks.length}</span>
         </h3>
@@ -65,8 +69,8 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
                   />
                 ))
               ) : (
-                <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
-                  No tasks here.
+                <div className="flex items-center justify-center h-24 rounded-md border-2 border-dashed text-sm text-muted-foreground">
+                  {isArchivedColumn ? "Nothing archived." : "Drop a task here."}
                 </div>
               )}
             </div>

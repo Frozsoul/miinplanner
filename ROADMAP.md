@@ -32,6 +32,7 @@ MiinPlanner proves MiinDigital can ship a useful product. The plan generator is 
 
 ## Done
 - [x] Reminders via a private calendar feed (Settings > Reminders): tasks with due dates appear in Google, Apple or Outlook Calendar with 9am alerts, plus a day-before alert for high and urgent. PR #10
+- [x] Themes work everywhere and survive reloads (light palettes were being dropped from the production CSS, and the settings page wiped dark mode). Added warmth: colored priority pills and card stripes, overdue and today dates, status dots, a confetti burst and "N to go" toast when a task is done. PR #9
 - [x] Quick plan: the plan generator now returns 5 to 7 tasks, has a shorter form, a flat tick list, and sits at the bottom of the nav as "Quick plan" instead of being the headline. PR #8
 - [x] Closed the user list leak: users can only read their own `users/{uid}` doc. Invite by email and member names now go through server actions (`src/services/workspace-members-actions.ts`). Needs the new `firebase.rules` deployed. PR #6
 - [x] Gemini server actions verify the Firebase ID token and enforce daily limits server-side (`aiUsage/{uid}`, plan 3, chat 10, insights 10). PR #5
