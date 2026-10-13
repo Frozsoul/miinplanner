@@ -31,6 +31,7 @@ MiinPlanner proves MiinDigital can ship a useful product. The plan generator is 
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Plan with AI: paste a plan from ChatGPT, Claude or any AI (prompt with one-click open in ChatGPT/Claude, forgiving parser for tables, lists, CSV and JSON, tick list, dated tasks). Reminders featured in Task Manager (banner plus header button). PR #11
 - [x] Reminders via a private calendar feed (Settings > Reminders): tasks with due dates appear in Google, Apple or Outlook Calendar with 9am alerts, plus a day-before alert for high and urgent. PR #10
 - [x] Themes work everywhere and survive reloads (light palettes were being dropped from the production CSS, and the settings page wiped dark mode). Added warmth: colored priority pills and card stripes, overdue and today dates, status dots, a confetti burst and "N to go" toast when a task is done. PR #9
 - [x] Quick plan: the plan generator now returns 5 to 7 tasks, has a shorter form, a flat tick list, and sits at the bottom of the nav as "Quick plan" instead of being the headline. PR #8
