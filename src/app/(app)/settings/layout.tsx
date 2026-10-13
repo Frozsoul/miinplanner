@@ -2,13 +2,14 @@
 "use client";
 
 import { PageHeader } from "@/components/PageHeader";
-import { Settings, CreditCard, ListTodo, Palette } from "lucide-react";
+import { Settings, CreditCard, ListTodo, Palette, Bell } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const settingsNav = [
   { name: "Plan & Billing", href: "/settings/billing", icon: CreditCard },
+  { name: "Reminders", href: "/settings/reminders", icon: Bell },
   { name: "Workflow", href: "/settings/workflow", icon: ListTodo },
   { name: "Appearance", href: "/settings/appearance", icon: Palette },
 ];

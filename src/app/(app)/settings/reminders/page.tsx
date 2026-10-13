@@ -1,0 +1,149 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Bell, Copy, Check, RefreshCw, Loader2, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { getCalendarFeedAction, resetCalendarFeedAction } from "@/services/calendar-feed-actions";
+
+function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+export default function RemindersPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const result = await getCalendarFeedAction(await user.getIdToken(), browserTimeZone());
+      if (cancelled) return;
+      if (result.ok) setToken(result.data.token);
+      else setError(result.message);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://planner.miindigital.com";
+  const feedUrl = token ? `${origin}/api/calendar/${token}.ics` : "";
+  const webcalUrl = feedUrl.replace(/^https?:/, "webcal:");
+  const googleUrl = feedUrl ? `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}` : "";
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(feedUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Couldn't copy", description: "Select the link and copy it manually.", variant: "destructive" });
+    }
+  };
+
+  const handleReset = async () => {
+    if (!user) return;
+    setResetting(true);
+    const result = await resetCalendarFeedAction(await user.getIdToken(), browserTimeZone());
+    setResetting(false);
+    if (result.ok) {
+      setToken(result.data.token);
+      toast({ title: "New link created", description: "The old link no longer works. Add the new one to your calendar." });
+    } else {
+      toast({ title: "Couldn't reset the link", description: result.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> Reminders in your calendar</CardTitle>
+          <CardDescription>
+            Add your tasks to Google, Apple or Outlook Calendar. Every task with a due date shows up on that day,
+            and your phone reminds you at 9am. High and urgent tasks also get a heads-up the day before.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Creating your private link...
+            </div>
+          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {token && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <a href={googleUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Add to Google Calendar
+                  </a>
+                </Button>
+                <Button asChild variant="outline">
+                  <a href={webcalUrl}>Add to Apple or Outlook</a>
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="feed-url" className="text-sm font-medium">Or copy your private link</label>
+                <div className="flex gap-2">
+                  <Input id="feed-url" readOnly value={feedUrl} onFocus={e => e.currentTarget.select()} className="font-mono text-xs" />
+                  <Button variant="outline" onClick={handleCopy} aria-label="Copy link">
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                <li>Includes your personal tasks and team tasks assigned to you. Done and archived tasks are left out.</li>
+                <li>Calendars refresh the link on their own schedule. Google can take several hours; Apple usually within the hour.</li>
+                <li>In Google Calendar, turn on notifications for the &quot;MiinPlanner tasks&quot; calendar in its settings to get alerts.</li>
+              </ul>
+            </>
+          )}
+        </CardContent>
+        {token && (
+          <CardFooter className="border-t pt-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">Anyone with this link can see your task titles and due dates. Keep it private.</p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" disabled={resetting}>
+                  {resetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                  Reset link
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset your calendar link?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    The current link stops working right away. Calendars using it will stop updating until you add the new link.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReset}>Reset link</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardFooter>
+        )}
+      </Card>
+    </div>
+  );
+}
