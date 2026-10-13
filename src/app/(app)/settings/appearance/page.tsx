@@ -19,20 +19,21 @@ export default function AppearancePage() {
   const { theme: colorMode, setTheme: setColorMode } = useTheme(); // This is for light/dark/system
   const [colorTheme, setColorTheme] = React.useState('miin');
 
+  // The palette class is applied before paint by a script in the root layout.
+  // Here we only read the saved choice. Light/dark classes belong to next-themes; never touch them.
   React.useEffect(() => {
-    const savedTheme = localStorage.getItem('color-theme') || 'miin';
-    setColorTheme(savedTheme);
-    document.documentElement.className = ''; // Clear existing classes
-    document.documentElement.classList.add(colorMode ?? 'light', `theme-${savedTheme}`);
-  }, [colorMode]);
+    try {
+      const saved = localStorage.getItem('color-theme');
+      if (saved && colorThemes.some(t => t.name === saved)) setColorTheme(saved);
+    } catch {}
+  }, []);
 
   const handleSetColorTheme = (themeName: string) => {
     setColorTheme(themeName);
-    localStorage.setItem('color-theme', themeName);
-    
-    const allThemes = colorThemes.map(t => `theme-${t.name}`);
-    document.documentElement.classList.remove(...allThemes);
-    document.documentElement.classList.add(`theme-${themeName}`);
+    try { localStorage.setItem('color-theme', themeName); } catch {}
+    const root = document.documentElement;
+    root.classList.remove(...colorThemes.map(t => `theme-${t.name}`));
+    if (themeName !== 'miin') root.classList.add(`theme-${themeName}`);
   };
 
   return (

@@ -1,5 +1,7 @@
 "use client";
 import type { Task, TaskPriority, TaskStatus } from "@/types";
+import { cn } from "@/lib/utils";
+import { PRIORITY_PILL } from "@/lib/task-colors";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO, isValid } from "date-fns";
@@ -25,19 +27,6 @@ export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: Task
   const memberInitials = memberName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   const isTeamTask = !!task.workspaceId;
 
-  const getPriorityBadgeVariant = (priority: TaskPriority) => {
-    switch (priority) {
-      case 'High':
-      case 'Urgent':
-        return 'destructive';
-      case 'Medium':
-        return 'secondary';
-      case 'Low':
-        return 'outline';
-      default:
-        return 'default';
-    }
-  };
 
   const getStatusBadgeVariant = (status: TaskStatus) => {
      switch (status) {
@@ -105,7 +94,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: Task
             </div>
             <div>
               <h4 className="font-semibold mb-1">Priority:</h4>
-              <Badge variant={getPriorityBadgeVariant(task.priority)} className="capitalize">{task.priority}</Badge>
+              <Badge variant="outline" className={cn("capitalize", PRIORITY_PILL[task.priority])}>{task.priority}</Badge>
             </div>
           </div>
 

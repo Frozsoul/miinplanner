@@ -15,7 +15,11 @@ export function PageHeader({ title, description, icon: Icon, actionButtons }: Pa
     <div className="mb-6 pb-4 border-b">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          {Icon && <Icon className="h-8 w-8 text-primary hidden sm:block" />}
+          {Icon && (
+            <span className="hidden sm:flex h-11 w-11 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+              <Icon className="h-6 w-6" />
+            </span>
+          )}
           <div>
             <h1 className="text-2xl sm:text-3xl font-headline font-bold">{title}</h1>
             {description && <div className="text-sm sm:text-base text-muted-foreground mt-1">{description}</div>}
