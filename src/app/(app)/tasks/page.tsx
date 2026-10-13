@@ -6,7 +6,8 @@ import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppData } from "@/contexts/app-data-context";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown, Archive, ArchiveRestore, Library, CalendarDays } from "lucide-react";
+import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown, Archive, ArchiveRestore, Library, CalendarDays, Bell, Sparkles } from "lucide-react";
+import { RemindersBanner } from "@/components/tasks/RemindersBanner";
 import {
   Dialog,
   DialogContent,
@@ -245,11 +246,23 @@ export default function TasksPage() {
             </h1>
             <MotivationalQuote context="tasks" />
           </div>
-          <div className="flex gap-2 w-full sm:w-auto self-end sm:self-center">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto self-end sm:self-center">
                <Button variant="outline" asChild>
                   <Link href="/settings/workflow">
                       <Library className="mr-2 h-4 w-4" />
                       Manage Spaces
+                  </Link>
+               </Button>
+               <Button variant="outline" asChild>
+                  <Link href="/settings/reminders">
+                      <Bell className="mr-2 h-4 w-4" />
+                      Reminders
+                  </Link>
+               </Button>
+               <Button variant="outline" asChild>
+                  <Link href="/planner">
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Plan with AI
                   </Link>
                </Button>
               <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
@@ -257,6 +270,8 @@ export default function TasksPage() {
               </Button>
           </div>
         </div>
+
+        <RemindersBanner />
 
         <Card className="mb-6 shadow-sm border">
           <CardContent className="p-4 flex flex-col xl:flex-row gap-4 justify-between xl:items-center">

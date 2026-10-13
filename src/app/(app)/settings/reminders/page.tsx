@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { getCalendarFeedAction, resetCalendarFeedAction } from "@/services/calendar-feed-actions";
+import { REMINDERS_SETUP_KEY } from "@/components/tasks/RemindersBanner";
 
 function browserTimeZone(): string {
   try {
@@ -49,7 +50,13 @@ export default function RemindersPage() {
   const webcalUrl = feedUrl.replace(/^https?:/, "webcal:");
   const googleUrl = feedUrl ? `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}` : "";
 
+  // Hides the Task Manager banner once the user has actually added or copied the link.
+  const markSetup = () => {
+    try { localStorage.setItem(REMINDERS_SETUP_KEY, "1"); } catch {}
+  };
+
   const handleCopy = async () => {
+    markSetup();
     try {
       await navigator.clipboard.writeText(feedUrl);
       setCopied(true);
@@ -93,12 +100,12 @@ export default function RemindersPage() {
             <>
               <div className="flex flex-wrap gap-2">
                 <Button asChild>
-                  <a href={googleUrl} target="_blank" rel="noopener noreferrer">
+                  <a href={googleUrl} target="_blank" rel="noopener noreferrer" onClick={markSetup}>
                     <ExternalLink className="mr-2 h-4 w-4" /> Add to Google Calendar
                   </a>
                 </Button>
                 <Button asChild variant="outline">
-                  <a href={webcalUrl}>Add to Apple or Outlook</a>
+                  <a href={webcalUrl} onClick={markSetup}>Add to Apple or Outlook</a>
                 </Button>
               </div>
               <div className="space-y-2">

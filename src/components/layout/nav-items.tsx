@@ -23,7 +23,7 @@ const allNavItems: NavItem[] = [
   { href: "/teamwork", icon: Users, label: "Teamwork" },
   { href: "/library", icon: Library, label: "Library" },
   { href: "/insights", icon: Lightbulb, label: "AI Insights" },
-  { href: "/planner", icon: Sparkles, label: "Quick plan" },
+  { href: "/planner", icon: Sparkles, label: "Plan with AI" },
 ];
 
 export const useNavItems = () => {

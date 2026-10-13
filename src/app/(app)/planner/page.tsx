@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { addDays, format } from "date-fns";
 import { Loader2, Sparkles, CalendarPlus, RotateCcw } from "lucide-react";
@@ -18,6 +18,8 @@ import { useAppData } from "@/contexts/app-data-context";
 import { useToast } from "@/hooks/use-toast";
 import { generateMarketingPlan, type MarketingPlan } from "@/ai/flows/generate-marketing-plan";
 import type { TaskData } from "@/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PastePlan } from "@/components/planner/PastePlan";
 
 const PLAN_DAILY_LIMIT = 3;
 
@@ -44,6 +46,13 @@ export default function MarketingPlannerPage() {
   const [channels, setChannels] = useState<string[]>(["Facebook", "Google Business Profile"]);
   const [durationDays, setDurationDays] = useState("30");
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+
+  const [tab, setTab] = useState("paste");
+  useEffect(() => {
+    // Deep link: /planner?tab=generate opens the built-in generator.
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (requested === "generate" || requested === "paste") setTab(requested);
+  }, []);
 
   const [plan, setPlan] = useState<MarketingPlan | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -138,10 +147,22 @@ export default function MarketingPlannerPage() {
   return (
     <div className="px-4 sm:px-6 md:py-6 space-y-6">
       <PageHeader
-        title="Quick plan"
-        description="Get 5 to 7 dated starter tasks for one goal. Tick the ones you want and add them to your board."
+        title="Plan with AI"
+        description="Bring a plan from ChatGPT or Claude, or get a quick one here. Either way, every task lands on your board with a date."
         icon={Sparkles}
       />
+
+      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+        <TabsList className="h-auto flex-wrap">
+          <TabsTrigger value="paste">Paste from ChatGPT or Claude</TabsTrigger>
+          <TabsTrigger value="generate">Quick plan (5 to 7 tasks)</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="paste">
+          <PastePlan />
+        </TabsContent>
+
+        <TabsContent value="generate" className="space-y-6">
 
       {!plan && (
         <Card>
@@ -270,6 +291,8 @@ export default function MarketingPlannerPage() {
           </p>
         </>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
