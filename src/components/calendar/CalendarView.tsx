@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import { Bell } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -66,7 +68,12 @@ export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
       <Card className="md:col-span-2 shadow-lg">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>{format(currentMonth, "MMMM yyyy")}</CardTitle>
+            <div>
+              <CardTitle>{format(currentMonth, "MMMM yyyy")}</CardTitle>
+              <Link href="/settings/reminders" className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
+                <Bell className="h-3 w-3" /> Get reminders in your phone calendar
+              </Link>
+            </div>
             <Calendar
                 mode="single"
                 selected={currentMonth}

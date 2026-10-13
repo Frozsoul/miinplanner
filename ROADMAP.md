@@ -19,6 +19,7 @@ MiinPlanner proves MiinDigital can ship a useful product. The plan generator is 
 - GA4 funnel events (`sign_up`, `plan_generated`, `plan_added`, `cta_miindigital_click`). Revisit as product analytics once an edge ships.
 
 ## Later: clean up
+- [ ] Reminders, next steps if the calendar feed gets used: a daily email digest (due today, overdue, assigned to you) needs an email provider and Cloud Scheduler; browser push needs a service worker and FCM.
 - [ ] **Pin the `miinplanner` database.** Add `firebase.json` (and `.firebaserc`) so `firebase deploy --only firestore:rules` targets the `miinplanner` database, not `(default)`. Share one database ID constant between `src/lib/firebase.ts` and `src/lib/firebase-admin.ts`. Note the named database in CLAUDE.md.
 - [ ] Delete stub routes: `/chatbot`, `/calendar`, `/reminders`, `/prioritization`, and `src/ai/flows/prioritize-tasks-flow.ts`, `generate-content-ideas.ts`.
 - [ ] AI Insights: compute completion rate, averages and overdue lists in code; use the model only for the summary and suggestions.
@@ -30,6 +31,7 @@ MiinPlanner proves MiinDigital can ship a useful product. The plan generator is 
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Reminders via a private calendar feed (Settings > Reminders): tasks with due dates appear in Google, Apple or Outlook Calendar with 9am alerts, plus a day-before alert for high and urgent. PR #10
 - [x] Themes work everywhere and survive reloads (light palettes were being dropped from the production CSS, and the settings page wiped dark mode). Added warmth: colored priority pills and card stripes, overdue and today dates, status dots, a confetti burst and "N to go" toast when a task is done. PR #9
 - [x] Quick plan: the plan generator now returns 5 to 7 tasks, has a shorter form, a flat tick list, and sits at the bottom of the nav as "Quick plan" instead of being the headline. PR #8
 - [x] Closed the user list leak: users can only read their own `users/{uid}` doc. Invite by email and member names now go through server actions (`src/services/workspace-members-actions.ts`). Needs the new `firebase.rules` deployed. PR #6
