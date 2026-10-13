@@ -13,7 +13,8 @@ import { z } from 'genkit';
 import { runGuarded, type AiResult } from '@/ai/guard';
 
 const PLAN_DURATIONS = [7, 14, 30] as const;
-const MAX_TASKS = 30;
+const MIN_TASKS = 5;
+const MAX_TASKS = 7;
 
 const MarketingPlanInputSchema = z.object({
   businessType: z.string().trim().min(2).max(120)
@@ -51,6 +52,7 @@ export type MarketingPlanTask = MarketingPlan['tasks'][number];
 
 const PromptInputSchema = MarketingPlanInputSchema.extend({
   channelList: z.string(),
+  minTasks: z.number(),
   maxTasks: z.number(),
   lastDay: z.number(),
 });
@@ -69,12 +71,12 @@ Channels available: {{{channelList}}}
 Time available: about {{hoursPerWeek}} hours per week
 
 Rules:
-- Return at most {{maxTasks}} tasks. Fit the total effort into the time available; fewer, better tasks beat a long list.
+- Return {{minTasks}} to {{maxTasks}} tasks: only the highest-impact actions for this goal. Fit the total effort into the time available.
 - Every task must be concrete and doable in one sitting (under 2 hours). Bad: "Improve social media". Good: "Post 3 behind-the-scenes photos of morning baking on Instagram".
-- Start with 1-3 setup tasks (e.g. fix profile info, set up tracking) in the first days, then spread recurring content across the period, and end with a review task that checks results against the goal.
+- Start with at most 1 setup task (e.g. fix profile info, set up tracking) if it is needed, spread the rest across the period, and end with a review task that checks results against the goal.
 - Only use the channels listed, plus "General" for setup and review tasks.
 - Reference the specific business and audience in titles and descriptions. No generic filler.
-- dayOffset must be between 0 and {{lastDay}}. Spread tasks realistically; don't stack more than 3 on one day.
+- dayOffset must be between 0 and {{lastDay}}. Spread tasks across the period; don't put more than 2 on one day.
 - Mark only the tasks that directly drive the goal as High or Urgent.`,
 });
 
@@ -89,7 +91,8 @@ const generateMarketingPlanFlow = ai.defineFlow(
     const { output } = await prompt({
       ...input,
       channelList: input.channels.join(', '),
-      maxTasks: input.durationDays === 7 ? 10 : input.durationDays === 14 ? 18 : MAX_TASKS,
+      minTasks: MIN_TASKS,
+      maxTasks: MAX_TASKS,
       lastDay,
     });
     if (!output) {

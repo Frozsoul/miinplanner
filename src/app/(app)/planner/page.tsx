@@ -43,7 +43,6 @@ export default function MarketingPlannerPage() {
   const [audience, setAudience] = useState("");
   const [channels, setChannels] = useState<string[]>(["Facebook", "Google Business Profile"]);
   const [durationDays, setDurationDays] = useState("30");
-  const [hoursPerWeek, setHoursPerWeek] = useState("5");
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   const [plan, setPlan] = useState<MarketingPlan | null>(null);
@@ -71,7 +70,6 @@ export default function MarketingPlannerPage() {
         audience: audience.trim() || undefined,
         channels,
         durationDays: Number(durationDays),
-        hoursPerWeek: Number(hoursPerWeek) || 5,
       });
       if (!response.ok) {
         toast({ title: "Couldn't generate a plan", description: response.message, variant: "destructive" });
@@ -100,22 +98,6 @@ export default function MarketingPlannerPage() {
     const d = new Date(`${startDate}T09:00:00`);
     return isNaN(d.getTime()) ? new Date() : d;
   }, [startDate]);
-
-  // Group tasks by week of the plan for a readable preview.
-  const weeks = useMemo(() => {
-    if (!plan) return [];
-    const groups: { week: number; items: { task: MarketingPlan["tasks"][number]; index: number }[] }[] = [];
-    plan.tasks.forEach((task, index) => {
-      const week = Math.floor(task.dayOffset / 7) + 1;
-      let group = groups.find(g => g.week === week);
-      if (!group) {
-        group = { week, items: [] };
-        groups.push(group);
-      }
-      group.items.push({ task, index });
-    });
-    return groups.sort((a, b) => a.week - b.week);
-  }, [plan]);
 
   const handleAddToBoard = async () => {
     if (!plan || selected.size === 0) return;
@@ -156,8 +138,8 @@ export default function MarketingPlannerPage() {
   return (
     <div className="px-4 sm:px-6 md:py-6 space-y-6">
       <PageHeader
-        title="AI Marketing Planner"
-        description="Tell us about your business and goal. Get a day-by-day marketing plan you can drop straight into your board."
+        title="Quick plan"
+        description="Get 5 to 7 dated starter tasks for one goal. Tick the ones you want and add them to your board."
         icon={Sparkles}
       />
 
@@ -199,7 +181,7 @@ export default function MarketingPlannerPage() {
                 ))}
               </div>
             </div>
-            <div className="grid gap-5 sm:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Plan length</Label>
                 <Select value={durationDays} onValueChange={setDurationDays}>
@@ -208,18 +190,6 @@ export default function MarketingPlannerPage() {
                     <SelectItem value="7">1 week</SelectItem>
                     <SelectItem value="14">2 weeks</SelectItem>
                     <SelectItem value="30">30 days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Time per week</Label>
-                <Select value={hoursPerWeek} onValueChange={setHoursPerWeek}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">About 2 hours</SelectItem>
-                    <SelectItem value="5">About 5 hours</SelectItem>
-                    <SelectItem value="10">About 10 hours</SelectItem>
-                    <SelectItem value="20">20+ hours</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -235,7 +205,7 @@ export default function MarketingPlannerPage() {
             </p>
             <Button onClick={handleGenerate} disabled={!canGenerate || isGenerating}>
               {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {isGenerating ? "Building your plan..." : "Generate my plan"}
+              {isGenerating ? "Building your plan..." : "Get my tasks"}
             </Button>
           </CardFooter>
         </Card>
@@ -254,43 +224,42 @@ export default function MarketingPlannerPage() {
               </Button>
               <Button onClick={handleAddToBoard} disabled={isAdding || selected.size === 0}>
                 {isAdding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarPlus className="mr-2 h-4 w-4" />}
-                Add {selected.size} tasks to my board
+                Add {selected.size} {selected.size === 1 ? "task" : "tasks"} to my board
               </Button>
             </CardFooter>
           </Card>
 
-          {weeks.map(({ week, items }) => (
-            <Card key={week}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Week {week}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {items.map(({ task, index }) => (
-                  <label key={index} className="flex gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/50">
-                    <Checkbox
-                      className="mt-1"
-                      checked={selected.has(index)}
-                      onCheckedChange={() => setSelected(prev => {
-                        const next = new Set(prev);
-                        if (next.has(index)) next.delete(index); else next.add(index);
-                        return next;
-                      })}
-                    />
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{task.title}</span>
-                        <Badge variant={PRIORITY_VARIANT[task.priority] || "secondary"}>{task.priority}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{task.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(addDays(start, task.dayOffset), "EEE d MMM")} · {task.channel}
-                      </p>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Pick the tasks to add</CardTitle>
+              <CardDescription>{selected.size} of {plan.tasks.length} selected.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {plan.tasks.map((task, index) => (
+                <label key={index} className="flex gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/50">
+                  <Checkbox
+                    className="mt-1"
+                    checked={selected.has(index)}
+                    onCheckedChange={() => setSelected(prev => {
+                      const next = new Set(prev);
+                      if (next.has(index)) next.delete(index); else next.add(index);
+                      return next;
+                    })}
+                  />
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{task.title}</span>
+                      <Badge variant={PRIORITY_VARIANT[task.priority] || "secondary"}>{task.priority}</Badge>
                     </div>
-                  </label>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
+                    <p className="text-sm text-muted-foreground">{task.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(addDays(start, task.dayOffset), "EEE d MMM")} · {task.channel}
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </CardContent>
+          </Card>
 
           <p className="text-sm text-muted-foreground text-center">
             Want someone to run this plan for you?{" "}

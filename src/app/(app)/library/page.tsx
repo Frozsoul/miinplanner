@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Library, Loader2, Plus, Replace, Sparkles, CalendarDays, ListChecks } from "lucide-react";
+import { Library, Loader2, Plus, Replace, CalendarDays, ListChecks } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,17 +75,10 @@ export default function LibraryPage() {
         icon={Library}
       />
 
-      <Card className="border-primary/40 bg-primary/5">
-        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5">
-          <div>
-            <p className="font-semibold">Want a plan written for your business?</p>
-            <p className="text-sm text-muted-foreground">The AI marketing planner builds a custom plan from your goal, channels and time.</p>
-          </div>
-          <Button asChild>
-            <Link href="/planner"><Sparkles className="mr-2 h-4 w-4" />Build my plan</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <p className="text-sm text-muted-foreground">
+        Need tasks for a specific goal instead?{" "}
+        <Link href="/planner" className="underline font-medium">Get a quick plan</Link>
+      </p>
 
       <div className="flex flex-wrap gap-2">
         {CATEGORIES.map(c => (
