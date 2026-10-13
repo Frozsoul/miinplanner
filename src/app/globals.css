@@ -81,65 +81,6 @@ body {
     --sidebar-border: 0 4% 10%; /* #1c1a1a */
     --sidebar-ring: 48 100% 50%; /* #ffce00 */
   }
-
-  /* Forest Theme */
-  .theme-forest {
-    --primary: 158 29% 51%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 142 76% 36%;
-    --ring: 142 76% 36%;
-    --sidebar-primary: 142 76% 36%;
-    --sidebar-primary-foreground: 0 0% 100%;
-  }
-
-  .dark.theme-forest {
-    --primary: 142 76% 36%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 158 29% 51%;
-    --ring: 158 29% 51%;
-    --sidebar-primary: 158 29% 51%;
-    --sidebar-primary-foreground: 0 0% 100%;
-  }
-
-  /* Ocean Theme */
-  .theme-ocean {
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
-    --ring: 217 91% 60%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-  }
-
-  .dark.theme-ocean {
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 0 0% 98%;
-    --ring: 217 91% 60%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-  }
-
-  /* Sunset Theme */
-  .theme-sunset {
-    --primary: 24 96% 53%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 35 92% 61%;
-    --ring: 35 92% 61%;
-    --sidebar-primary: 24 96% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-  }
-
-  .dark.theme-sunset {
-    --primary: 35 92% 61%;
-    --primary-foreground: 0 4% 10%;
-    --accent: 24 96% 53%;
-    --ring: 24 96% 53%;
-    --sidebar-primary: 35 92% 61%;
-    --sidebar-primary-foreground: 0 4% 10%;
-  }
 }
 
 @layer base {
@@ -163,4 +104,90 @@ body {
     white-space: nowrap;
     border-width: 0;
   }
+}
+
+/* Color palettes. Kept outside @layer on purpose: Tailwind drops layered classes it never sees
+   in the source, and these class names are built at runtime (theme-${name}), so inside a layer
+   the light variants were silently removed from the production CSS. */
+/* Forest Theme */
+.theme-forest {
+  --background: 140 20% 95.5%;
+  --sidebar-background: 160 35% 13%;
+  --sidebar-accent: 160 25% 20%;
+  --sidebar-border: 160 25% 20%;
+  --primary: 158 29% 51%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 142 76% 36%;
+  --ring: 142 76% 36%;
+  --sidebar-primary: 142 76% 36%;
+  --sidebar-primary-foreground: 0 0% 100%;
+}
+
+.dark.theme-forest {
+  --background: 160 20% 8%;
+  --sidebar-background: 160 25% 5%;
+  --sidebar-accent: 160 20% 10%;
+  --sidebar-border: 160 20% 10%;
+  --primary: 142 76% 36%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 158 29% 51%;
+  --ring: 158 29% 51%;
+  --sidebar-primary: 158 29% 51%;
+  --sidebar-primary-foreground: 0 0% 100%;
+}
+
+/* Ocean Theme */
+.theme-ocean {
+  --background: 214 35% 96%;
+  --sidebar-background: 222 47% 13%;
+  --sidebar-accent: 222 35% 21%;
+  --sidebar-border: 222 35% 21%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222 47% 11%;
+  --ring: 217 91% 60%;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+}
+
+.dark.theme-ocean {
+  --background: 222 40% 8%;
+  --sidebar-background: 222 45% 5%;
+  --sidebar-accent: 222 35% 11%;
+  --sidebar-border: 222 35% 11%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 0 0% 98%;
+  --ring: 217 91% 60%;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+}
+
+/* Sunset Theme */
+.theme-sunset {
+  --background: 30 45% 96%;
+  --sidebar-background: 15 30% 13%;
+  --sidebar-accent: 15 22% 21%;
+  --sidebar-border: 15 22% 21%;
+  --primary: 24 96% 53%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 35 92% 61%;
+  --ring: 35 92% 61%;
+  --sidebar-primary: 24 96% 53%;
+  --sidebar-primary-foreground: 0 0% 100%;
+}
+
+.dark.theme-sunset {
+  --background: 15 20% 8%;
+  --sidebar-background: 15 25% 5%;
+  --sidebar-accent: 15 18% 11%;
+  --sidebar-border: 15 18% 11%;
+  --primary: 35 92% 61%;
+  --primary-foreground: 0 4% 10%;
+  --accent: 24 96% 53%;
+  --ring: 24 96% 53%;
+  --sidebar-primary: 35 92% 61%;
+  --sidebar-primary-foreground: 0 4% 10%;
 }

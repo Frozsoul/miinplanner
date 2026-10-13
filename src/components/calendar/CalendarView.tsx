@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Task, TaskPriority } from "@/types";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay,isSameMonth, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PRIORITY_PILL, PRIORITY_STRIPE } from "@/lib/task-colors";
 import { ListChecks } from "lucide-react";
 
 interface CalendarViewProps {
@@ -59,20 +60,6 @@ export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
     setSelectedDate(startOfMonth(month)); 
   };
   
-  const getPriorityBadgeVariant = (priority?: TaskPriority) => {
-    if (!priority) return 'default';
-    switch (priority) {
-      case 'Urgent':
-      case 'High':
-        return 'destructive';
-      case 'Medium':
-        return 'secondary';
-      case 'Low':
-        return 'outline';
-      default:
-        return 'default';
-    }
-  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -174,10 +161,10 @@ export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
                         <ul className="space-y-2">
                           {tasksForSelectedDate.map(task => (
                             <li key={task.id} 
-                                className="p-3 border rounded-md hover:bg-muted/30 cursor-pointer transition-colors"
+                                className={cn("p-3 border border-l-4 rounded-md hover:bg-muted/30 cursor-pointer transition-colors", task.priority && PRIORITY_STRIPE[task.priority])}
                                 onClick={() => onTaskClick?.(task)}>
                               <p className="font-medium text-sm">{task.title}</p>
-                              <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs mt-1">{task.priority}</Badge>
+                              <Badge variant="outline" className={cn("text-xs mt-1", task.priority && PRIORITY_PILL[task.priority])}>{task.priority}</Badge>
                             </li>
                           ))}
                         </ul>

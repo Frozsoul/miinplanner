@@ -5,6 +5,8 @@ import { useAppData } from '@/contexts/app-data-context';
 import type { Task, TaskPriority } from '@/types';
 import { TASK_PRIORITIES } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
+import { PRIORITY_PILL } from '@/lib/task-colors';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,20 +18,6 @@ import {
 interface InlinePriorityPickerProps {
   task: Task;
 }
-
-const getPriorityBadgeVariant = (priority: TaskPriority) => {
-  switch (priority) {
-    case 'High':
-    case 'Urgent':
-      return 'destructive';
-    case 'Medium':
-      return 'secondary';
-    case 'Low':
-      return 'outline';
-    default:
-      return 'default';
-  }
-};
 
 export function InlinePriorityPicker({ task }: InlinePriorityPickerProps) {
   const { updateTaskField } = useAppData();
@@ -44,8 +32,8 @@ export function InlinePriorityPicker({ task }: InlinePriorityPickerProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Badge
-          variant={getPriorityBadgeVariant(task.priority)}
-          className="cursor-pointer hover:ring-2 hover:ring-ring"
+          variant="outline"
+          className={cn("cursor-pointer font-medium hover:ring-2 hover:ring-ring", PRIORITY_PILL[task.priority])}
         >
           {task.priority}
         </Badge>
