@@ -5,8 +5,8 @@ Live app: https://planner.miindigital.com. Promo page: https://miindigital.com/m
 
 ## Why it exists
 MiinPlanner is a lead magnet for MiinDigital's services, not a standalone SaaS. It should not compete with Todoist/Trello as a generic task manager.
-Its edge is the **AI Marketing Planner** (`/planner`): business + goal gives you a dated marketing plan on your board. New work should strengthen that loop:
-promo page or free tool, then signup, then first plan, then tasks done, then "Talk to MiinDigital".
+It exists to prove MiinDigital can ship a genuinely useful product. The plan generator (`/planner`, "Quick plan") is a small secondary helper, not the hook: a general AI chat gives the same plan.
+The edge is what needs a real tool: the calendar, teamwork and AI insights on the team's actual work. See the Direction section in `ROADMAP.md`. No promotion or growth hooks in the app.
 
 ## Stack
 - Next.js 15 (App Router), React 18, Tailwind, shadcn/ui (`src/components/ui`)

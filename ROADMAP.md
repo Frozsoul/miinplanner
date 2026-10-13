@@ -5,11 +5,18 @@ Ordered by priority. One item per PR unless items are tiny. Tick items off when 
 ## Now: fix the risks
 - Nothing open. Add new risks here.
 
-## Next: make the planner the front door
-- [ ] Send new users (no tasks yet) straight to `/planner` after signup instead of the dashboard.
-- [ ] Deep link support: `planner.miindigital.com/planner?business=...&goal=...` pre-fills the form, so the promo page and blog posts can hand over context. The page must survive the login redirect.
-- [ ] Add a "Plan my marketing" card on the dashboard for users who haven't generated a plan yet.
-- [ ] Track key events in GA4 (`sign_up`, `plan_generated`, `plan_added`, `cta_miindigital_click`) so we can see the funnel.
+## Direction (October 2026)
+MiinPlanner proves MiinDigital can ship a useful product. The plan generator is not the hook: a general AI chat gives the same plan. The edge is what needs a real tool: the calendar, teamwork (shared boards, assigning, seeing what teammates do) and AI insights on the team's actual work. Test for every change: would a small business owner get this faster or better here than from a chat plus a to-do list? No promotion, popups or growth hooks in the app.
+
+## Next: make the calendar, teamwork and insights genuinely good
+- [ ] Write `EDGE.md`: 3 to 5 candidate edges on the calendar, teamwork and AI insights (who it helps, the job, why a chat or generic planner can't do it, smallest test, how we'd know). Minh picks one before anything is built.
+- Until an edge is picked: usability, speed and reliability fixes to the calendar, teamwork and insights flows (see Later).
+
+## Parked (plan generator is no longer the front door)
+- Send new users straight to `/planner` after signup.
+- Deep link `/planner?business=...&goal=...` pre-fill.
+- "Plan my marketing" card on the dashboard.
+- GA4 funnel events (`sign_up`, `plan_generated`, `plan_added`, `cta_miindigital_click`). Revisit as product analytics once an edge ships.
 
 ## Later: clean up
 - [ ] **Pin the `miinplanner` database.** Add `firebase.json` (and `.firebaserc`) so `firebase deploy --only firestore:rules` targets the `miinplanner` database, not `(default)`. Share one database ID constant between `src/lib/firebase.ts` and `src/lib/firebase-admin.ts`. Note the named database in CLAUDE.md.
@@ -23,6 +30,7 @@ Ordered by priority. One item per PR unless items are tiny. Tick items off when 
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Quick plan: the plan generator now returns 5 to 7 tasks, has a shorter form, a flat tick list, and sits at the bottom of the nav as "Quick plan" instead of being the headline. PR #8
 - [x] Closed the user list leak: users can only read their own `users/{uid}` doc. Invite by email and member names now go through server actions (`src/services/workspace-members-actions.ts`). Needs the new `firebase.rules` deployed. PR #6
 - [x] Gemini server actions verify the Firebase ID token and enforce daily limits server-side (`aiUsage/{uid}`, plan 3, chat 10, insights 10). PR #5
 - [x] Template library rebuilt: 8 marketing playbooks with dated tasks, preview, "Add to board" (append) and optional replace. PR #4
