@@ -81,7 +81,7 @@ export function PastePlan() {
         priority: t.priority,
         status,
         channel: t.channel,
-        tags: ["ai-import"],
+        tags: Array.from(new Set([...t.tags, "ai-import"])),
         startDate: due,
         dueDate: due,
         archived: false,
@@ -216,7 +216,7 @@ export function PastePlan() {
                     </div>
                     {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
                     <p className="text-xs text-muted-foreground">
-                      {format(dueDateFor(task, start), "EEE d MMM")} · {task.channel}
+                      {format(dueDateFor(task, start), "EEE d MMM")} · {task.channel}{task.tags.length > 0 && ` · ${task.tags.map(tag => `#${tag}`).join(" ")}`}
                     </p>
                   </div>
                 </label>
