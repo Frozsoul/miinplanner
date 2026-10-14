@@ -19,6 +19,7 @@ import {
   Sidebar,
   SidebarHeader,
   SidebarContent,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -26,7 +27,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useNavItems } from "@/components/layout/nav-items";
-import { User, Settings, LogOut, Loader2, PanelLeft } from "lucide-react";
+import { User, Settings, LogOut, Loader2, PanelLeft, MessageSquareHeart } from "lucide-react";
+import { FEEDBACK_MAILTO } from "@/lib/feedback";
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from 'react';
 import { AppDataProvider } from '@/contexts/app-data-context';
@@ -101,6 +103,18 @@ export default function AppLayout({
                 ))}
               </SidebarMenu>
             </SidebarContent>
+            <SidebarFooter>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Send feedback" className="justify-start">
+                    <a href={FEEDBACK_MAILTO}>
+                      <MessageSquareHeart className="h-5 w-5" />
+                      <span>Send feedback</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarFooter>
           </Sidebar>
 
           <SidebarInset> 

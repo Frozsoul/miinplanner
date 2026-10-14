@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Coffee } from "lucide-react";
+import { Coffee, MessageSquareHeart } from "lucide-react";
+import { FEEDBACK_EMAIL, FEEDBACK_MAILTO } from "@/lib/feedback";
 import Link from "next/link";
 
 export default function BillingPage() {
@@ -26,6 +27,22 @@ export default function BillingPage() {
                 <Coffee className="mr-2 h-4 w-4" />
                 Buy me a coffee
               </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Feedback and wishlist</CardTitle>
+            <CardDescription>
+              Found a bug, or wish MiinPlanner did something it doesn't? Email me and I'll read every message.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" className="w-full">
+              <a href={FEEDBACK_MAILTO}>
+                <MessageSquareHeart className="mr-2 h-4 w-4" />
+                Email {FEEDBACK_EMAIL}
+              </a>
             </Button>
           </CardContent>
         </Card>
