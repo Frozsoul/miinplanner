@@ -19,6 +19,8 @@ export type ParsedPlanTask = {
   dayOffset: number | null;
   /** Exact date (YYYY-MM-DD) when the row gave one instead of a day number. */
   date: string | null;
+  /** Optional tags from a Tags or Client column, lowercase, e.g. ["acme", "seo"]. */
+  tags: string[];
 };
 
 export type ParseResult = { tasks: ParsedPlanTask[]; skipped: number };
@@ -86,7 +88,7 @@ function parseDay(value: string): { dayOffset: number | null; date: string | nul
   return null;
 }
 
-type Columns = { day: number; title: number; description: number; channel: number; priority: number };
+type Columns = { day: number; title: number; description: number; channel: number; priority: number; tags: number };
 
 const HEADER_ALIASES: Record<keyof Columns, string[]> = {
   day: ["day", "date", "when", "ngay", "ngày"],
@@ -94,6 +96,7 @@ const HEADER_ALIASES: Record<keyof Columns, string[]> = {
   description: ["details", "detail", "description", "notes", "how", "what", "mo ta", "mô tả", "chi tiet", "chi tiết"],
   channel: ["channel", "platform", "kenh", "kênh"],
   priority: ["priority", "importance", "uu tien", "ưu tiên"],
+  tags: ["tags", "tag", "client", "project", "label", "nhan", "nhãn", "khach hang", "khách hàng", "du an", "dự án"],
 };
 
 function detectColumns(header: string[]): Columns | null {
@@ -101,11 +104,23 @@ function detectColumns(header: string[]): Columns | null {
   const find = (key: keyof Columns) => lower.findIndex(h => HEADER_ALIASES[key].some(a => h === a || h.startsWith(a)));
   const cols: Columns = {
     day: find("day"), title: find("title"), description: find("description"), channel: find("channel"), priority: find("priority"),
+    tags: find("tags"),
   };
   return cols.title >= 0 ? cols : null;
 }
 
-const DEFAULT_COLUMNS: Columns = { day: 0, title: 1, description: 2, channel: 3, priority: 4 };
+const DEFAULT_COLUMNS: Columns = { day: 0, title: 1, description: 2, channel: 3, priority: 4, tags: -1 };
+
+/** "Acme, SEO; reports" -> ["acme", "seo", "reports"]. Max 5 tags, 30 chars each. */
+function parseTags(value: string | undefined): string[] {
+  const out: string[] = [];
+  for (const raw of cleanCell(value).split(/[,;#]/)) {
+    const tag = raw.trim().toLowerCase().replace(/\s+/g, "-").slice(0, 30);
+    if (tag && !out.includes(tag)) out.push(tag);
+    if (out.length >= 5) break;
+  }
+  return out;
+}
 
 function rowsToTasks(rows: string[][]): ParseResult {
   if (rows.length === 0) return { tasks: [], skipped: 0 };
@@ -126,6 +141,7 @@ function rowsToTasks(rows: string[][]): ParseResult {
       description: cols.description >= 0 ? cleanCell(row[cols.description]).slice(0, 600) : "",
       channel: cols.channel >= 0 ? cleanCell(row[cols.channel]).slice(0, 40) || "General" : "General",
       priority: normalizePriority(cols.priority >= 0 ? row[cols.priority] : undefined),
+      tags: cols.tags >= 0 ? parseTags(row[cols.tags]) : [],
       ...when,
     });
     if (tasks.length >= MAX_IMPORTED_TASKS) break;
@@ -205,6 +221,7 @@ export function parsePastedPlan(input: string): ParseResult {
       priority: "Medium",
       dayOffset: day ?? listTasks.length,
       date: null,
+      tags: [],
     });
     if (listTasks.length >= MAX_IMPORTED_TASKS) break;
   }
