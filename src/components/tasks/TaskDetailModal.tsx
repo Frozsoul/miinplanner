@@ -18,7 +18,7 @@ interface TaskDetailModalProps {
 }
 
 export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: TaskDetailModalProps) {
-  const { workspaceMembers } = useAppData();
+  const { workspaceMembers, doneStatus, taskStatuses } = useAppData();
   
   if (!task) return null;
 
@@ -29,14 +29,9 @@ export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: Task
 
 
   const getStatusBadgeVariant = (status: TaskStatus) => {
-     switch (status) {
-      case 'Done': return 'default';
-      case 'In Progress': return 'secondary';
-      case 'To Do': return 'outline';
-      case 'Pending': return 'secondary';
-      case 'Review': return 'default';
-      default: return 'default';
-    }
+    if (status === doneStatus) return 'default';
+    if (status === taskStatuses[0]) return 'outline';
+    return 'secondary';
   };
 
   const formatDateSafe = (dateInput: any, dateFormat: string = "PPPpp") => {

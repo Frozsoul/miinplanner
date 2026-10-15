@@ -11,6 +11,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { buildCalendar, localDate, type IcalEvent } from '@/lib/ical';
+import { resolveDoneStatus } from '@/lib/task-status';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -29,9 +30,11 @@ function toDate(value: unknown): Date | null {
   return null;
 }
 
-function isDone(data: FirebaseFirestore.DocumentData, statuses: string[]): boolean {
-  if (data.completed === true || data.status === 'Done') return true;
-  return statuses.length > 0 && data.status === statuses[statuses.length - 1];
+// The status is the source of truth: a task is done when it sits in the board's finished status.
+// Without a status list (very old accounts), fall back to the stored flag or "Done".
+function isDone(data: FirebaseFirestore.DocumentData, board: { statuses: string[]; doneStatus?: string | null }): boolean {
+  if (board.statuses.length > 0) return data.status === resolveDoneStatus(board.statuses, board.doneStatus);
+  return data.completed === true || data.status === 'Done';
 }
 
 function notFound() {
@@ -55,17 +58,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       db.collection('tasks').where('userId', '==', uid).get(),
       db.collection('tasks').where('assignedTo', '==', uid).get(),
     ]);
-    const personalStatuses: string[] = profile.get('taskStatuses') || [];
+    const personalBoard = { statuses: (profile.get('taskStatuses') || []) as string[], doneStatus: profile.get('doneStatus') as string | undefined };
 
     // Workspace status lists and membership, loaded once per workspace.
-    const workspaceInfo = new Map<string, { member: boolean; statuses: string[] }>();
+    const workspaceInfo = new Map<string, { member: boolean; statuses: string[]; doneStatus?: string }>();
     const workspaceIds = new Set<string>();
     assignedTasks.docs.forEach(d => { const w = d.get('workspaceId'); if (w) workspaceIds.add(w); });
     await Promise.all(
       Array.from(workspaceIds).map(async id => {
         const ws = await db.collection('workspaces').doc(id).get();
         const members: string[] = ws.get('memberUids') || [];
-        workspaceInfo.set(id, { member: ws.exists && members.includes(uid), statuses: ws.get('taskStatuses') || [] });
+        workspaceInfo.set(id, { member: ws.exists && members.includes(uid), statuses: ws.get('taskStatuses') || [], doneStatus: ws.get('doneStatus') });
       }),
     );
 
@@ -78,14 +81,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       const data = doc.data();
       const workspaceId: string | undefined = data.workspaceId || undefined;
       if (!team && workspaceId) return; // own tasks: personal board only
-      let statuses = personalStatuses;
+      let board: { statuses: string[]; doneStatus?: string | null } = personalBoard;
       if (team) {
         if (!workspaceId) return;
         const info = workspaceInfo.get(workspaceId);
         if (!info?.member) return;
-        statuses = info.statuses;
+        board = info;
       }
-      if (data.archived || isDone(data, statuses)) return;
+      if (data.archived || isDone(data, board)) return;
       const due = toDate(data.dueDate);
       if (!due || due.getTime() < cutoff) return;
       seen.add(doc.id);

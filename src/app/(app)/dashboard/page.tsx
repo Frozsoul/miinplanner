@@ -36,7 +36,8 @@ export default function DashboardPage() {
     tasks, 
     fetchTasks, 
     isLoadingTasks,
-    setCurrentWorkspaceById
+    setCurrentWorkspaceById,
+    isTaskDone,
   } = useAppData();
 
   useEffect(() => {
@@ -51,26 +52,26 @@ export default function DashboardPage() {
   const upcomingTasks = useMemo(() => activeTasks
     .filter(task => {
         const dueDate = parseTaskDate(task.dueDate);
-        return dueDate && !isPast(dueDate) && task.status !== 'Done';
+        return dueDate && !isPast(dueDate) && !isTaskDone(task);
     })
     .sort((a, b) => {
         const dateA = parseTaskDate(a.dueDate)?.getTime() || 0;
         const dateB = parseTaskDate(b.dueDate)?.getTime() || 0;
         return dateA - dateB;
     })
-    .slice(0, 5), [activeTasks]);
+    .slice(0, 5), [activeTasks, isTaskDone]);
     
   const overdueTasks = useMemo(() => activeTasks
     .filter(task => {
         const dueDate = parseTaskDate(task.dueDate);
-        return dueDate && isPast(dueDate) && task.status !== 'Done';
+        return dueDate && isPast(dueDate) && !isTaskDone(task);
     })
     .sort((a, b) => {
         const dateA = parseTaskDate(a.dueDate)?.getTime() || 0;
         const dateB = parseTaskDate(b.dueDate)?.getTime() || 0;
         return dateA - dateB;
     })
-    .slice(0, 5), [activeTasks]);
+    .slice(0, 5), [activeTasks, isTaskDone]);
     
   const tasksToShow = upcomingTasks.length > 0 ? upcomingTasks : overdueTasks;
   const isShowingOverdue = upcomingTasks.length === 0 && overdueTasks.length > 0;

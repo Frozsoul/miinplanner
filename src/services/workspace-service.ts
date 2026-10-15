@@ -59,9 +59,9 @@ export const createWorkspace = async (userId: string, name: string, taskStatuses
   };
 };
 
-export const updateWorkspaceStatuses = async (workspaceId: string, taskStatuses: TaskStatus[]): Promise<void> => {
+export const updateWorkspaceStatuses = async (workspaceId: string, taskStatuses: TaskStatus[], doneStatus?: TaskStatus | null): Promise<void> => {
   const workspaceRef = doc(db, WORKSPACE_COLLECTION, workspaceId);
-  const updateData = { taskStatuses };
+  const updateData = doneStatus ? { taskStatuses, doneStatus } : { taskStatuses };
   
   updateDoc(workspaceRef, updateData).catch(async (err) => {
     if (err.code === 'permission-denied') {

@@ -26,10 +26,11 @@ The edge is what needs a real tool: the calendar, teamwork and AI insights on th
 Concise, direct, plain English. No em dashes. No filler. Sentence case for headings and buttons.
 
 ## Data model (Firestore)
-- `tasks/{id}`: `userId`, optional `workspaceId`, `status` (free text, matches the user's or workspace's status list), `priority`, `startDate`/`dueDate` (Timestamps), `channel`, `tags`, `order`.
-- `users/{uid}`: profile, `taskStatuses`, daily AI usage counters (`chatbotMessageCount`, `marketingPlanCount`, and `last...Date` fields).
+- `tasks/{id}`: `userId`, optional `workspaceId`, `status` (free text, matches the user's or workspace's status list), `priority`, `startDate`/`dueDate` (Timestamps), `channel`, `tags`, `order`, `completed` and `completedAt` (derived from the status, written on every status change).
+- Finished status: never check for "Done". Use `doneStatus` / `isTaskDone` from `useAppData()` (rule in `src/lib/task-status.ts`).
+- `users/{uid}`: profile, `taskStatuses`, `doneStatus`, daily AI usage counters (`chatbotMessageCount`, `marketingPlanCount`, and `last...Date` fields).
 - `users/{uid}/taskSpaces/{id}`: saved boards (task snapshots).
-- `workspaces/{id}`: `ownerId`, `memberUids`, `taskStatuses`.
+- `workspaces/{id}`: `ownerId`, `memberUids`, `taskStatuses`, `doneStatus`.
 - `aiUsage/{uid}`: server-only daily AI counters (`date` in UTC, `plan`, `chat`, `insights`), written by `src/ai/guard.ts` with firebase-admin. No client access.
 
 ## AI server actions

@@ -34,13 +34,13 @@ export function KanbanColumn({ status, tasks, onEditTask, onDeleteTask, onViewTa
   });
 
   const taskIds = tasks.map(t => t.id);
-  const { taskStatuses } = useAppData();
+  const { taskStatuses, doneStatus } = useAppData();
 
   return (
     <div className="flex flex-col bg-muted/50 rounded-lg h-full min-h-[200px] snap-center">
       <div className="p-4 border-b flex justify-between items-center">
         <h3 className="font-semibold text-lg flex items-center">
-          <span className={cn("mr-2 h-2.5 w-2.5 rounded-full", statusDotClass(status, taskStatuses))} aria-hidden="true" />
+          <span className={cn("mr-2 h-2.5 w-2.5 rounded-full", statusDotClass(status, taskStatuses, doneStatus))} aria-hidden="true" />
           {status}
           <span className="ml-2 text-sm font-normal bg-primary/10 text-primary rounded-full px-2 py-0.5">{tasks.length}</span>
         </h3>

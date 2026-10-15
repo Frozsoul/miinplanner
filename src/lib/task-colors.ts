@@ -1,4 +1,5 @@
 import type { TaskPriority } from "@/types";
+import { resolveDoneStatus } from "@/lib/task-status";
 
 /** Soft, readable pill styles per priority (light and dark). */
 export const PRIORITY_PILL: Record<TaskPriority, string> = {
@@ -16,17 +17,18 @@ export const PRIORITY_STRIPE: Record<TaskPriority, string> = {
   Low: "border-l-slate-300 dark:border-l-slate-600",
 };
 
-/** Dot colors for status columns, by position in the user's status list. Last status is treated as done. */
+/** Dot colors for status columns, by position in the user's status list. The board's finished status is green. */
 const STATUS_DOTS = ["bg-slate-400", "bg-sky-500", "bg-violet-500", "bg-amber-500", "bg-pink-500", "bg-teal-500"];
 
-export function statusDotClass(status: string, statuses: string[]): string {
+export function statusDotClass(status: string, statuses: string[], doneStatus?: string | null): string {
   if (status === "Archived") return "bg-muted-foreground/40";
   const index = statuses.indexOf(status);
-  if (status === "Done" || (index >= 0 && index === statuses.length - 1)) return "bg-green-500";
+  if (status === (doneStatus ?? resolveDoneStatus(statuses))) return "bg-green-500";
   return STATUS_DOTS[(index < 0 ? 0 : index) % STATUS_DOTS.length];
 }
 
-export function isDoneStatus(status: string | undefined, statuses: string[]): boolean {
+/** True when `status` is the board's finished status. Pass `doneStatus` from useAppData() when you have it. */
+export function isDoneStatus(status: string | undefined, statuses: string[], doneStatus?: string | null): boolean {
   if (!status) return false;
-  return status === "Done" || (statuses.length > 0 && status === statuses[statuses.length - 1]);
+  return status === (doneStatus ?? resolveDoneStatus(statuses));
 }

@@ -16,7 +16,7 @@ interface InlineDatePickerProps {
 }
 
 export function InlineDatePicker({ task }: InlineDatePickerProps) {
-  const { updateTaskField, taskStatuses } = useAppData();
+  const { updateTaskField, taskStatuses, doneStatus } = useAppData();
   const [isOpen, setIsOpen] = useState(false);
 
   // Safe date parsing helper
@@ -46,7 +46,7 @@ export function InlineDatePicker({ task }: InlineDatePickerProps) {
   };
 
   const currentDate = parseTaskDate(task.dueDate);
-  const isOpenTask = !task.archived && !isDoneStatus(task.status, taskStatuses);
+  const isOpenTask = !task.archived && !isDoneStatus(task.status, taskStatuses, doneStatus);
   const isOverdue = !!currentDate && isOpenTask && isBefore(currentDate, startOfDay(new Date()));
   const isDueToday = !!currentDate && isOpenTask && isToday(currentDate);
 

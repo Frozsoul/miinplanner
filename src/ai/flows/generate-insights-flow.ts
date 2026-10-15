@@ -23,6 +23,7 @@ const InsightTaskSchema = z.object({
   createdAt: z.string().describe("The task's creation date in ISO 8601 format."),
   updatedAt: z.string().describe("The task's last updated date in ISO 8601 format."),
   dueDate: z.string().optional().describe("The task's due date in ISO 8601 format, if available."),
+  completed: z.boolean().optional().describe("True when the task is in the user's finished status."),
 });
 export type InsightTask = z.infer<typeof InsightTaskSchema>;
 
@@ -76,7 +77,7 @@ const prompt = ai.definePrompt({
 Your goal is to analyze the provided list of tasks and generate a comprehensive, data-driven insights report.
 The current date is {{currentDate}}. Use this for all time-based calculations.
 
-The user has defined their own task statuses. The final status in their workflow (e.g., 'Done') should be considered as the completed state.
+The user has defined their own task statuses. A task is completed when its "completed" field is true, whatever its status is called. If "completed" is missing, treat the final status in their workflow (e.g., 'Done') as the completed state.
 
 Your response MUST be a JSON object matching the provided schema.
 
