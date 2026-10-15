@@ -75,12 +75,15 @@ export function KanbanColumn({
 
   if (isFinishedColumn && collapsed) {
     return (
-      <div className="flex flex-col bg-muted/30 rounded-lg h-full min-h-[200px] snap-center">
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "flex flex-col rounded-lg h-full min-h-[200px] snap-center transition-colors duration-200",
+          isOver ? "bg-green-100 ring-2 ring-green-500 dark:bg-green-500/15" : "bg-muted/30",
+        )}
+      >
         {header}
-        <div
-          ref={setNodeRef}
-          className={cn("p-4 flex-grow flex flex-col gap-3 transition-colors duration-200", isOver && "bg-accent/20")}
-        >
+        <div className="p-4 flex-grow flex flex-col gap-3">
           <div className="rounded-lg bg-card border p-4">
             <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
               <CheckCircle2 className="h-5 w-5" />
