@@ -21,7 +21,6 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-console.log("Firebase Config Used by App:", firebaseConfig);
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.error(
