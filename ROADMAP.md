@@ -3,7 +3,7 @@
 Ordered by priority. One item per PR unless items are tiny. Tick items off when merged.
 
 ## Now: fix the risks
-- [ ] Saving a task space fails: "Unsupported field value: undefined" in `users/{uid}/taskSpaces`. `saveCurrentTaskSpace` sends tasks with undefined fields (`channel`, `startDate`, `completedAt` and others) and `saveTaskSpace` doesn't await `addDoc`, so the UI looks saved while nothing is written. Strip undefined fields, await the write and show an error toast. Minh: fix once the new board flows are agreed.
+- [x] Saving the current board to Saved Spaces works again: empty optional fields (channel, dates, workspace) were sent as `undefined`, which Firestore rejects, and the write wasn't awaited, so it looked saved when it wasn't. Now cleaned, awaited, with a success or error toast. PR #21
 
 ## Direction (October 2026)
 MiinPlanner proves MiinDigital can ship a useful product. The plan generator is not the hook: a general AI chat gives the same plan. The edge is what needs a real tool: the calendar, teamwork (shared boards, assigning, seeing what teammates do) and AI insights on the team's actual work. Test for every change: would a small business owner get this faster or better here than from a chat plus a to-do list? No promotion, popups or growth hooks in the app.

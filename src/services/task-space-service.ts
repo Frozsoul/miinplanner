@@ -45,17 +45,34 @@ export const getTaskSpaces = async (userId: string): Promise<TaskSpace[]> => {
   }
 };
 
+/**
+ * Firestore rejects `undefined` anywhere in a document, and tasks read from Firestore carry
+ * undefined for empty optional fields (channel, dates, workspace). Keep only defined values.
+ */
+const toSnapshotTask = (task: TaskData): TaskData => {
+  const clean: any = {};
+  Object.entries(task).forEach(([key, value]) => {
+    if (value === undefined) return;
+    clean[key] = Array.isArray(value) ? value.filter(v => v !== undefined) : value;
+  });
+  return clean as TaskData;
+};
+
 export const saveTaskSpace = async (userId: string, name: string, tasks: TaskData[], taskStatuses: TaskStatus[]): Promise<TaskSpace> => {
   if (!userId) throw new Error("User not authenticated.");
   const spacesRef = collection(db, USER_COLLECTION, userId, TASK_SPACE_COLLECTION);
+  const cleanTasks = tasks.map(toSnapshotTask);
   const docData = {
     name,
-    tasks,
+    tasks: cleanTasks,
     taskStatuses,
     createdAt: serverTimestamp(),
   };
 
-  addDoc(spacesRef, docData).catch(async (err) => {
+  try {
+    const ref = await addDoc(spacesRef, docData);
+    return { id: ref.id, name, tasks: cleanTasks, taskStatuses, createdAt: new Date() };
+  } catch (err: any) {
     if (err.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: spacesRef.path,
@@ -63,15 +80,8 @@ export const saveTaskSpace = async (userId: string, name: string, tasks: TaskDat
         requestResourceData: docData,
       } satisfies SecurityRuleContext));
     }
-  });
-
-  return {
-    id: 'optimistic-space-' + Date.now(),
-    name,
-    tasks,
-    taskStatuses,
-    createdAt: new Date(),
-  };
+    throw err;
+  }
 };
 
 const BATCH_LIMIT = 450; // Firestore allows 500 writes per batch; keep headroom.
