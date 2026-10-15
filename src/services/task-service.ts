@@ -43,7 +43,9 @@ export const taskFromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>)
     dueDate: toIsoString(data.dueDate),
     channel: data.channel || undefined,
     tags: data.tags || [],
-    completed: data.completed || (data.status === 'Done'),
+    // `completed` is written whenever the status changes. Old tasks without the field fall back to "Done".
+    completed: typeof data.completed === 'boolean' ? data.completed : data.status === 'Done',
+    completedAt: toIsoString(data.completedAt),
     archived: data.archived || false,
     order: data.order,
     createdAt: data.createdAt,
@@ -116,7 +118,8 @@ export const addTask = async (userId: string, taskData: TaskData): Promise<Task>
     workspaceId: taskData.workspaceId || null, 
     assignedTo: taskData.assignedTo || null,
     tags: taskData.tags || [],
-    completed: taskData.status === 'Done' ? true : (taskData.completed || false),
+    completed: taskData.completed ?? taskData.status === 'Done',
+    completedAt: (taskData.completed ?? taskData.status === 'Done') ? serverTimestamp() : null,
     archived: false,
     order: taskData.order ?? Date.now(),
     createdAt: serverTimestamp(),
@@ -181,7 +184,8 @@ export const addTasksBulk = async (userId: string, tasksData: TaskData[]): Promi
       workspaceId: taskData.workspaceId || null,
       assignedTo: taskData.assignedTo || null,
       tags: taskData.tags || [],
-      completed: false,
+      completed: taskData.completed ?? false,
+      completedAt: taskData.completed ? serverTimestamp() : null,
       archived: false,
       order: taskData.order ?? baseOrder + i,
       createdAt: serverTimestamp(),
@@ -213,7 +217,9 @@ export const addTasksBulk = async (userId: string, tasksData: TaskData[]): Promi
   return tasksData.length;
 };
 
-export const updateTask = async (userId: string, taskId: string, taskUpdate: Partial<TaskData & { completed?: boolean, archived?: boolean }>): Promise<void> => {
+export type TaskUpdate = Partial<Omit<TaskData, 'completedAt'> & { completed?: boolean; archived?: boolean; completedAt?: Date | null }>;
+
+export const updateTask = async (userId: string, taskId: string, taskUpdate: TaskUpdate): Promise<void> => {
   if (!userId || !taskId) return;
   const taskRef = doc(db, TASK_COLLECTION, taskId);
   
@@ -265,4 +271,20 @@ export const deleteTask = async (userId: string, taskId: string): Promise<void> 
       } satisfies SecurityRuleContext));
     }
   });
+};
+
+/**
+ * Brings the stored `completed` flag in line with each task's status (one batch per 400 tasks).
+ * Only writes `completed` and `completedAt`; never changes status, content or anything else.
+ */
+export const syncCompletion = async (
+  updates: { id: string; completed: boolean; completedAt: Timestamp | null }[],
+): Promise<void> => {
+  for (let i = 0; i < updates.length; i += 400) {
+    const batch = writeBatch(db);
+    updates.slice(i, i + 400).forEach(u => {
+      batch.update(doc(db, TASK_COLLECTION, u.id), { completed: u.completed, completedAt: u.completedAt });
+    });
+    await batch.commit();
+  }
 };

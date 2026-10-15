@@ -14,7 +14,8 @@ export interface Task {
   dueDate?: string;
   channel?: string;
   tags?: string[];
-  completed: boolean;
+  completed: boolean; // derived: true when status is the board's finished status
+  completedAt?: string; // ISO date the task last moved into the finished status
   archived: boolean;
   order?: number;
   createdAt: Timestamp;
@@ -32,6 +33,7 @@ export interface Workspace {
   ownerId: string;
   memberUids: string[];
   taskStatuses?: TaskStatus[]; // Shared statuses for the workspace
+  doneStatus?: TaskStatus; // Which status means finished; see src/lib/task-status.ts
   createdAt: Date | Timestamp;
 }
 
@@ -57,6 +59,7 @@ export interface InsightTask {
   createdAt: string;
   updatedAt: string;
   dueDate?: string;
+  completed?: boolean;
 }
 
 export interface AtRiskTaskInsight {
@@ -115,6 +118,7 @@ export interface UserProfile {
   plan: UserPlan;
   createdAt: Date | Timestamp;
   taskStatuses?: TaskStatus[];
+  doneStatus?: TaskStatus; // Which status means finished on the personal board
   insightGenerationCount?: number;
   lastInsightGenerationDate?: string;
   chatbotMessageCount?: number;

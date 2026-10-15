@@ -1,17 +1,17 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import type { Task, TaskData, AIInsights, SimpleInsights, TaskStatus, TaskSpace, Workspace, WorkspaceMember } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
-import { getTasks, addTask as addTaskService, addTasksBulk as addTasksBulkService, updateTask as updateTaskService, deleteTask as deleteTaskService } from '@/services/task-service';
+import { getTasks, addTask as addTaskService, addTasksBulk as addTasksBulkService, updateTask as updateTaskService, deleteTask as deleteTaskService, syncCompletion } from '@/services/task-service';
 import { getTaskSpaces, saveTaskSpace as saveTaskSpaceService, loadTasksFromSpace, deleteTaskSpace as deleteTaskSpaceService, applyTasksToUser, backupPersonalBoard } from '@/services/task-space-service';
 import { getUserWorkspaces, createWorkspace, inviteMemberByEmail, getWorkspaceMembers, removeMember as removeMemberService, deleteWorkspace as deleteWorkspaceService, updateWorkspaceStatuses } from '@/services/workspace-service';
+import { resolveDoneStatus, isFinished, completionFields } from '@/lib/task-status';
 import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
 import { celebrate } from '@/lib/celebrate';
-import { isDoneStatus } from '@/lib/task-colors';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
 
 interface AppDataContextType {
@@ -30,6 +30,10 @@ interface AppDataContextType {
   addStatus: (status: TaskStatus) => Promise<void>;
   deleteStatus: (status: TaskStatus) => Promise<void>;
   reorderStatuses: (startIndex: number, endIndex: number) => Promise<void>;
+  /** The status that means finished on the current board. Use this instead of checking for "Done". */
+  doneStatus: TaskStatus | null;
+  setDoneStatus: (status: TaskStatus) => Promise<void>;
+  isTaskDone: (task: Pick<Task, 'status'>) => boolean;
 
   // Workspaces
   workspaces: Workspace[];
@@ -70,6 +74,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const [taskSpaces, setTaskSpaces] = useState<TaskSpace[]>([]);
   const [insights, setInsights] = useState<AIInsights | null>(null);
   const [taskStatuses, setTaskStatuses] = useState<TaskStatus[]>(DEFAULT_TASK_STATUSES);
+  const [storedDoneStatus, setStoredDoneStatus] = useState<TaskStatus | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
 
   // Workspace State
@@ -83,18 +88,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (currentWorkspace) {
       setTaskStatuses(currentWorkspace.taskStatuses || DEFAULT_TASK_STATUSES);
+      setStoredDoneStatus(currentWorkspace.doneStatus || null);
     } else if (userProfile?.taskStatuses) {
       setTaskStatuses(userProfile.taskStatuses);
+      setStoredDoneStatus(userProfile.doneStatus || null);
     } else {
       setTaskStatuses(DEFAULT_TASK_STATUSES);
+      setStoredDoneStatus(userProfile?.doneStatus || null);
     }
   }, [currentWorkspace, userProfile]);
+
+  // The one rule for "finished" on this board. See src/lib/task-status.ts.
+  const doneStatus = useMemo(() => resolveDoneStatus(taskStatuses, storedDoneStatus), [taskStatuses, storedDoneStatus]);
+  const isTaskDone = useCallback((task: Pick<Task, 'status'>) => isFinished(task.status, doneStatus), [doneStatus]);
 
   // Data Insights: Simple metrics calculated from local state
   const simpleInsights = useMemo((): SimpleInsights => {
     const total = tasks.length;
-    const todo = tasks.filter(t => t.status !== 'Done' && !t.archived).length;
-    const urgent = tasks.filter(t => (t.priority === 'Urgent' || t.priority === 'High') && t.status !== 'Done' && !t.archived).length;
+    const todo = tasks.filter(t => !isTaskDone(t) && !t.archived).length;
+    const urgent = tasks.filter(t => (t.priority === 'Urgent' || t.priority === 'High') && !isTaskDone(t) && !t.archived).length;
     
     let message = "Start completing tasks to unlock more detailed insights.";
     if (total > 5) message = "You've got a good list going! Use the AI generation for a deeper analysis.";
@@ -107,7 +119,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       highPriorityTasks: urgent,
       message
     };
-  }, [tasks]);
+  }, [tasks, isTaskDone]);
 
   // Completion History for the last 7 days
   const completionHistory = useMemo(() => {
@@ -120,16 +132,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       const dateStr = d.toLocaleDateString('en-US', { weekday: 'short' });
       
       const count = tasks.filter(t => {
-        if (t.status !== 'Done' || t.archived) return false;
-        const updated = t.updatedAt?.toDate ? t.updatedAt.toDate() : null;
-        if (!updated) return false;
-        return updated.toDateString() === d.toDateString();
+        if (!isTaskDone(t) || t.archived) return false;
+        const finished = t.completedAt ? new Date(t.completedAt) : (t.updatedAt?.toDate ? t.updatedAt.toDate() : null);
+        if (!finished) return false;
+        return finished.toDateString() === d.toDateString();
       }).length;
       
       history.push({ date: dateStr, completed: count });
     }
     return history;
-  }, [tasks]);
+  }, [tasks, isTaskDone]);
 
   // --- Workspace Logic ---
   const fetchWorkspaces = useCallback(async () => {
@@ -223,7 +235,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const addTask = async (taskData: TaskData, workspaceId?: string): Promise<Task | null> => {
     if (!user?.uid) return null;
     const targetWorkspaceId = workspaceId || currentWorkspace?.id || null;
-    const payload = { ...taskData, workspaceId: targetWorkspaceId };
+    const payload = { ...taskData, workspaceId: targetWorkspaceId, completed: isFinished(taskData.status, doneStatus) };
     const newTask = await addTaskService(user.uid, payload);
     await fetchTasks(targetWorkspaceId === null ? undefined : targetWorkspaceId);
     return newTask;
@@ -235,7 +247,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const targetWorkspaceId = currentWorkspace?.id || null;
     const count = await addTasksBulkService(
       user.uid,
-      tasksData.map(t => ({ ...t, workspaceId: targetWorkspaceId ?? undefined })),
+      tasksData.map(t => ({ ...t, workspaceId: targetWorkspaceId ?? undefined, completed: isFinished(t.status, doneStatus) })),
     );
     await fetchTasks(targetWorkspaceId === null ? undefined : targetWorkspaceId);
     return count;
@@ -245,18 +257,27 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   const celebrateIfDone = (taskId: string, newStatus: unknown) => {
     if (typeof newStatus !== 'string') return;
     const task = tasks.find(t => t.id === taskId);
-    if (!task || isDoneStatus(task.status, taskStatuses) || !isDoneStatus(newStatus, taskStatuses)) return;
+    if (!task || isFinished(task.status, doneStatus) || !isFinished(newStatus, doneStatus)) return;
     celebrate();
-    const left = tasks.filter(t => t.id !== taskId && !t.archived && !isDoneStatus(t.status, taskStatuses)).length;
+    const left = tasks.filter(t => t.id !== taskId && !t.archived && !isFinished(t.status, doneStatus)).length;
     toast({
       title: "Task done",
       description: left === 0 ? "Board clear. Nice work." : `${left} ${left === 1 ? "task" : "tasks"} to go.`,
     });
   };
 
+  // Any status change also writes `completed` and `completedAt`, so they always match the status.
+  // Skipped when the status didn't actually change, so editing a finished task keeps its finish date.
+  const withCompletion = <T extends { status?: TaskStatus }>(update: T, previousStatus?: TaskStatus) =>
+    typeof update.status === 'string' && update.status !== previousStatus
+      ? { ...update, ...completionFields(update.status, doneStatus) }
+      : update;
+
   const updateTask = async (taskId: string, taskUpdate: Partial<TaskData>) => {
     if (!user?.uid) return;
-    await updateTaskService(user.uid, taskId, taskUpdate);
+    const { completedAt: _ignored, ...rest } = taskUpdate;
+    const previous = tasks.find(t => t.id === taskId);
+    await updateTaskService(user.uid, taskId, withCompletion(rest, previous?.status));
     if ('status' in taskUpdate) celebrateIfDone(taskId, taskUpdate.status);
     const task = tasks.find(t => t.id === taskId);
     await fetchTasks(task?.workspaceId);
@@ -264,16 +285,24 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateTaskField = async (taskId: string, field: keyof TaskData, value: any) => {
     if (!user?.uid) return;
+    if (field === 'status' && typeof value === 'string' && value !== tasks.find(t => t.id === taskId)?.status) {
+      const fields = completionFields(value, doneStatus);
+      await updateTaskService(user.uid, taskId, { status: value, ...fields });
+      celebrateIfDone(taskId, value);
+      setTasks(prev => prev.map(t => t.id === taskId
+        ? { ...t, status: value, completed: fields.completed, completedAt: fields.completedAt ? fields.completedAt.toISOString() : undefined }
+        : t));
+      return;
+    }
     await updateTaskService(user.uid, taskId, { [field]: value });
-    if (field === 'status') celebrateIfDone(taskId, value);
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, [field]: value } : t));
   };
 
   const moveTask = async (taskId: string, newStatus: TaskStatus, newIndex: number) => {
     if (!user?.uid) return;
-    await updateTaskService(user.uid, taskId, { status: newStatus });
-    celebrateIfDone(taskId, newStatus);
     const task = tasks.find(t => t.id === taskId);
+    await updateTaskService(user.uid, taskId, withCompletion({ status: newStatus }, task?.status));
+    celebrateIfDone(taskId, newStatus);
     await fetchTasks(task?.workspaceId);
   };
 
@@ -286,46 +315,79 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // --- Status Logic ---
-  const addStatus = async (status: TaskStatus) => {
+  // Saves the status list and the finished status together. Every edit also pins the current
+  // finished status, so adding or reordering statuses never changes which tasks count as done.
+  const saveStatuses = async (newStatuses: TaskStatus[], newDone: TaskStatus | null) => {
     if (!user?.uid) return;
-    const newStatuses = [...taskStatuses, status];
     setTaskStatuses(newStatuses);
+    setStoredDoneStatus(newDone);
+    const fields = newDone ? { taskStatuses: newStatuses, doneStatus: newDone } : { taskStatuses: newStatuses };
     if (currentWorkspace) {
-      await updateWorkspaceStatuses(currentWorkspace.id, newStatuses);
-      setWorkspaces(prev => prev.map(ws => ws.id === currentWorkspace.id ? { ...ws, taskStatuses: newStatuses } : ws));
-      setCurrentWorkspace(prev => prev ? { ...prev, taskStatuses: newStatuses } : null);
+      await updateWorkspaceStatuses(currentWorkspace.id, newStatuses, newDone);
+      setWorkspaces(prev => prev.map(ws => ws.id === currentWorkspace.id ? { ...ws, ...fields } : ws));
+      setCurrentWorkspace(prev => prev ? { ...prev, ...fields } : null);
     } else {
-      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+      await updateUserProfile(user.uid, fields);
     }
+  };
+
+  const addStatus = async (status: TaskStatus) => {
+    await saveStatuses([...taskStatuses, status], doneStatus);
   };
 
   const deleteStatus = async (statusToDelete: TaskStatus) => {
-    if (!user?.uid) return;
-    const newStatuses = taskStatuses.filter(s => s !== statusToDelete);
-    setTaskStatuses(newStatuses);
-    if (currentWorkspace) {
-      await updateWorkspaceStatuses(currentWorkspace.id, newStatuses);
-      setWorkspaces(prev => prev.map(ws => ws.id === currentWorkspace.id ? { ...ws, taskStatuses: newStatuses } : ws));
-      setCurrentWorkspace(prev => prev ? { ...prev, taskStatuses: newStatuses } : null);
-    } else {
-      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
+    if (statusToDelete === doneStatus) {
+      toast({
+        title: "Pick another finished status first",
+        description: `"${statusToDelete}" is the status that marks tasks as finished. Mark a different status as finished, then delete this one.`,
+        variant: "destructive",
+      });
+      return;
     }
+    await saveStatuses(taskStatuses.filter(s => s !== statusToDelete), doneStatus);
   };
 
   const reorderStatuses = async (startIndex: number, endIndex: number) => {
-    if (!user?.uid) return;
     const newStatuses = [...taskStatuses];
     const [removed] = newStatuses.splice(startIndex, 1);
     newStatuses.splice(endIndex, 0, removed);
-    setTaskStatuses(newStatuses);
-    if (currentWorkspace) {
-      await updateWorkspaceStatuses(currentWorkspace.id, newStatuses);
-      setWorkspaces(prev => prev.map(ws => ws.id === currentWorkspace.id ? { ...ws, taskStatuses: newStatuses } : ws));
-      setCurrentWorkspace(prev => prev ? { ...prev, taskStatuses: newStatuses } : null);
-    } else {
-      await updateUserProfile(user.uid, { taskStatuses: newStatuses });
-    }
+    await saveStatuses(newStatuses, doneStatus);
   };
+
+  const setDoneStatus = async (status: TaskStatus) => {
+    if (!taskStatuses.includes(status) || status === doneStatus) return;
+    await saveStatuses(taskStatuses, status);
+    toast({ title: "Finished status updated", description: `Tasks in "${status}" now count as finished.` });
+  };
+
+  // Keep the stored `completed` flag in line with each task's status. Runs once per board and
+  // finished status, and only writes `completed` and `completedAt` on tasks that disagree.
+  const syncedKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user?.uid || isLoadingTasks || !doneStatus || tasks.length === 0) return;
+    const boardId = currentWorkspace?.id;
+    const onThisBoard = tasks.filter(t => (boardId ? t.workspaceId === boardId : !t.workspaceId));
+    if (onThisBoard.length === 0) return;
+    const key = `${boardId || 'personal'}:${doneStatus}:${onThisBoard.length}`;
+    if (syncedKey.current === key) return;
+    const mismatched = onThisBoard.filter(t => t.completed !== isFinished(t.status, doneStatus));
+    syncedKey.current = key;
+    if (mismatched.length === 0) return;
+    const updates = mismatched.map(t => {
+      const done = isFinished(t.status, doneStatus);
+      return { id: t.id, completed: done, completedAt: done ? (t.updatedAt ?? null) : null };
+    });
+    syncCompletion(updates)
+      .then(() => {
+        const byId = new Map(updates.map(u => [u.id, u]));
+        setTasks(prev => prev.map(t => {
+          const u = byId.get(t.id);
+          if (!u) return t;
+          return { ...t, completed: u.completed, completedAt: u.completed && t.updatedAt?.toDate ? t.updatedAt.toDate().toISOString() : undefined };
+        }));
+      })
+      .catch(err => console.error("Couldn't sync finished flags:", err));
+  }, [user, isLoadingTasks, tasks, doneStatus, currentWorkspace]);
 
   // --- Space Logic ---
   const fetchTaskSpaces = useCallback(async () => {
@@ -438,6 +500,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         createdAt: t.createdAt.toDate ? t.createdAt.toDate().toISOString() : new Date().toISOString(),
         updatedAt: t.updatedAt.toDate ? t.updatedAt.toDate().toISOString() : new Date().toISOString(),
         dueDate: t.dueDate,
+        completed: isTaskDone(t),
       }));
       
       const idToken = await user.getIdToken();
@@ -467,7 +530,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       isLoadingAppData,
       tasks, setTasks, isLoadingTasks, fetchTasks,
       addTask, addTasks, updateTask, updateTaskField, deleteTask, moveTask,
-      taskStatuses, addStatus, deleteStatus, reorderStatuses,
+      taskStatuses, addStatus, deleteStatus, reorderStatuses, doneStatus, setDoneStatus, isTaskDone,
       workspaces, currentWorkspace, setCurrentWorkspaceById, workspaceMembers, fetchWorkspaces, addWorkspace, inviteToWorkspace, removeFromWorkspace, deleteWorkspace,
       taskSpaces, fetchTaskSpaces, saveCurrentTaskSpace, loadTaskSpace, deleteTaskSpace, importTaskSpace, loadTaskSpaceTemplate,
       insights, simpleInsights, completionHistory, isLoadingAi, generateInsights,
