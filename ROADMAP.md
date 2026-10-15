@@ -10,7 +10,6 @@ MiinPlanner proves MiinDigital can ship a useful product. The plan generator is 
 
 ## Now: boards that show what to do next (from Minh, 15 Oct 2026)
 The Kanban, list and calendar views give every task the same weight, so they don't say where to start. Rule for all views: what needs you now comes first, finished work steps back. Time groups (Overdue, Today, This week, Later, No date) are computed from the due date, never stored; statuses stay as the workflow.
-- [ ] Sorting rule plus Kanban: sort cards by time group then priority (keep a "My order" option), collapse the finished column to a slim summary, date badges for overdue and today.
 - [ ] List view: group rows by time group, finished tasks in a collapsed "Completed" section, Assignee only on workspace boards, Channel only when used.
 - [ ] Calendar: task titles coloured by priority, overdue in red, finished tasks faded with a "Hide done" toggle, "Next up" in the side panel when a day is empty.
 - [ ] "Up next" strip above all views: the top 3 open tasks with one-click done.
@@ -38,6 +37,7 @@ The Kanban, list and calendar views give every task the same weight, so they don
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Kanban shows what to do next: open columns sort Overdue, Today, Next 7 days, Later, No date, then by priority, with small group labels ("Due first", or "Date added" as before). The finished column collapses to a slim summary (finished in the last 7 days, last 3 titles, still a drop target); expanded, it shows the last 7 days with "Show N older". Choices are remembered per browser. Rule in `src/lib/task-buckets.ts`. PR #15
 - [x] Finished status: each board marks one status as finished (Settings, Statuses), default "Done" or the last status. It can't be deleted while marked, and reordering no longer changes what counts as done. Every status change writes `completed` and `completedAt`; a one-time sync fixes old tasks. Board, list, dashboard, insights, confetti and the calendar feed all use the same rule. PR #14
 - [x] Plan with AI: paste a plan from ChatGPT, Claude or any AI (prompt with one-click open in ChatGPT/Claude, forgiving parser for tables, lists, CSV and JSON, tick list, dated tasks). Reminders featured in Task Manager (banner plus header button). PR #11
 - [x] Reminders via a private calendar feed (Settings > Reminders): tasks with due dates appear in Google, Apple or Outlook Calendar with 9am alerts, plus a day-before alert for high and urgent. PR #10

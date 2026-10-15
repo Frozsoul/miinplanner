@@ -10,6 +10,20 @@ import { cn } from "@/lib/utils";
 import { DndContext, type DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { TaskCard } from './task-card';
+import { compareByUrgency, finishedTime } from '@/lib/task-buckets';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type SortMode = 'smart' | 'added';
+const SORT_KEY = 'mp.kanbanSort';
+const COLLAPSE_KEY = 'mp.finishedCollapsed';
+
+// Per-viewer preferences. Storage can be blocked (private mode), so every access is guarded.
+function readPref(key: string): string | null {
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+function writePref(key: string, value: string) {
+  try { window.localStorage.setItem(key, value); } catch { /* ignore */ }
+}
 
 
 interface KanbanBoardProps {
@@ -22,9 +36,19 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArchiveToggle, showArchived }: KanbanBoardProps) {
-  const { moveTask, setTasks, taskStatuses } = useAppData();
+  const { moveTask, setTasks, taskStatuses, doneStatus } = useAppData();
   const isMobile = useIsMobile();
   const [activeTask, setActiveTask] = React.useState<Task | null>(null);
+  const [sortMode, setSortMode] = React.useState<SortMode>('smart');
+  const [finishedCollapsed, setFinishedCollapsed] = React.useState(true);
+
+  React.useEffect(() => {
+    if (readPref(SORT_KEY) === 'added') setSortMode('added');
+    if (readPref(COLLAPSE_KEY) === 'false') setFinishedCollapsed(false);
+  }, []);
+
+  const changeSort = (mode: SortMode) => { setSortMode(mode); writePref(SORT_KEY, mode); };
+  const toggleFinished = () => setFinishedCollapsed(prev => { writePref(COLLAPSE_KEY, String(!prev)); return !prev; });
   
   const columns = showArchived ? ['Archived'] : taskStatuses;
 
@@ -87,6 +111,24 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
       : `grid-cols-${columns.length}`
   );
 
+  // Open columns: what needs attention first (or the order tasks were added).
+  // Finished column: most recently finished first.
+  const tasksFor = (status: string): Task[] => {
+    if (showArchived) return tasks.filter(task => task.archived);
+    const list = tasks.filter(task => task.status === status);
+    if (status === doneStatus) return [...list].sort((a, b) => finishedTime(b) - finishedTime(a));
+    if (sortMode === 'smart') {
+      const now = new Date();
+      return [...list].sort((a, b) => compareByUrgency(a, b, now));
+    }
+    return list;
+  };
+
+  const isCollapsed = (status: string) => !showArchived && status === doneStatus && finishedCollapsed;
+  const gridTemplate = columns
+    .map(status => (isCollapsed(status) ? 'minmax(190px, 0.5fr)' : 'minmax(0, 1fr)'))
+    .join(' ');
+
   return (
     <DndContext 
         sensors={sensors}
@@ -94,11 +136,19 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
     >
-      <div className={containerClasses} style={{ gridTemplateColumns: isMobile ? undefined : `repeat(${columns.length}, minmax(0, 1fr))` }}>
+      {!showArchived && (
+        <div className="flex items-center justify-end gap-2 mb-3 text-sm text-muted-foreground">
+          <span>Sort</span>
+          <ToggleGroup type="single" size="sm" value={sortMode} onValueChange={(v) => { if (v) changeSort(v as SortMode); }}>
+            <ToggleGroupItem value="smart" aria-label="Sort by what needs attention first" title="Overdue and due soon first, then by priority">Due first</ToggleGroupItem>
+            <ToggleGroupItem value="added" aria-label="Sort by date added" title="The order tasks were added">Date added</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
+      <div className={containerClasses} style={{ gridTemplateColumns: isMobile ? undefined : gridTemplate }}>
         {columns.map(status => {
-          const tasksForStatus = tasks.filter(task => 
-            showArchived ? task.archived : task.status === status
-          );
+          const tasksForStatus = tasksFor(status);
+          const isFinished = !showArchived && status === doneStatus;
           
           return (
             <KanbanColumn 
@@ -110,6 +160,10 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
               onViewTask={onViewTask}
               onArchiveToggle={onArchiveToggle}
               isArchivedColumn={showArchived}
+              showGroups={!showArchived && !isFinished && sortMode === 'smart'}
+              isFinishedColumn={isFinished}
+              collapsed={isCollapsed(status)}
+              onToggleCollapsed={toggleFinished}
             />
           );
         })}
