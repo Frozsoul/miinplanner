@@ -8,7 +8,7 @@ interface LogoProps {
 
 export function Logo({ className }: LogoProps) {
   return (
-    <Link href="/dashboard" className={cn("flex items-center", className)}>
+    <Link href="/tasks" className={cn("flex items-center", className)}>
       <svg
         version="1.1"
         id="Layer_1"

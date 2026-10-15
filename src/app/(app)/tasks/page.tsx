@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TASK_PRIORITIES } from "@/lib/constants";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
+import { UpNext, EmptyBoardWelcome } from "@/components/tasks/UpNext";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -358,8 +359,12 @@ export default function TasksPage() {
           </div>
         )}
 
+        {!showArchived && tasks.length > 0 && <UpNext tasks={tasks} onView={openDetailModal} />}
+
         <div className="flex-grow min-h-0">
-          {renderContent()}
+          {!isLoadingTasks && tasks.length === 0 && !showArchived
+            ? <EmptyBoardWelcome onAddTask={() => openFormModal()} />
+            : renderContent()}
 
           {!isLoadingTasks && tasks.length > 0 && filteredTasks.length === 0 && (
             <Card className="mt-4">
