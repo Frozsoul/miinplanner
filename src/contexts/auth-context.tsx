@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw { code: "auth/email-not-verified", message: "Your email has not been verified. Please check your inbox for the verification link." } as AuthError;
       }
       // onAuthStateChanged will handle setting user and profile
-      router.push("/dashboard"); 
+      router.push("/tasks"); 
       return userCredential.user;
     } catch (err) {
       setError(err as AuthError);
@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle setting user and profile
-      router.push("/dashboard");
+      router.push("/tasks");
       return userCredential.user;
     } catch (err) {
       setError(err as AuthError);

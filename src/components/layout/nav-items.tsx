@@ -2,7 +2,6 @@
 "use client";
 
 import {
-  LayoutDashboard,
   ListChecks,
   Lightbulb,
   Library,
@@ -18,7 +17,6 @@ interface NavItem {
 }
 
 const allNavItems: NavItem[] = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/tasks", icon: ListChecks, label: "Task Manager" },
   { href: "/teamwork", icon: Users, label: "Teamwork" },
   { href: "/library", icon: Library, label: "Library" },
