@@ -7,13 +7,25 @@ import { KanbanColumn } from "./kanban-column";
 import { useAppData } from "@/contexts/app-data-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { DndContext, type DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners } from "@dnd-kit/core";
+import { DndContext, type DragEndEvent, type CollisionDetection, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners, pointerWithin } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { TaskCard } from './task-card';
 import { compareByUrgency, finishedTime } from '@/lib/task-buckets';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 type SortMode = 'smart' | 'added';
+
+// Drop where the pointer is. closestCorners alone compares the corners of the dragged card with
+// every target, so a whole column (like the slim finished column) loses to nearby cards in the
+// next column. Prefer a card under the pointer, then the column under the pointer, then fall back.
+const pointerFirst: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  if (hits.length > 0) {
+    const cards = hits.filter(h => args.droppableContainers.find(c => c.id === h.id)?.data.current?.type === 'TASK');
+    return cards.length > 0 ? cards : hits;
+  }
+  return closestCorners(args);
+};
 const SORT_KEY = 'mp.kanbanSort';
 const COLLAPSE_KEY = 'mp.finishedCollapsed';
 
@@ -91,6 +103,7 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
              setTasks((currentTasks) => {
                 const activeIndex = currentTasks.findIndex((t) => t.id === active.id);
                 const overIndex = currentTasks.findIndex((t) => t.id === over.id);
+                if (activeIndex < 0 || overIndex < 0) return currentTasks;
                 return arrayMove(currentTasks, activeIndex, overIndex);
              });
         }
@@ -132,7 +145,7 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
   return (
     <DndContext 
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={pointerFirst}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
     >
