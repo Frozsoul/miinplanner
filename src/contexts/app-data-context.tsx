@@ -49,7 +49,7 @@ interface AppDataContextType {
   // Task Spaces
   taskSpaces: TaskSpace[];
   fetchTaskSpaces: () => Promise<void>;
-  saveCurrentTaskSpace: (name: string) => Promise<void>;
+  saveCurrentTaskSpace: (name: string) => Promise<boolean>;
   loadTaskSpace: (spaceId: string) => Promise<void>;
   deleteTaskSpace: (spaceId: string) => Promise<void>;
   importTaskSpace: (space: Omit<TaskSpace, 'id'>) => Promise<void>;
@@ -397,10 +397,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   const saveCurrentTaskSpace = async (name: string) => {
-    if (!user?.uid) return;
+    if (!user?.uid) return false;
     const tasksToSave = tasks.map(({ id, createdAt, updatedAt, userId, ...data }) => data);
-    await saveTaskSpaceService(user.uid, name, tasksToSave, taskStatuses);
-    fetchTaskSpaces();
+    try {
+      await saveTaskSpaceService(user.uid, name, tasksToSave, taskStatuses);
+      toast({ title: "Board saved", description: `"${name}" is in your saved spaces.` });
+      fetchTaskSpaces();
+      return true;
+    } catch (err) {
+      console.error("Error saving task space:", err);
+      toast({ title: "Could not save the board", description: "Nothing was saved. Please try again.", variant: "destructive" });
+      return false;
+    }
   };
 
   // Every replace of the personal board is preceded by an automatic backup to Saved Spaces.

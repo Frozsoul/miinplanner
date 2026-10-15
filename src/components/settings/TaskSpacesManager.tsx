@@ -48,8 +48,8 @@ export function TaskSpacesManager() {
       return;
     }
     setIsLoading(true);
-    await saveCurrentTaskSpace(newSpaceName);
-    setNewSpaceName("");
+    const saved = await saveCurrentTaskSpace(newSpaceName.trim());
+    if (saved) setNewSpaceName("");
     setIsLoading(false);
   };
 
