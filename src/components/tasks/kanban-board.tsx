@@ -118,7 +118,7 @@ export function KanbanBoard({ tasks, onEditTask, onDeleteTask, onViewTask, onArc
   };
   
   const containerClasses = cn(
-    "grid gap-4 h-full",
+    "grid gap-4",
     isMobile 
       ? "grid-cols-1" 
       : `grid-cols-${columns.length}`

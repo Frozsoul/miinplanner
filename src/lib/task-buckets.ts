@@ -64,3 +64,32 @@ export const RECENT_DAYS = 7;
 export function finishedRecently(task: Task, now: Date = new Date()): boolean {
   return finishedTime(task) >= now.getTime() - RECENT_DAYS * 24 * 60 * 60 * 1000;
 }
+
+export const BUCKET_ORDER: DueBucket[] = ["overdue", "today", "week", "later", "none"];
+
+export interface GroupedTasks {
+  groups: { bucket: DueBucket; tasks: Task[] }[];
+  finished: Task[];
+  archived: Task[];
+}
+
+/**
+ * Splits a board into open time groups (sorted by urgency), finished tasks (newest first)
+ * and archived tasks. Empty groups are left out.
+ */
+export function groupByUrgency(tasks: Task[], isDone: (t: Task) => boolean, now: Date = new Date()): GroupedTasks {
+  const open: Task[] = [];
+  const finished: Task[] = [];
+  const archived: Task[] = [];
+  tasks.forEach(t => {
+    if (t.archived) archived.push(t);
+    else if (isDone(t)) finished.push(t);
+    else open.push(t);
+  });
+  open.sort((a, b) => compareByUrgency(a, b, now));
+  finished.sort((a, b) => finishedTime(b) - finishedTime(a));
+  const groups = BUCKET_ORDER
+    .map(bucket => ({ bucket, tasks: open.filter(t => dueBucket(t, now) === bucket) }))
+    .filter(g => g.tasks.length > 0);
+  return { groups, finished, archived };
+}
