@@ -12,6 +12,9 @@ MiinPlanner proves MiinDigital can ship a useful product. The plan generator is 
 The Kanban, list and calendar views give every task the same weight, so they don't say where to start. Rule for all views: what needs you now comes first, finished work steps back. Time groups (Overdue, Today, This week, Later, No date) are computed from the due date, never stored; statuses stay as the workflow.
 - [ ] "Up next" strip above all views: the top 3 open tasks with one-click done.
 
+## Paid option (parked, from Minh 15 Oct 2026)
+Ship a good free product first; keep the option to charge later. No Vietnamese version. A greyed-out "Pro" card sits in Settings > Plan & Billing (no button, no sign-up). First idea if it happens: a small one-time price (around $3) for premium themes. The planner itself stays free. Plan doc: https://claude.ai/code/artifact/1f7e2265-cf8c-40fc-912c-38adf5c9a2ea
+
 ## Next: make the calendar, teamwork and insights genuinely good
 - [ ] Write `EDGE.md`: 3 to 5 candidate edges on the calendar, teamwork and AI insights (who it helps, the job, why a chat or generic planner can't do it, smallest test, how we'd know). Minh picks one before anything is built.
 - Until an edge is picked: usability, speed and reliability fixes to the calendar, teamwork and insights flows (see Later).
@@ -34,6 +37,7 @@ The Kanban, list and calendar views give every task the same weight, so they don
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Greyed-out "Pro" card in Settings > Plan & Billing (premium themes), and "free tool" copy changed to "free to use". PR #19
 - [x] Calendar shows what's coming: task titles in each day coloured by priority, overdue in red, finished tasks hidden by default ("Hide done" switch, remembered per browser) or shown faded and struck through. Today, previous and next buttons replace the hidden month picker, and months that need six rows now show every day. Side panel: the day's tasks, open first; today also lists anything overdue; an empty day shows Overdue and the next 3 tasks. Phones show coloured dots. Also removed the Firebase config console log. PR #18
 - [x] List view shows what to do next: rows grouped under Overdue, Today, Next 7 days, Later and No due date (with counts), finished tasks in a collapsed "Completed" section, archived in their own collapsed section. Assignee only on workspace boards or when someone is assigned; Channel only when a task uses it. Same grouping on the phone card list. Also fixed the double scroll bar on the Kanban board. PR #17
 - [x] Kanban shows what to do next: open columns sort Overdue, Today, Next 7 days, Later, No date, then by priority, with small group labels ("Due first", or "Date added" as before). The finished column collapses to a slim summary (finished in the last 7 days, last 3 titles, still a drop target); expanded, it shows the last 7 days with "Show N older". Choices are remembered per browser. Rule in `src/lib/task-buckets.ts`. PR #15

@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Coffee, MessageSquareHeart } from "lucide-react";
+import { Coffee, MessageSquareHeart, Palette } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { FEEDBACK_EMAIL, FEEDBACK_MAILTO } from "@/lib/feedback";
 import Link from "next/link";
 
@@ -15,7 +16,7 @@ export default function BillingPage() {
           <CardHeader>
             <CardTitle>Support MiinPlanner</CardTitle>
             <CardDescription>
-              MiinPlanner is a free tool, built with passion. If you find it useful, please consider supporting its development.
+              MiinPlanner is free to use, built with passion. If you find it useful, please consider supporting its development.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -28,6 +29,22 @@ export default function BillingPage() {
                 Buy me a coffee
               </Link>
             </Button>
+          </CardContent>
+        </Card>
+        {/* Placeholder for optional paid extras. Not available yet, so it is shown greyed out and does nothing. */}
+        <Card aria-disabled="true" className="opacity-50 select-none">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Pro <Badge variant="secondary">Not available</Badge>
+            </CardTitle>
+            <CardDescription>
+              Optional extras for people who want more. Everything you use today stays free.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li className="flex items-center gap-2"><Palette className="h-4 w-4" />Premium themes</li>
+            </ul>
           </CardContent>
         </Card>
         <Card>
