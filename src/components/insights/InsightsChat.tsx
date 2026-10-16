@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { ChatMessage, Task } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,9 +17,14 @@ const CHATBOT_DAILY_LIMIT = 10;
 
 interface InsightsChatProps {
   tasks: Task[];
+  title?: string;
+  description?: string;
+  /** Speak as the user's companion instead of the default assistant. */
+  persona?: { name: string; voice: string };
+  avatar?: React.ReactNode;
 }
 
-export function InsightsChat({ tasks }: InsightsChatProps) {
+export function InsightsChat({ tasks, title = "Chat with Miin", description = "Ask anything about your tasks.", persona, avatar }: InsightsChatProps) {
   const { user, userProfile, updateUserProfile } = useAuth();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -77,6 +82,7 @@ export function InsightsChat({ tasks }: InsightsChatProps) {
 
       const aiInput: SuggestProductivityTipsInput = { 
         query: input,
+        ...(persona ? { persona: { name: persona.name.slice(0, 40), voice: persona.voice.slice(0, 400) } } : {}),
         tasks: tasks.map(t => ({
             id: t.id,
             title: t.title,
@@ -130,10 +136,10 @@ export function InsightsChat({ tasks }: InsightsChatProps) {
         <div className="flex justify-between items-center">
             <div>
                 <CardTitle className="flex items-center gap-2 text-xl">
-                    <Sparkles className="h-5 w-5 text-accent" /> 
-                    Follow-up with MiinBot
+                    {avatar ?? <Sparkles className="h-5 w-5 text-accent" />}
+                    {title}
                 </CardTitle>
-                <CardDescription>Ask for specific advice about your tasks.</CardDescription>
+                <CardDescription>{description}</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
                 {isLimitReached ? <ShieldOff className="h-3 w-3 text-destructive"/> : <ShieldCheck className="h-3 w-3 text-green-500"/>}
@@ -146,11 +152,11 @@ export function InsightsChat({ tasks }: InsightsChatProps) {
           <div className="space-y-4">
             {messages.map((msg) => (
               <div key={msg.id} className={cn("flex items-start gap-3", msg.sender === "user" ? "justify-end" : "justify-start")}>
-                {msg.sender === "ai" && (
+                {msg.sender === "ai" && (avatar ?? (
                   <Avatar className="h-8 w-8 border">
                     <AvatarFallback className="bg-secondary"><Bot className="h-4 w-4" /></AvatarFallback>
                   </Avatar>
-                )}
+                ))}
                 <div className={cn(
                     "max-w-[85%] rounded-xl px-4 py-2 text-sm shadow-sm", 
                     msg.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted border"
@@ -167,9 +173,9 @@ export function InsightsChat({ tasks }: InsightsChatProps) {
             ))}
             {isLoading && (
                <div className="flex items-start gap-3 justify-start">
-                  <Avatar className="h-8 w-8 border">
+                  {avatar ?? (<Avatar className="h-8 w-8 border">
                     <AvatarFallback><Bot className="h-4 w-4" /></AvatarFallback>
-                  </Avatar>
+                  </Avatar>)}
                   <div className="bg-muted border rounded-xl px-4 py-2">
                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>

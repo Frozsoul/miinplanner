@@ -24,6 +24,7 @@ const ChatTaskSchema = z.object({
 const SuggestProductivityTipsInputSchema = z.object({
   query: z.string().trim().min(1).max(2000).describe('The user query for productivity tips and workflow optimizations.'),
   tasks: z.array(ChatTaskSchema).max(500).optional().describe('Contextual task data to help the AI provide specific advice.'),
+  persona: z.object({ name: z.string().max(40), voice: z.string().max(400) }).optional().describe("The user's companion, to answer in its voice."),
 });
 export type SuggestProductivityTipsInput = z.infer<typeof SuggestProductivityTipsInputSchema>;
 
@@ -45,7 +46,10 @@ const prompt = ai.definePrompt({
   name: 'suggestProductivityTipsPrompt',
   input: {schema: SuggestProductivityTipsInputSchema},
   output: {schema: SuggestProductivityTipsOutputSchema},
-  prompt: `You are an AI assistant specialized in providing productivity tips and workflow optimizations for a planner app called MiinPlanner.
+  prompt: `{{#if persona}}You are {{persona.name}}, the user's companion in MiinPlanner. Your personality: {{persona.voice}}
+Stay in that voice. Keep answers short and practical. Never guilt-trip, no romance or flirting, no em dashes.
+
+{{/if}}You are an AI assistant specialized in providing productivity tips and workflow optimizations for a planner app called MiinPlanner.
 
   {{#if tasks}}
   You have access to the user's current task list for context:

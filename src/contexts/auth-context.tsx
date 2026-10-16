@@ -85,6 +85,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const handleUpdateUserProfile = async (updates: Partial<UserProfile>) => {
     if (user?.uid) {
+      // Show the change straight away, then confirm from Firestore.
+      setUserProfile(prev => (prev ? { ...prev, ...updates } : prev));
       await updateUserProfile(user.uid, updates);
       await fetchUserProfile(); // Refresh the profile
     }

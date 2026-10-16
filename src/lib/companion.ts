@@ -22,30 +22,30 @@ export interface Companion {
 export const COMPANIONS: Companion[] = [
   {
     id: "mia",
-    name: "Mia",
-    role: "The bestie",
-    blurb: "Warm and supportive. Always in your corner.",
+    name: "Miin Buddy",
+    role: "Warm and supportive",
+    blurb: "Always in your corner. Cheers every step.",
     voice: "Warm, caring and casual, like a close friend who believes in them. Encouraging, never preachy. Celebrates progress and is gentle about slips.",
   },
   {
     id: "kai",
-    name: "Kai",
-    role: "The coach",
-    blurb: "Strict and direct. Holds you to your plan.",
+    name: "Miin Coach",
+    role: "Strict and direct",
+    blurb: "Holds you to your plan. No excuses.",
     voice: "A strict, no-nonsense coach. Short, firm sentences. Names the one thing to do next. Praise is brief and earned. Tough but fair, never insulting.",
   },
   {
     id: "theo",
-    name: "Theo",
-    role: "The mentor",
-    blurb: "Calm and wise. Big picture first.",
+    name: "Miin Mentor",
+    role: "Calm and wise",
+    blurb: "Big picture first. Keeps you steady.",
     voice: "A calm, experienced mentor. Thoughtful and steady. Puts the week in perspective and suggests what matters most. Never rushed.",
   },
   {
     id: "pip",
-    name: "Pip",
-    role: "The hype buddy",
-    blurb: "Playful and loud. Celebrates every win.",
+    name: "Miin Hype",
+    role: "Playful and loud",
+    blurb: "Turns every win into a party.",
     voice: "A playful, high-energy hype buddy. Fun, upbeat, a little cheeky. May use one emoji. Turns even small wins into a celebration.",
   },
 ];
@@ -131,7 +131,7 @@ type Lines = Record<Mood, string[]>;
 /** Free, instant one-liners. {name} is the user's first name, {overdue} and {week} are counts. */
 const GREETINGS: Record<CompanionId, Lines> = {
   mia: {
-    hello: ["Hi {name}! I'm Mia. Finish your first task and I'll start cheering.", "Hey {name}, so glad you're here. Let's tick off one thing together."],
+    hello: ["Hi {name}! I'm your Miin Buddy. Finish your first task and I'll start cheering.", "Hey {name}, so glad you're here. Let's tick off one thing together."],
     sad: ["I miss seeing you tick things off, {name}. One small task today?", "Rough week? No judgement. Let's pick one easy win."],
     worried: ["{overdue} overdue, {name}. Let's sort one out and breathe.", "Things are piling up a bit. I'm here, let's start small."],
     okay: ["Steady work, {name}. A couple more and I'll be beaming.", "You're doing fine. One more today would make my day."],
@@ -139,7 +139,7 @@ const GREETINGS: Record<CompanionId, Lines> = {
     love: ["{name}, you're on fire. I'm so proud of you!", "{week} done this week. Honestly, you're amazing."],
   },
   kai: {
-    hello: ["I'm Kai. Finish one task and we start keeping score.", "{name}. Pick a task. Finish it. Then we talk."],
+    hello: ["I'm your Miin Coach. Finish one task and we start keeping score.", "{name}. Pick a task. Finish it. Then we talk."],
     sad: ["{name}, nothing moved this week. Pick one task. Do it now.", "No excuses today. One task, start to finish."],
     worried: ["{overdue} overdue. Clear the oldest one first.", "You're slipping, {name}. Fix one overdue task today."],
     okay: ["Not bad. Not good enough yet. Finish one more.", "Average week so far. Push."],
@@ -155,7 +155,7 @@ const GREETINGS: Record<CompanionId, Lines> = {
     love: ["Excellent week, {name}. This is what consistency looks like.", "{week} done and nothing slipping. Well earned."],
   },
   pip: {
-    hello: ["Yo {name}! I'm Pip. Finish a task and I'll throw a party 🎉", "New buddy alert! Let's smash the first task."],
+    hello: ["Yo {name}! I'm Miin Hype. Finish a task and I'll throw a party 🎉", "New buddy alert! Let's smash the first task."],
     sad: ["Psst, {name}... the board misses you. One quick win?", "Zero wins this week?! Let's fix that right now."],
     worried: ["Uh oh, {overdue} overdue. Let's squash one!", "The overdue pile is staring at me, {name}. Help!"],
     okay: ["Not bad, {name}! One more and I start dancing.", "We're warming up. Keep going!"],
