@@ -28,6 +28,11 @@ const fromFirestore = (snapshot: any): UserProfile | null => {
         lastInsightGenerationDate: data.lastInsightGenerationDate || '',
         chatbotMessageCount: data.chatbotMessageCount || 0,
         lastChatbotMessageDate: data.lastChatbotMessageDate || '',
+        marketingPlanCount: data.marketingPlanCount || 0,
+        lastMarketingPlanDate: data.lastMarketingPlanDate || '',
+        // Without these, the saved finished status and companion were dropped on every reload.
+        ...(data.doneStatus ? { doneStatus: data.doneStatus } : {}),
+        ...(data.companionId ? { companionId: data.companionId } : {}),
     };
 };
 
@@ -76,7 +81,9 @@ export const updateUserProfile = async (userId: string, updates: Partial<UserPro
     if (!userId) return;
     const userRef = doc(db, USER_COLLECTION, userId);
     
-    updateDoc(userRef, updates).catch(async (err) => {
+    // Awaited so a profile refetch right after sees the change.
+    await updateDoc(userRef, updates).catch(async (err) => {
+        console.error("Error updating user profile:", err);
         if (err.code === 'permission-denied') {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: userRef.path,

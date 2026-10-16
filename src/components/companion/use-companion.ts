@@ -5,6 +5,7 @@ import { useAppData } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { companionCheckIn, type CheckInOutput } from "@/ai/flows/companion-checkin-flow";
+import { getAiUsageLeft } from "@/services/ai-usage-actions";
 import {
   computeMomentum, firstNameOf, getCompanion, greeting, watchList, type CompanionId,
 } from "@/lib/companion";
@@ -47,7 +48,17 @@ export function useCompanion() {
 
   const [checkIn, setCheckIn] = useState<SavedCheckIn | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [checkInsLeft, setCheckInsLeft] = useState<number | null>(null);
   useEffect(() => { setCheckIn(readCheckIn()); }, []);
+
+  const refreshCheckInsLeft = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await getAiUsageLeft(await user.getIdToken(), "checkin");
+      if (res.ok) setCheckInsLeft(res.data.left);
+    } catch { /* the count is a nice-to-have; the server still enforces the limit */ }
+  }, [user]);
+  useEffect(() => { refreshCheckInsLeft(); }, [refreshCheckInsLeft]);
 
   const chooseCompanion = useCallback(async (id: CompanionId) => {
     try {
@@ -84,15 +95,17 @@ export function useCompanion() {
         currentDate: new Date().toDateString(),
       });
       if (!result.ok) {
+        if (result.code === "limit_reached") setCheckInsLeft(0);
         toast({
           title: result.code === "limit_reached" ? `${companion.name} needs a break` : "Check-in unavailable",
-          description: result.code === "limit_reached" ? "You've had today's 3 check-ins. More tomorrow." : result.message,
+          description: result.code === "limit_reached" ? "You've had today's 3 check-ins. More tomorrow (resets at midnight UTC)." : result.message,
           variant: "destructive",
         });
         return;
       }
       const saved: SavedCheckIn = { ...result.data, day: today(), companionId: companion.id, at: Date.now() };
       setCheckIn(saved);
+      setCheckInsLeft(left => (left === null ? null : Math.max(0, left - 1)));
       try { localStorage.setItem(CHECKIN_KEY, JSON.stringify(saved)); } catch { /* per-browser convenience only */ }
     } catch (error) {
       console.error("Companion check-in failed:", error);
@@ -102,5 +115,5 @@ export function useCompanion() {
     }
   }, [user, watch, companion, firstName, momentum, toast]);
 
-  return { companion, firstName, momentum, watch, line, checkIn, isCheckingIn, askForCheckIn, chooseCompanion };
+  return { companion, firstName, momentum, watch, line, checkIn, isCheckingIn, askForCheckIn, chooseCompanion, checkInsLeft };
 }

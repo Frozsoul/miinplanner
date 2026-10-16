@@ -58,7 +58,7 @@ function Part({ label, value, max, hint }: { label: string; value: number; max: 
 export default function CompanionPage() {
   const { loading: authLoading } = useAuth();
   const { tasks, completionHistory } = useAppData();
-  const { companion, momentum, watch, line, checkIn, isCheckingIn, askForCheckIn, chooseCompanion } = useCompanion();
+  const { companion, momentum, watch, line, checkIn, isCheckingIn, askForCheckIn, chooseCompanion, checkInsLeft } = useCompanion();
 
   if (authLoading) {
     return (
@@ -137,11 +137,18 @@ export default function CompanionPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={askForCheckIn} disabled={isCheckingIn}>
+                <Button onClick={askForCheckIn} disabled={isCheckingIn || checkInsLeft === 0}>
                   {isCheckingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircleHeart className="mr-2 h-4 w-4" />}
                   {isCheckingIn ? `${companion.name} is looking at your board...` : `Check in with ${companion.name}`}
                 </Button>
-                <span className="text-xs text-muted-foreground">Up to 3 check-ins a day. {companion.name} reads your board and replies in a few lines.</span>
+                {checkInsLeft !== null && (
+                  <span className={cn("text-xs font-medium rounded-full px-2.5 py-1", checkInsLeft === 0 ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
+                    {checkInsLeft === 0 ? "No check-ins left today" : `${checkInsLeft} of 3 left today`}
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {checkInsLeft === 0 ? "More tomorrow. The count resets at midnight UTC." : `${companion.name} reads your board and replies in a few lines.`}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -226,7 +233,13 @@ export default function CompanionPage() {
 
         <CompletionChart data={completionHistory} />
 
-        <InsightsChat tasks={tasks} />
+        <InsightsChat
+          tasks={tasks}
+          title={`Chat with ${companion.name}`}
+          description={`Ask ${companion.name} anything about your tasks and plans.`}
+          persona={{ name: companion.name, voice: companion.voice }}
+          avatar={<CompanionAvatar companion={companion.id} mood="okay" size={32} />}
+        />
       </div>
     </div>
   );
