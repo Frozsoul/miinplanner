@@ -5,99 +5,66 @@ import { cn } from "@/lib/utils";
 import type { CompanionId, Mood } from "@/lib/companion";
 
 /**
- * The Miin assistant: one friendly robot wearing the MiinDigital mark, in a colour per
- * personality, with six moods shown on its screen face. Drawn on a 200x200 grid; all
- * numbers are static so the server and browser render the same markup.
+ * The Miin assistant: a glossy helmet head with ear fins and headphone pods, framing a
+ * soft face with big shiny eyes. One colour per personality, six moods. Drawn on a
+ * 200x200 grid; all numbers are static so the server and browser render the same markup.
  */
 
-interface Look { bg: string; body: string; bodyDark: string; screen: string; glow: string }
+interface Look { helm: [string, string, string]; acc: string; accDark: string; iris: [string, string]; bg: string }
 
 const LOOK: Record<CompanionId, Look> = {
-  mia: { bg: "#FFF4C2", body: "#FFD000", bodyDark: "#E0B500", screen: "#1F2430", glow: "#FFE266" },
-  kai: { bg: "#D5F5EE", body: "#2B3038", bodyDark: "#1A1D22", screen: "#0E1116", glow: "#5EEAD4" },
-  theo: { bg: "#E3E7FA", body: "#6D7FE0", bodyDark: "#5466C7", screen: "#1C2140", glow: "#C7D2FE" },
-  pip: { bg: "#FFE3EA", body: "#FF7A9C", bodyDark: "#E85F83", screen: "#2A1C24", glow: "#FFC2D3" },
+  mia: { helm: ["#FFFFFF", "#E6EAF0", "#C9D1DC"], acc: "#FF8A3D", accDark: "#E8641A", iris: ["#FFC98A", "#E8641A"], bg: "#FFE9D6" },
+  kai: { helm: ["#5A6170", "#3A3F4B", "#262A33"], acc: "#2DD4BF", accDark: "#0F9E8E", iris: ["#9FF5E8", "#0F9E8E"], bg: "#D3F4EE" },
+  theo: { helm: ["#FFFFFF", "#E7E8F4", "#CBCDE2"], acc: "#7C6CF2", accDark: "#5A49D6", iris: ["#C9C1FF", "#5A49D6"], bg: "#E6E3FF" },
+  pip: { helm: ["#FFFFFF", "#F1E6EC", "#DCC6D2"], acc: "#FF5C8A", accDark: "#E23A6C", iris: ["#FFB3C8", "#E23A6C"], bg: "#FFE1EA" },
 };
 
-const EYE_Y = 104;
-const EYES = [80, 120] as const;
+const INK = "#1B2233";
+const EY = 121;
+const EX = [76, 124] as const;
+const HEART = "M0 6 C-9 0 -6 -8 0 -3 C6 -8 9 0 0 6 Z";
 
-function Eyes({ mood, glow }: { mood: Mood; glow: string }) {
+function Eye({ x, wink, mood, irisId }: { x: number; wink: boolean; mood: Mood; irisId: string }) {
   if (mood === "love") {
     return (
-      <>
-        {EYES.map(x => (
-          <path key={x} d={`M${x} ${EYE_Y + 8} C${x - 12} ${EYE_Y} ${x - 6} ${EYE_Y - 10} ${x} ${EYE_Y - 3} C${x + 6} ${EYE_Y - 10} ${x + 12} ${EYE_Y} ${x} ${EYE_Y + 8} Z`} fill="#FF5C7A" />
-        ))}
-      </>
+      <g>
+        <path d={`M${x} ${EY + 10} C${x - 15} ${EY} ${x - 8} ${EY - 13} ${x} ${EY - 4} C${x + 8} ${EY - 13} ${x + 15} ${EY} ${x} ${EY + 10} Z`} fill="#FF4D73" />
+        <circle cx={x + 4} cy={EY - 5} r={2.4} fill="#fff" opacity={0.9} />
+      </g>
     );
   }
-  if (mood === "happy") {
-    return (
-      <>
-        {EYES.map(x => (
-          <path key={x} d={`M${x - 9} ${EYE_Y + 4} Q${x} ${EYE_Y - 8} ${x + 9} ${EYE_Y + 4}`} stroke={glow} strokeWidth={6} strokeLinecap="round" fill="none" />
-        ))}
-      </>
-    );
+  if (mood === "happy" || wink) {
+    return <path d={`M${x - 11} ${EY + 3} Q${x} ${EY - 11} ${x + 11} ${EY + 3}`} stroke={INK} strokeWidth={4.5} strokeLinecap="round" fill="none" />;
   }
-  const h = mood === "worried" ? 13 : mood === "sad" ? 12 : 17;
-  const dy = mood === "sad" ? 4 : 0;
+  const ry = mood === "sad" ? 11 : mood === "worried" ? 12 : 14;
+  const y = EY + (mood === "sad" ? 3 : 0);
   return (
-    <>
-      {EYES.map((x, i) => mood === "hello" && i === 1 ? (
-        // A wink.
-        <path key={x} d={`M${x - 8} ${EYE_Y + 2} Q${x} ${EYE_Y - 7} ${x + 8} ${EYE_Y + 2}`} stroke={glow} strokeWidth={5.5} strokeLinecap="round" fill="none" />
-      ) : (
-        <g key={x}>
-          <rect x={x - 5.5} y={EYE_Y - h / 2 + dy} width={11} height={h} rx={5.5} fill={glow} />
-          <circle cx={x + 1.8} cy={EYE_Y - h / 2 + dy + 3.6} r={1.8} fill="#fff" opacity={0.9} />
-        </g>
-      ))}
-    </>
-  );
-}
-
-function Brows({ mood, glow }: { mood: Mood; glow: string }) {
-  if (mood !== "worried" && mood !== "sad") return null;
-  const lift = mood === "sad" ? 6 : 4;
-  return (
-    <g stroke={glow} strokeWidth={4} strokeLinecap="round">
-      <line x1={70} y1={88} x2={88} y2={88 - lift} />
-      <line x1={112} y1={88 - lift} x2={130} y2={88} />
+    <g>
+      <ellipse cx={x} cy={y} rx={14} ry={ry + 3} fill={INK} />
+      <ellipse cx={x} cy={y + 2} rx={11.5} ry={ry} fill={`url(#${irisId})`} />
+      <circle cx={x} cy={y + 3} r={5} fill={INK} />
+      <ellipse cx={x + 4.5} cy={y - 6} rx={5.2} ry={4.4} fill="#fff" />
+      <circle cx={x - 4} cy={y + 6} r={1.8} fill="#fff" opacity={0.8} />
+      <path d={`M${x - 15} ${y - ry + 2} Q${x} ${y - ry - 8} ${x + 15} ${y - ry + 2}`} stroke={INK} strokeWidth={3.2} strokeLinecap="round" fill="none" />
     </g>
   );
 }
 
-function Mouth({ mood, glow }: { mood: Mood; glow: string }) {
-  const line = { stroke: glow, strokeWidth: 5, strokeLinecap: "round" as const, fill: "none" };
+function Mouth({ mood }: { mood: Mood }) {
+  const line = { stroke: INK, strokeWidth: 3, strokeLinecap: "round" as const, fill: "none" };
   switch (mood) {
     case "love":
     case "happy":
-      return <path d="M84 124 Q100 140 116 124 Z" fill={glow} stroke={glow} strokeWidth={3} strokeLinejoin="round" />;
+      return <path d="M91 142 Q100 154 109 142 Z" fill="#B23A4F" stroke="#B23A4F" strokeWidth={2} strokeLinejoin="round" />;
     case "hello":
-      return <path d="M88 125 Q100 135 112 125" {...line} />;
+      return <path d="M93 143 Q100 150 107 143" {...line} strokeWidth={3.2} />;
     case "okay":
-      return <path d="M90 127 Q100 132 110 127" {...line} />;
+      return <path d="M94 144 Q100 148 106 144" {...line} />;
     case "worried":
-      return <path d="M88 130 Q94 125 100 129 Q106 133 112 128" {...line} />;
+      return <path d="M92 147 Q96 143 100 146 Q104 149 108 145" {...line} />;
     case "sad":
-      return <path d="M89 133 Q100 124 111 133" {...line} />;
+      return <path d="M93 149 Q100 142 107 149" {...line} />;
   }
-}
-
-/** The MiinDigital mark (two wings forming an M), scaled down as the robot's crest. */
-function Crest({ left, right }: { left: string; right: string }) {
-  return (
-    <g transform="translate(63.5 26) scale(0.0875)">
-      <path fill={left} d="M392.98 0 L0 221.07 L107.58 294.66 L282.87 190.73 L282.87 334.55 L392.98 400 Z" />
-      <path fill={right} d="M450.56 0 L843.54 221.07 L735.96 294.66 L560.67 190.73 L560.67 334.55 L450.56 400 Z" />
-    </g>
-  );
-}
-
-function Heart({ x, y, s }: { x: number; y: number; s: number }) {
-  return <path transform={`translate(${x} ${y}) scale(${s})`} d="M0 6 C-9 0 -6 -8 0 -3 C6 -8 9 0 0 6 Z" fill="#FF5C7A" />;
 }
 
 export function CompanionAvatar({
@@ -105,45 +72,65 @@ export function CompanionAvatar({
 }: { companion: CompanionId; mood: Mood; size?: number; className?: string; title?: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const c = LOOK[companion];
-  const crestLeft = "#1A1A1A";
-  const crestRight = companion === "mia" ? "#C99A00" : "#FFD000";
-  const cheeks = mood === "love" || mood === "happy" || mood === "hello";
+  const ids = { clip: `c${uid}`, helm: `h${uid}`, face: `f${uid}`, iris: `i${uid}`, acc: `a${uid}` };
+  const helm = `url(#${ids.helm})`;
+  const acc = `url(#${ids.acc})`;
+  const sadBrows = mood === "sad";
   return (
     <svg width={size} height={size} viewBox="0 0 200 200" role="img" aria-label={title} className={cn("shrink-0", className)}>
       {title && <title>{title}</title>}
       <defs>
-        <clipPath id={`c${uid}`}><circle cx={100} cy={100} r={100} /></clipPath>
+        <clipPath id={ids.clip}><circle cx={100} cy={100} r={100} /></clipPath>
+        <radialGradient id={ids.helm} cx="38%" cy="28%" r="80%">
+          <stop offset="0" stopColor={c.helm[0]} /><stop offset="0.6" stopColor={c.helm[1]} /><stop offset="1" stopColor={c.helm[2]} />
+        </radialGradient>
+        <radialGradient id={ids.face} cx="50%" cy="35%" r="75%">
+          <stop offset="0" stopColor="#FFF8F2" /><stop offset="1" stopColor="#F6DFD2" />
+        </radialGradient>
+        <radialGradient id={ids.iris} cx="50%" cy="75%" r="75%">
+          <stop offset="0" stopColor={c.iris[0]} /><stop offset="1" stopColor={c.iris[1]} />
+        </radialGradient>
+        <linearGradient id={ids.acc} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={c.acc} /><stop offset="1" stopColor={c.accDark} />
+        </linearGradient>
       </defs>
-      <g clipPath={`url(#c${uid})`}>
+      <g clipPath={`url(#${ids.clip})`}>
         <circle cx={100} cy={100} r={100} fill={c.bg} />
-        {/* body */}
-        <rect x={56} y={160} width={88} height={60} rx={30} fill={c.bodyDark} />
-        <rect x={86} y={150} width={28} height={16} rx={6} fill={c.bodyDark} />
-        {/* ears */}
-        <rect x={24} y={92} width={20} height={34} rx={10} fill={c.bodyDark} />
-        <rect x={156} y={92} width={20} height={34} rx={10} fill={c.bodyDark} />
-        <Crest left={crestLeft} right={crestRight} />
-        {/* head */}
-        <rect x={36} y={56} width={128} height={100} rx={42} fill={c.body} />
-        <path d="M60 64 Q100 54 140 64" stroke="#fff" strokeOpacity={0.35} strokeWidth={5} strokeLinecap="round" fill="none" />
-        {/* screen */}
-        <rect x={52} y={74} width={96} height={70} rx={30} fill={c.screen} />
-        {cheeks && (
-          <g fill="#FF8FA8" opacity={0.55}>
-            <ellipse cx={45} cy={124} rx={6} ry={4} />
-            <ellipse cx={155} cy={124} rx={6} ry={4} />
+        {/* ear fins */}
+        <path d="M48 78 Q50 40 60 24 Q78 36 94 56 Z" fill={helm} stroke={c.helm[2]} strokeWidth={1.5} strokeLinejoin="round" />
+        <path d="M58 64 Q60 44 64 36 Q74 44 82 56 Z" fill={acc} />
+        <path d="M152 78 Q150 40 140 24 Q122 36 106 56 Z" fill={helm} stroke={c.helm[2]} strokeWidth={1.5} strokeLinejoin="round" />
+        <path d="M142 64 Q140 44 136 36 Q126 44 118 56 Z" fill={acc} />
+        {/* helmet */}
+        <rect x={34} y={44} width={132} height={136} rx={62} fill={helm} />
+        <path d="M58 60 Q100 40 142 60" stroke="#fff" strokeOpacity={0.7} strokeWidth={7} strokeLinecap="round" fill="none" />
+        <rect x={88} y={56} width={24} height={9} rx={4.5} fill={acc} />
+        {/* headphone pods */}
+        <ellipse cx={32} cy={122} rx={15} ry={27} fill={helm} stroke={c.helm[2]} strokeWidth={1.5} />
+        <ellipse cx={32} cy={122} rx={8} ry={17} fill={acc} />
+        <ellipse cx={168} cy={122} rx={15} ry={27} fill={helm} stroke={c.helm[2]} strokeWidth={1.5} />
+        <ellipse cx={168} cy={122} rx={8} ry={17} fill={acc} />
+        {/* face */}
+        <rect x={47} y={82} width={106} height={88} rx={42} fill={`url(#${ids.face})`} stroke={c.helm[2]} strokeWidth={2.5} />
+        <g fill="#FF9AA8" opacity={mood === "sad" ? 0.25 : 0.55}>
+          <ellipse cx={66} cy={139} rx={8} ry={5} />
+          <ellipse cx={134} cy={139} rx={8} ry={5} />
+        </g>
+        {(mood === "worried" || mood === "sad") && (
+          <g stroke={INK} strokeWidth={3} strokeLinecap="round" opacity={0.75}>
+            <line x1={68} y1={sadBrows ? 99 : 100} x2={86} y2={sadBrows ? 93 : 95} />
+            <line x1={114} y1={sadBrows ? 93 : 95} x2={132} y2={sadBrows ? 99 : 100} />
           </g>
         )}
-        <Brows mood={mood} glow={c.glow} />
-        <Eyes mood={mood} glow={c.glow} />
-        <Mouth mood={mood} glow={c.glow} />
-        {mood === "sad" && <path d="M131 112 Q127 120 131 123 Q135 120 131 112 Z" fill="#7CC0F0" />}
-        {mood === "worried" && <path d="M160 66 Q155 75 160 79 Q165 75 160 66 Z" fill="#7CC0F0" />}
+        <Eye x={EX[0]} wink={false} mood={mood} irisId={ids.iris} />
+        <Eye x={EX[1]} wink={mood === "hello"} mood={mood} irisId={ids.iris} />
+        <Mouth mood={mood} />
+        {mood === "sad" && <path d="M134 124 Q129.5 133 134 136.5 Q138.5 133 134 124 Z" fill="#7CC4F4" />}
+        {mood === "worried" && <path d="M146 78 Q141 87 146 91 Q151 87 146 78 Z" fill="#7CC4F4" />}
         {mood === "love" && (
-          <g>
-            <Heart x={164} y={48} s={1.5} />
-            <Heart x={180} y={74} s={1} />
-            <Heart x={30} y={56} s={1} />
+          <g fill="#FF4D73">
+            <path transform="translate(168 50) scale(1.5)" d={HEART} />
+            <path transform="translate(182 78)" d={HEART} />
           </g>
         )}
       </g>
