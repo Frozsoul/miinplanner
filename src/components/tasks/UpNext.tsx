@@ -26,7 +26,7 @@ function dueLabel(task: Task, now: Date): { text: string; tone: string } {
  * "Up next": the 3 open tasks that need attention first (overdue, today, next 7 days),
  * with a one-click finish. Answers "where do I start" above every view.
  */
-export function UpNext({ tasks, onView }: { tasks: Task[]; onView: (task: Task) => void }) {
+export function UpNext({ tasks, onView, className }: { tasks: Task[]; onView: (task: Task) => void; className?: string }) {
   const { isTaskDone, doneStatus, updateTaskField } = useAppData();
   const now = new Date();
   const open = tasks.filter(t => !t.archived && !isTaskDone(t));
@@ -49,7 +49,7 @@ export function UpNext({ tasks, onView }: { tasks: Task[]; onView: (task: Task) 
   ].filter(Boolean).join(" · ");
 
   return (
-    <Card className="mb-6 shadow-sm border">
+    <Card className={cn("mb-6 shadow-sm border", className)}>
       <CardContent className="p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide">Up next</h2>

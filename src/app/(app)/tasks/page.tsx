@@ -37,6 +37,7 @@ import { Label } from "@/components/ui/label";
 import { TASK_PRIORITIES } from "@/lib/constants";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { UpNext, EmptyBoardWelcome } from "@/components/tasks/UpNext";
+import { CompanionBox } from "@/components/companion/CompanionBox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -359,7 +360,12 @@ export default function TasksPage() {
           </div>
         )}
 
-        {!showArchived && tasks.length > 0 && <UpNext tasks={tasks} onView={openDetailModal} />}
+        {!showArchived && tasks.length > 0 && (
+          <div className="mb-6 flex flex-col lg:flex-row gap-4 items-stretch">
+            <UpNext tasks={tasks} onView={openDetailModal} className="mb-0 flex-1 min-w-0" />
+            <CompanionBox className="lg:w-80 shrink-0" />
+          </div>
+        )}
 
         <div className="flex-grow min-h-0">
           {!isLoadingTasks && tasks.length === 0 && !showArchived

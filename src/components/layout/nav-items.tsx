@@ -3,7 +3,7 @@
 
 import {
   ListChecks,
-  Lightbulb,
+  Smile,
   Library,
   Users,
   Sparkles,
@@ -18,9 +18,9 @@ interface NavItem {
 
 const allNavItems: NavItem[] = [
   { href: "/tasks", icon: ListChecks, label: "Task Manager" },
+  { href: "/companion", icon: Smile, label: "Companion" },
   { href: "/teamwork", icon: Users, label: "Teamwork" },
   { href: "/library", icon: Library, label: "Library" },
-  { href: "/insights", icon: Lightbulb, label: "AI Insights" },
   { href: "/planner", icon: Sparkles, label: "Plan with AI" },
 ];
 

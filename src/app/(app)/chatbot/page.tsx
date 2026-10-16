@@ -11,7 +11,7 @@ export default function ChatbotPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/insights");
+    router.replace("/companion");
   }, [router]);
 
   return null;

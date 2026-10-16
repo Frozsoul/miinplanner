@@ -14,13 +14,14 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb, uidFromIdToken } from '@/lib/firebase-admin';
 
-export type AiFeature = 'plan' | 'chat' | 'insights';
+export type AiFeature = 'plan' | 'chat' | 'insights' | 'checkin';
 
 /** Daily limits per user, reset at 00:00 UTC. Keep in sync with the UI copy. */
 export const AI_DAILY_LIMITS: Record<AiFeature, number> = {
   plan: 3,
   chat: 10,
   insights: 10,
+  checkin: 3,
 };
 
 export type AiErrorCode = 'unauthenticated' | 'limit_reached' | 'failed';

@@ -119,6 +119,7 @@ export interface UserProfile {
   createdAt: Date | Timestamp;
   taskStatuses?: TaskStatus[];
   doneStatus?: TaskStatus; // Which status means finished on the personal board
+  companionId?: 'mia' | 'kai' | 'theo' | 'pip'; // Chosen companion, see src/lib/companion.ts
   insightGenerationCount?: number;
   lastInsightGenerationDate?: string;
   chatbotMessageCount?: number;

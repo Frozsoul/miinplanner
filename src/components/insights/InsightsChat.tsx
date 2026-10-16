@@ -133,7 +133,7 @@ export function InsightsChat({ tasks }: InsightsChatProps) {
                     <Sparkles className="h-5 w-5 text-accent" /> 
                     Follow-up with MiinBot
                 </CardTitle>
-                <CardDescription>Ask for specific advice based on these insights and your tasks.</CardDescription>
+                <CardDescription>Ask for specific advice about your tasks.</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
                 {isLimitReached ? <ShieldOff className="h-3 w-3 text-destructive"/> : <ShieldCheck className="h-3 w-3 text-green-500"/>}

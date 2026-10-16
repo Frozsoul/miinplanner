@@ -8,6 +8,11 @@ Ordered by priority. One item per PR unless items are tiny. Tick items off when 
 ## Direction (October 2026)
 MiinPlanner proves MiinDigital can ship a useful product. The plan generator is not the hook: a general AI chat gives the same plan. The edge is what needs a real tool: the calendar, teamwork (shared boards, assigning, seeing what teammates do) and AI insights on the team's actual work. Test for every change: would a small business owner get this faster or better here than from a chat plus a to-do list? No promotion, popups or growth hooks in the app.
 
+## Now: companion (from Minh, 16 Oct 2026)
+AI Insights was undersold. The point is to keep people company while they work: a companion with a personality whose mood follows how the board is going.
+- [x] Companion replaces AI Insights. Four original companions (Mia the bestie, Kai the coach, Theo the mentor, Pip the hype buddy) with their own faces and six moods. Momentum score out of 100 worked out in code from the board (getting things done 50, showing up 30, today 20), so the mood is live and free. Small companion box next to Up next in the Task Manager. Companion page: score breakdown, what the companion is watching, picker, and up to 3 short AI check-ins a day in the companion's voice (`checkin` quota). `/insights` redirects to `/companion`. Rule in `src/lib/companion.ts`. PR #22
+- [ ] Watch which companion people pick and whether check-ins get used before adding more companions or moods.
+
 ## Now: boards that show what to do next (from Minh, 15 Oct 2026)
 The Kanban, list and calendar views give every task the same weight, so they don't say where to start. Rule for all views: what needs you now comes first, finished work steps back. Time groups (Overdue, Today, This week, Later, No date) are computed from the due date, never stored; statuses stay as the workflow.
 
@@ -28,7 +33,6 @@ Ship a good free product first; keep the option to charge later. No Vietnamese v
 - [ ] Reminders, next steps if the calendar feed gets used: a daily email digest (due today, overdue, assigned to you) needs an email provider and Cloud Scheduler; browser push needs a service worker and FCM.
 - [ ] **Pin the `miinplanner` database.** Add `firebase.json` (and `.firebaserc`) so `firebase deploy --only firestore:rules` targets the `miinplanner` database, not `(default)`. Share one database ID constant between `src/lib/firebase.ts` and `src/lib/firebase-admin.ts`. Note the named database in CLAUDE.md.
 - [ ] Delete stub routes: `/chatbot`, `/calendar`, `/reminders`, `/prioritization`, and `src/ai/flows/prioritize-tasks-flow.ts`, `generate-content-ideas.ts`.
-- [ ] AI Insights: compute completion rate, averages and overdue lists in code; use the model only for the summary and suggestions.
 - [ ] Fix the remaining 9 TypeScript errors and remove `ignoreBuildErrors`.
 - [ ] Replace the Firebase Studio README.
 - [ ] Show remaining AI uses from the server count (`aiUsage/{uid}`, via a small server action) instead of the client-written counters on `users/{uid}`, which a user can edit. Server limits reset at midnight UTC; the UI uses local time.
