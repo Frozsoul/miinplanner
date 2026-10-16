@@ -3,6 +3,7 @@
 Ordered by priority. One item per PR unless items are tiny. Tick items off when merged.
 
 ## Now: fix the risks
+- [ ] Phones: the Kanban board is hard to scroll because any swipe on a card starts a drag (from Minh, 16 Oct 2026). Cause: `kanban-board.tsx` uses one `PointerSensor` with `distance: 8`, so 8px of finger movement picks up the card. Fix: `MouseSensor` (distance 8) for desktop plus `TouchSensor` with `delay: 250, tolerance: 5`, so a swipe scrolls and a press-and-hold drags. Add `touch-action: manipulation` on cards if needed, and test on a real phone.
 - [x] Saving the current board to Saved Spaces works again: empty optional fields (channel, dates, workspace) were sent as `undefined`, which Firestore rejects, and the write wasn't awaited, so it looked saved when it wasn't. Now cleaned, awaited, with a success or error toast. PR #21
 
 ## Direction (October 2026)
