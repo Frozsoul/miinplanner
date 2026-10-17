@@ -12,6 +12,7 @@ import { updateUserProfile } from '@/services/user-service';
 import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insights-flow';
 import { useToast } from '@/hooks/use-toast';
 import { celebrate } from '@/lib/celebrate';
+import { trackFirstTask } from '@/lib/analytics';
 import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
 
 interface AppDataContextType {
@@ -237,6 +238,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const targetWorkspaceId = workspaceId || currentWorkspace?.id || null;
     const payload = { ...taskData, workspaceId: targetWorkspaceId, completed: isFinished(taskData.status, doneStatus) };
     const newTask = await addTaskService(user.uid, payload);
+    trackFirstTask(user.uid, tasks.length === 0, 'manual');
     await fetchTasks(targetWorkspaceId === null ? undefined : targetWorkspaceId);
     return newTask;
   };
@@ -249,6 +251,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       user.uid,
       tasksData.map(t => ({ ...t, workspaceId: targetWorkspaceId ?? undefined, completed: isFinished(t.status, doneStatus) })),
     );
+    if (count > 0) trackFirstTask(user.uid, tasks.length === 0, 'plan_import');
     await fetchTasks(targetWorkspaceId === null ? undefined : targetWorkspaceId);
     return count;
   };

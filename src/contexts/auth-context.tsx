@@ -10,9 +10,11 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   sendEmailVerification,
+  getAdditionalUserInfo,
 } from "firebase/auth";
 import React, { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from "react";
 import { auth } from "@/lib/firebase";
+import { initAnalytics, trackEvent } from "@/lib/analytics";
 import { useRouter } from "next/navigation";
 import type { LoginFormData, SignupFormData, UserProfile } from "@/types";
 import { getUserProfile, createUserProfile, updateUserProfile } from "@/services/user-service";
@@ -79,6 +81,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, handleUserAuth);
     return () => unsubscribe();
   }, [handleUserAuth]);
@@ -130,6 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date(),
       };
       await createUserProfile(newProfile);
+      trackEvent("sign_up", { method: "password" });
 
       await sendEmailVerification(newUser);
       await firebaseSignOut(auth); // Sign out immediately after registration
@@ -150,6 +157,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
+      if (getAdditionalUserInfo(userCredential)?.isNewUser) {
+        trackEvent("sign_up", { method: "google" });
+      }
       // onAuthStateChanged will handle setting user and profile
       router.push("/tasks");
       return userCredential.user;
