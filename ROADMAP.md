@@ -29,7 +29,7 @@ Ship a good free product first; keep the option to charge later. No Vietnamese v
 - Send new users straight to `/planner` after signup.
 - Deep link `/planner?business=...&goal=...` pre-fill.
 - "Plan my marketing" card on the dashboard.
-- GA4 funnel events (`sign_up`, `plan_generated`, `plan_added`, `cta_miindigital_click`). Revisit as product analytics once an edge ships.
+- [x] GA4 basics on (Oct 2026): Firebase Analytics page views plus `sign_up`, `first_task_added`, `plan_imported`. Other funnel events (`plan_generated`, `cta_miindigital_click`) stay parked until an edge ships.
 
 ## Later: clean up
 - [ ] Reminders, next steps if the calendar feed gets used: a daily email digest (due today, overdue, assigned to you) needs an email provider and Cloud Scheduler; browser push needs a service worker and FCM.
