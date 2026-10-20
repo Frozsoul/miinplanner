@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { PRIORITY_PILL } from "@/lib/task-colors";
 import { buildPlanPrompt, parsePastedPlan, type ParsedPlanTask } from "@/lib/plan-import";
+import { trackEvent } from "@/lib/analytics";
 import type { TaskData } from "@/types";
 
 function dueDateFor(task: ParsedPlanTask, start: Date): Date {
@@ -89,6 +90,7 @@ export function PastePlan() {
     });
     try {
       const count = await addTasks(tasksToAdd);
+      if (count > 0) trackEvent("plan_imported", { task_count: count, board: currentWorkspace ? "workspace" : "personal" });
       setAddedCount(count);
       setPasted("");
       setUnticked(new Set());
