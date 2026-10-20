@@ -22,7 +22,7 @@ The Kanban, list and calendar views give every task the same weight, so they don
 Ship a good free product first; keep the option to charge later. No Vietnamese version. A greyed-out "Pro" card sits in Settings > Plan & Billing (no button, no sign-up). First idea if it happens: a small one-time price (around $3) for premium themes. The planner itself stays free. Plan doc: https://claude.ai/code/artifact/1f7e2265-cf8c-40fc-912c-38adf5c9a2ea
 
 ## Next: make the calendar, teamwork and insights genuinely good
-- [ ] Write `EDGE.md`: 3 to 5 candidate edges on the calendar, teamwork and AI insights (who it helps, the job, why a chat or generic planner can't do it, smallest test, how we'd know). Minh picks one before anything is built.
+- [ ] Minh picks an edge from `EDGE.md` (recommended: Monday team recap). Nothing in EDGE.md is built until then.
 - Until an edge is picked: usability, speed and reliability fixes to the calendar, teamwork and insights flows (see Later).
 
 ## Parked (plan generator is no longer the front door)
@@ -42,6 +42,7 @@ Ship a good free product first; keep the option to charge later. No Vietnamese v
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] `EDGE.md`: 4 candidate edges on the calendar, teamwork and AI insights (Monday team recap, channel gaps, who's on what, stuck work), each with who it helps, the job, why a chat can't, smallest test and how we'd know. PR #26
 - [x] Dashboard retired: the app opens on the Task Manager (old /dashboard links redirect). "Up next" sits above every view: the 3 open tasks to do first (overdue, today, next 7 days) with one-click finish and a count summary. Empty boards show a welcome with Add a task, Paste a plan and Browse playbooks. Unused dashboard components removed; TypeScript baseline now 8. PR #20
 - [x] Greyed-out "Pro" card in Settings > Plan & Billing (premium themes), and "free tool" copy changed to "free to use". PR #19
 - [x] Calendar shows what's coming: task titles in each day coloured by priority, overdue in red, finished tasks hidden by default ("Hide done" switch, remembered per browser) or shown faded and struck through. Today, previous and next buttons replace the hidden month picker, and months that need six rows now show every day. Side panel: the day's tasks, open first; today also lists anything overdue; an empty day shows Overdue and the next 3 tasks. Phones show coloured dots. Also removed the Firebase config console log. PR #18
