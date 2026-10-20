@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CalendarView } from "@/components/calendar/CalendarView";
+import { WeekRecapButton } from "@/components/tasks/WeekRecapButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +48,8 @@ export default function TeamworkPage() {
     updateTask,
     deleteTask,
     isLoadingTasks,
-    fetchTasks
+    fetchTasks,
+    isTaskDone
   } = useAppData();
 
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
@@ -262,9 +264,18 @@ export default function TeamworkPage() {
                     <ToggleGroupItem value="calendar" aria-label="Calendar View"><CalendarDays className="h-4 w-4" /></ToggleGroupItem>
                   </ToggleGroup>
                 </div>
-                <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
-                  <Plus className="mr-2 h-4 w-4" /> New Team Task
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <WeekRecapButton
+                    tasks={tasks}
+                    isDone={isTaskDone}
+                    boardName={currentWorkspace.name}
+                    members={workspaceMembers}
+                    className="w-full sm:w-auto"
+                  />
+                  <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
+                    <Plus className="mr-2 h-4 w-4" /> New Team Task
+                  </Button>
+                </div>
               </div>
 
               {isLoadingTasks ? (

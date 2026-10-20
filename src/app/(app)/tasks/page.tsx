@@ -50,6 +50,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { TaskCardList } from "@/components/tasks/TaskCardList";
 import { MotivationalQuote } from "@/components/dashboard/MotivationalQuote";
 import { CalendarView } from "@/components/calendar/CalendarView";
+import { WeekRecapButton } from "@/components/tasks/WeekRecapButton";
 import Link from "next/link";
 
 export default function TasksPage() {
@@ -62,7 +63,8 @@ export default function TasksPage() {
     deleteTask: deleteTaskContext, 
     isLoadingTasks,
     taskStatuses,
-    setCurrentWorkspaceById
+    setCurrentWorkspaceById,
+    isTaskDone
   } = useAppData();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -261,6 +263,7 @@ export default function TasksPage() {
                       Reminders
                   </Link>
                </Button>
+               <WeekRecapButton tasks={tasks} isDone={isTaskDone} boardName="My board" />
                <Button variant="outline" asChild>
                   <Link href="/planner">
                       <Sparkles className="mr-2 h-4 w-4" />
