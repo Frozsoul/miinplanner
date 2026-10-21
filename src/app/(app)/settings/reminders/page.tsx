@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Copy, Check, RefreshCw, Loader2, ExternalLink } from "lucide-react";
+import { Bell, Copy, Check, RefreshCw, Loader2, ExternalLink, Mail } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { syncDigestAction, updateDigestAction, type DigestSettings } from "@/services/email-digest-actions";
+import { DIGEST_TIMES } from "@/lib/email-digest";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,12 +18,93 @@ import { useToast } from "@/hooks/use-toast";
 import { getCalendarFeedAction, resetCalendarFeedAction } from "@/services/calendar-feed-actions";
 import { REMINDERS_SETUP_KEY } from "@/components/tasks/RemindersBanner";
 
-function browserTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  } catch {
-    return "UTC";
-  }
+import { browserTimeZone } from "@/components/DigestSync";
+
+function timeLabel(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
+}
+
+/** Daily email: on by default, sent at the chosen local time on days something is due. */
+function DailyEmailCard() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [settings, setSettings] = useState<DigestSettings | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const result = await syncDigestAction(await user.getIdToken(), browserTimeZone());
+      if (!cancelled && result.ok) setSettings(result.data);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const save = async (next: { enabled: boolean; sendAt: string }) => {
+    if (!user || !settings) return;
+    const previous = settings;
+    setSettings({ ...settings, ...next });
+    setSaving(true);
+    const result = await updateDigestAction(await user.getIdToken(), { ...next, timeZone: browserTimeZone() });
+    setSaving(false);
+    if (result.ok) {
+      setSettings(result.data);
+      toast({ title: next.enabled ? `Daily email at ${timeLabel(result.data.sendAt)}` : "Daily email turned off" });
+    } else {
+      setSettings(previous);
+      toast({ title: "Couldn't save", description: result.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Mail className="h-5 w-5" /> Daily email</CardTitle>
+        <CardDescription>
+          A short morning email with what's due today, what's overdue and high priority tasks due tomorrow.
+          It only comes on days you have something due, and works on any phone.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!settings ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex items-center gap-3 text-sm font-medium">
+              <Switch
+                checked={settings.enabled}
+                disabled={saving}
+                onCheckedChange={enabled => save({ enabled, sendAt: settings.sendAt })}
+                aria-label="Daily email"
+              />
+              {settings.enabled ? "On" : "Off"}
+            </label>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Send at</span>
+              <Select
+                value={settings.sendAt}
+                disabled={saving || !settings.enabled}
+                onValueChange={sendAt => save({ enabled: settings.enabled, sendAt })}
+              >
+                <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DIGEST_TIMES.map(t => <SelectItem key={t} value={t}>{timeLabel(t)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <span className="text-muted-foreground text-xs">{settings.timeZone}</span>
+            </div>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Sent to {user?.email}. Each email has a link to turn it off.
+        </p>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function RemindersPage() {
@@ -81,6 +166,7 @@ export default function RemindersPage() {
 
   return (
     <div className="space-y-6">
+      <DailyEmailCard />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> Reminders in your calendar</CardTitle>
