@@ -26,13 +26,12 @@ Two boards, one "me". Boards stay separate (personal is private, the team board 
 - [x] 1. Team board catch-up: search and filters (plus Assignee: Me, members, Unassigned), archived view, task detail view, phone card list, empty board, compact members row with Invite popup and confirm before removing. PR #29
 - [x] 2. Team hub: pinned links (title, URL, icon; remove asks first) as chips under the board title, and one shared team note ("how we work": rules, brand voice, approvals) with "Edited by X". Any member can edit; likely needs a Firestore rules update. PR #32
 - Parked (Minh, 22 Oct 2026): Up next and the companion counting team tasks assigned to you. Boards stay fully separate for now; mixing them in one place would make people think everything is blended. The daily email still lists assigned team tasks, labelled with the team name.
-- [ ] 4. Pushed dates should count (see below), on both boards.
+- [x] 4. Pushed dates count, on both boards. PR #34
 - [ ] 5. Who's on what this week (EDGE.md candidate 3).
 - [ ] Maybe later: "Show my team tasks" switch on the personal calendar, off by default.
 
 ## Next: make the calendar, teamwork and insights genuinely good
 - [x] Minh picked edge 1, Monday team recap (PR #27).
-- [ ] Pushed dates should count (from Minh, 21 Oct 2026, think before building): moving an overdue or due-soon task to a later day is invisible to the companion and stats, so the score stays "loving it" while work slips. Idea: keep the first due date and a slip count; a move counts as a slip when the task is overdue, due today or tomorrow, with a toast "Counted as a slip. It was a date fix" to undo; slips cost a little score; flag overloaded days in Up next and the calendar. Overlaps EDGE.md candidate 4.
 - [ ] Browser push reminders (FCM and a service worker) for at-the-moment nudges; works on Android Chrome, on iPhone only when added to the Home Screen.
 - Until an edge is picked: usability, speed and reliability fixes to the calendar, teamwork and insights flows (see Later).
 
@@ -54,6 +53,8 @@ Two boards, one "me". Boards stay separate (personal is private, the team board 
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Pushed dates count (from Minh, 21 Oct 2026): moving an open task that was overdue, due today or tomorrow to a later day is a slip (not for fresh tasks or tasks still days away). Toast "Moved to Thu. Counted as a slip" with "It was a date fix" to undo, and a note when the new day has 5+ open tasks. Cards show "Pushed N times" from the second push; the detail view shows the count and first due date. A slip in the last 7 days counts as half an overdue task in the momentum score, the companion names pushed work instead of a rosy line, and AI check-ins see it. Fields `slipCount`, `lastSlipAt`, `firstDueDate` on tasks; rule in `src/lib/slips.ts`. PR #34
+- Later: flag overloaded days on the calendar itself, not just in the toast.
 - [x] Team hub (step 2 above): pinned links as chips under the team board title (icon by site, remove asks first, up to 20) and one shared team note with "Edited by X", live for all members. Saving checks nobody else saved meanwhile, so no one's words get overwritten. Data in `workspaces/{id}/links` and `workspaces/{id}/hub/notes`; rules let any member edit. Needs the new `firebase.rules` published. PR #32
 - [x] Slim filter toolbar on both boards (from Minh, 22 Oct 2026: filters are a secondary tool, the old filter card took too much space, especially on phones). One row: search, one Filter button (all filters and archived in one panel, with a count), Mine on team boards, view switch; active filters show as removable chips. Phone headers use icon buttons; the Teamwork workspace picker is one row with + for a new workspace. PR #31
 - [x] New boards start with three statuses: To Do, In Progress, Done (from Minh, 22 Oct 2026). Applies to new users and new team workspaces (which no longer copy the creator's personal list). Existing boards untouched; the old five-status list stays only as the fallback for old accounts that never saved one. PR #30

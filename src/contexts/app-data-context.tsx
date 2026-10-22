@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { celebrate } from '@/lib/celebrate';
 import { trackFirstTask } from '@/lib/analytics';
 import { DEFAULT_TASK_STATUSES, NEW_BOARD_STATUSES } from '@/lib/constants';
+import { isSlip, slipFields, openTasksDueOn, BUSY_DAY_TASKS } from '@/lib/slips';
+import { ToastAction } from '@/components/ui/toast';
 
 interface AppDataContextType {
   isLoadingAppData: boolean;
@@ -276,11 +278,42 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
       ? { ...update, ...completionFields(update.status, doneStatus) }
       : update;
 
+  // Pushed dates: moving an already-due task to a later day counts as a slip (rule in src/lib/slips.ts).
+  // Returns the extra fields to write, or {} when it's a plain date change.
+  const slipUpdate = (previous: Task | undefined, newDueDate: unknown) => {
+    if (!previous || typeof newDueDate !== 'string') return {};
+    return isSlip(previous, newDueDate, isTaskDone) ? slipFields(previous) : {};
+  };
+
+  // Toast after a slip, with a one-tap undo for date fixes, and a note when the new day is busy.
+  const announceSlip = (previous: Task, newDueDate: string) => {
+    const day = new Date(newDueDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const busy = openTasksDueOn(tasks, newDueDate, isTaskDone, previous.id) + 1;
+    const undo = async () => {
+      if (!user?.uid) return;
+      const restore = {
+        slipCount: previous.slipCount || 0,
+        lastSlipAt: (previous.lastSlipAt ?? null) as unknown as string | undefined,
+      };
+      await updateTaskService(user.uid, previous.id, restore);
+      setTasks(prev => prev.map(t => t.id === previous.id ? { ...t, slipCount: restore.slipCount, lastSlipAt: previous.lastSlipAt } : t));
+    };
+    toast({
+      title: `Moved to ${day}. Counted as a slip.`,
+      description: busy >= BUSY_DAY_TASKS
+        ? `${day} now has ${busy} open tasks. Consider moving or handing off one.`
+        : "It was due already. Your companion will notice if it keeps moving.",
+      action: <ToastAction altText="It was a date fix, don't count it" onClick={undo}>It was a date fix</ToastAction>,
+    });
+  };
+
   const updateTask = async (taskId: string, taskUpdate: Partial<TaskData>) => {
     if (!user?.uid) return;
-    const { completedAt: _ignored, ...rest } = taskUpdate;
+    const { completedAt: _ignored, slipCount: _s, lastSlipAt: _l, firstDueDate: _f, ...rest } = taskUpdate;
     const previous = tasks.find(t => t.id === taskId);
-    await updateTaskService(user.uid, taskId, withCompletion(rest, previous?.status));
+    const slip = slipUpdate(previous, rest.dueDate);
+    await updateTaskService(user.uid, taskId, { ...withCompletion(rest, previous?.status), ...slip });
+    if (previous && 'slipCount' in slip && rest.dueDate) announceSlip(previous, rest.dueDate);
     if ('status' in taskUpdate) celebrateIfDone(taskId, taskUpdate.status);
     const task = tasks.find(t => t.id === taskId);
     await fetchTasks(task?.workspaceId);
@@ -297,8 +330,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         : t));
       return;
     }
-    await updateTaskService(user.uid, taskId, { [field]: value });
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, [field]: value } : t));
+    const previous = tasks.find(t => t.id === taskId);
+    const slip = field === 'dueDate' ? slipUpdate(previous, value) : {};
+    await updateTaskService(user.uid, taskId, { [field]: value, ...slip });
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, [field]: value, ...slip } : t));
+    if (previous && 'slipCount' in slip && typeof value === 'string') announceSlip(previous, value);
   };
 
   const moveTask = async (taskId: string, newStatus: TaskStatus, newIndex: number) => {

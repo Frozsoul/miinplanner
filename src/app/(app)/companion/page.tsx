@@ -108,7 +108,7 @@ export default function CompanionPage() {
                   <p className="text-sm text-muted-foreground mt-2">
                     {momentum.score === null
                       ? "Your score starts when you finish your first task."
-                      : `${momentum.finishedWeek} finished this week, ${momentum.overdue} overdue.`}
+                      : `${momentum.finishedWeek} finished this week, ${momentum.overdue} overdue${momentum.slipsWeek ? `, ${momentum.slipsWeek} pushed to later` : ""}.`}
                   </p>
                 </div>
               </div>
@@ -163,7 +163,7 @@ export default function CompanionPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Part label="Getting things done" value={momentum.parts.delivery} max={50}
-                hint="Tasks finished in the last 7 days against what's overdue. 3 finished and nothing overdue is full marks." />
+                hint="Tasks finished in the last 7 days against what's overdue. A task pushed to a later date after it was due counts as half an overdue one. 3 finished and nothing overdue is full marks." />
               <Part label="Showing up" value={momentum.parts.consistency} max={30}
                 hint={`Days this week you finished something: ${momentum.activeDays} of 4 needed.`} />
               <Part label="Today" value={momentum.parts.today} max={20}

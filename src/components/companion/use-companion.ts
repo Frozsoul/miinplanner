@@ -78,6 +78,7 @@ export function useCompanion() {
         priority: task.priority,
         when,
         dueDate: task.dueDate ? task.dueDate.slice(0, 10) : undefined,
+        timesPushed: task.slipCount || undefined,
       }));
       const idToken = await user.getIdToken();
       const result = await companionCheckIn(idToken, {
@@ -90,6 +91,7 @@ export function useCompanion() {
         activeDays: Math.min(momentum.activeDays, 7),
         overdue: momentum.overdue,
         dueToday: momentum.dueToday,
+        slipsWeek: momentum.slipsWeek,
         openTotal: watch.openTotal,
         tasks: items,
         currentDate: new Date().toDateString(),

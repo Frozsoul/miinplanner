@@ -16,6 +16,7 @@ const CheckInTaskSchema = z.object({
   priority: z.string().max(20),
   when: z.enum(['overdue', 'today', 'week', 'stalled']),
   dueDate: z.string().max(40).optional(),
+  timesPushed: z.number().int().min(0).max(1000).optional(),
 });
 
 const CheckInInputSchema = z.object({
@@ -28,6 +29,7 @@ const CheckInInputSchema = z.object({
   activeDays: z.number().int().min(0).max(7),
   overdue: z.number().int().min(0),
   dueToday: z.number().int().min(0),
+  slipsWeek: z.number().int().min(0).optional(),
   openTotal: z.number().int().min(0),
   tasks: z.array(CheckInTaskSchema).max(15),
   currentDate: z.string().max(40),
@@ -69,6 +71,7 @@ Their momentum (worked out by the app, do not recalculate):
 - Score: {{scoreText}}, mood: {{mood}}
 - Finished in the last 7 days: {{finishedWeek}} (today: {{finishedToday}}), active days this week: {{activeDays}}
 - Open tasks: {{openTotal}}, overdue: {{overdue}}, due today: {{dueToday}}
+- Tasks pushed to a later date this week after they were already due: {{slipsWeek}}
 
 Tasks that need attention (overdue, today, next 7 days, or not touched for over a week):
 {{{json tasks}}}
@@ -80,7 +83,8 @@ Write a short check-in:
 Rules:
 - Stay supportive even when strict. Never guilt-trip, shame or threaten. No romance or flirting.
 - Plain English. No em dashes. No markdown. No made-up tasks or numbers.
-- If there are no tasks, suggest adding one or planning the week.`,
+- If there are no tasks, suggest adding one or planning the week.
+- If tasks were pushed ("timesPushed" or the weekly count above), mention it once, kindly, and ask whether the new date is realistic. Pushed is not done.`,
 });
 
 const checkInFlow = ai.defineFlow(
@@ -89,6 +93,7 @@ const checkInFlow = ai.defineFlow(
     const c = getCompanion(input.companionId);
     const { output } = await prompt({
       ...input,
+      slipsWeek: input.slipsWeek ?? 0,
       companionName: c.name,
       companionRole: c.role,
       voice: c.voice,
