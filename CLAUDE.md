@@ -16,7 +16,7 @@ The edge is what needs a real tool: the calendar, teamwork and AI insights on th
 
 ## How we work
 - **Never push to `main`.** `main` auto-deploys to production. Work on a branch (`feature/...`, `fix/...`, `docs/...`) and open a PR. Minh merges.
-- Before opening a PR: `npx tsc --noEmit` must not add errors (baseline is 8 pre-existing; the build ignores them via `ignoreBuildErrors`), and `npx next build` must pass.
+- Before opening a PR: `npx tsc --noEmit` must not add errors (baseline is 6 pre-existing; the build ignores them via `ignoreBuildErrors`), and `npx next build` must pass.
   For a local build, create `.env.local` from the `NEXT_PUBLIC_*` values in `apphosting.yaml` (they are public by design). Never commit `.env*`.
 - AI flows can't be tested without the Gemini key. Say so in the PR and ask Minh to test on production after merging.
 - Additive changes over rewrites. Never write code that deletes a user's tasks without explicit confirmation.

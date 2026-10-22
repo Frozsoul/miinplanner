@@ -103,7 +103,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: Task
                 <span className="text-muted-foreground">{memberName}</span>
               </div>
             </div>
-            {!isTeamTask && (
+            {(!isTeamTask || task.channel) && (
               <div>
                 <h4 className="font-semibold mb-1">Channel:</h4>
                 <span className="text-muted-foreground">{task.channel || "N/A"}</span>

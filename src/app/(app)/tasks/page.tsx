@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import type { Task, TaskData, TaskStatus, TaskPriority } from "@/types";
+import { useState, useEffect } from "react";
+import type { Task, TaskData } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppData } from "@/contexts/app-data-context";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, List, LayoutGrid, ListChecks, ChevronsUpDown, Archive, ArchiveRestore, Library, CalendarDays, Bell, Sparkles } from "lucide-react";
+import { Loader2, PlusCircle, ListChecks, Library, Bell, Sparkles } from "lucide-react";
 import { RemindersBanner } from "@/components/tasks/RemindersBanner";
 import {
   Dialog,
@@ -32,25 +32,16 @@ import { TaskList } from "@/components/tasks/TaskList";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskForm } from "@/components/tasks/TaskForm";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { TASK_PRIORITIES } from "@/lib/constants";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { UpNext, EmptyBoardWelcome } from "@/components/tasks/UpNext";
 import { CompanionBox } from "@/components/companion/CompanionBox";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TaskCardList } from "@/components/tasks/TaskCardList";
 import { MotivationalQuote } from "@/components/dashboard/MotivationalQuote";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { WeekRecapButton } from "@/components/tasks/WeekRecapButton";
+import { TaskFilterBar, useTaskFilters, type ViewMode } from "@/components/tasks/TaskFilters";
 import Link from "next/link";
 
 export default function TasksPage() {
@@ -77,14 +68,9 @@ export default function TasksPage() {
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
-  const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
-  const [tagFilter, setTagFilter] = useState<string[]>([]);
-  const [channelFilter, setChannelFilter] = useState<string[]>([]);
-  
-  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'calendar'>('kanban');
-  const [showArchived, setShowArchived] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const filters = useTaskFilters(tasks);
+  const { filteredTasks, showArchived } = filters;
 
   useEffect(() => {
     // Clear workspace context to ensure personal statuses are used
@@ -93,39 +79,6 @@ export default function TasksPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    tasks.forEach(task => {
-      task.tags?.forEach(tag => tags.add(tag));
-    });
-    return Array.from(tags).sort();
-  }, [tasks]);
-
-  const allChannels = useMemo(() => {
-    const channels = new Set<string>();
-    tasks.forEach(task => {
-      if (task.channel) channels.add(task.channel);
-    });
-    return Array.from(channels).sort();
-  }, [tasks]);
-
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      // Filter by archived state first
-      if (task.archived && !showArchived) return false;
-      if (!task.archived && showArchived) return false;
-
-      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesStatus = statusFilter.length === 0 || statusFilter.includes(task.status);
-      const matchesPriority = priorityFilter.length === 0 || priorityFilter.includes(task.priority);
-      const matchesChannel = channelFilter.length === 0 || (task.channel && channelFilter.includes(task.channel));
-      const matchesTags = tagFilter.length === 0 || (task.tags && task.tags.some(tag => tagFilter.includes(tag)));
-      
-      return matchesSearch && matchesStatus && matchesPriority && matchesChannel && matchesTags;
-    });
-  }, [tasks, searchTerm, statusFilter, priorityFilter, channelFilter, tagFilter, showArchived]);
-
   const openFormModal = (taskToEdit?: Task) => {
     setEditingTask(taskToEdit || null);
     setIsFormOpen(true);
@@ -278,84 +231,13 @@ export default function TasksPage() {
 
         <RemindersBanner />
 
-        <Card className="mb-6 shadow-sm border">
-          <CardContent className="p-4 flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
-                   <div className="lg:col-span-1">
-                      <Label htmlFor="search-tasks" className="block text-sm font-medium text-muted-foreground mb-1.5">Search</Label>
-                      <Input
-                          id="search-tasks"
-                          placeholder="Keywords..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                  </div>
-                  <div>
-                      <Label htmlFor="status-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Status</Label>
-                       <MultiSelect
-                          title="Status"
-                          options={taskStatuses.map(s => ({ value: s, label: s }))}
-                          selected={statusFilter}
-                          onChange={setStatusFilter}
-                      />
-                  </div>
-                  <div>
-                      <Label htmlFor="priority-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Priority</Label>
-                      <MultiSelect
-                          title="Priority"
-                          options={TASK_PRIORITIES.map(p => ({ value: p, label: p }))}
-                          selected={priorityFilter}
-                          onChange={setPriorityFilter}
-                      />
-                  </div>
-                  <div>
-                      <Label htmlFor="channel-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Channel</Label>
-                      <MultiSelect
-                          title="Channel"
-                          options={allChannels.map(c => ({ value: c, label: c }))}
-                          selected={channelFilter}
-                          onChange={setChannelFilter}
-                      />
-                  </div>
-                  <div>
-                      <Label htmlFor="tag-filter" className="block text-sm font-medium text-muted-foreground mb-1.5">Tag</Label>
-                      <MultiSelect
-                          title="Tag"
-                          options={allTags.map(t => ({ value: t, label: t }))}
-                          selected={tagFilter}
-                          onChange={setTagFilter}
-                      />
-                  </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4 items-center sm:justify-between w-full xl:w-auto xl:justify-start pt-5 xl:pt-0">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="show-archived"
-                    checked={showArchived}
-                    onCheckedChange={setShowArchived}
-                  />
-                  <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                    {showArchived ? <ArchiveRestore className="inline-block h-4 w-4 mr-1" /> : <Archive className="inline-block h-4 w-4 mr-1" />}
-                    {showArchived ? 'Viewing Archived' : 'View Archived'}
-                  </Label>
-                </div>
-                <Separator orientation="vertical" className="h-6 hidden sm:block xl:ml-4" />
-                <div className="flex-shrink-0">
-                  <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {if(value) setViewMode(value as any)}} defaultValue="kanban">
-                    <ToggleGroupItem value="kanban" aria-label="Kanban board view">
-                      <LayoutGrid className="h-4 w-4" />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="list" aria-label="List view">
-                      <List className="h-4 w-4"/>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="calendar" aria-label="Calendar view">
-                      <CalendarDays className="h-4 w-4" />
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
-              </div>
-          </CardContent>
-        </Card>
+        <TaskFilterBar
+          className="mb-6"
+          filters={filters}
+          statuses={taskStatuses}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
 
         {isLoadingTasks && tasks.length > 0 && (
           <div className="flex justify-center items-center py-4">
@@ -433,86 +315,3 @@ export default function TasksPage() {
 }
 
 
-interface MultiSelectProps {
-  options: { label: string; value: string }[];
-  selected: string[];
-  onChange: (selected: string[]) => void;
-  className?: string;
-  title?: string;
-}
-
-function MultiSelect({ options, selected, onChange, className, title = "Select" }: MultiSelectProps) {
-  
-  const handleSelect = (value: string) => {
-    const isSelected = selected.includes(value);
-    if (isSelected) {
-      onChange(selected.filter((item) => item !== value));
-    } else {
-      onChange([...selected, value]);
-    }
-  };
-
-  const getButtonLabel = () => {
-    if (selected.length === 0) return `Filter by ${title.toLowerCase()}`;
-    if (selected.length === 1) return selected[0];
-    if (selected.length === options.length) return `All ${title}s`;
-    return `${selected.length} ${title}s selected`;
-  };
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          className={cn("w-full justify-between", className)}
-          disabled={options.length === 0}
-        >
-          <span className="truncate">{getButtonLabel()}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <div className="p-2">
-            <p className="text-sm font-medium">{title}</p>
-        </div>
-        <Separator />
-        <ScrollArea className="max-h-60">
-            <div className="p-1">
-            {options.map((option) => (
-                <div
-                key={option.value}
-                onClick={() => handleSelect(option.value)}
-                className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
-                >
-                <Checkbox
-                    id={`multiselect-${title}-${option.value}`}
-                    checked={selected.includes(option.value)}
-                    readOnly
-                />
-                <Label htmlFor={`multiselect-${title}-${option.value}`} className="font-normal cursor-pointer flex-1">
-                    {option.label}
-                </Label>
-                </div>
-            ))}
-            </div>
-        </ScrollArea>
-        {selected.length > 0 && (
-            <>
-                <Separator />
-                <div className="p-2">
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        className="w-full"
-                        onClick={() => onChange([])}
-                    >
-                        Clear selection
-                    </Button>
-                </div>
-            </>
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}

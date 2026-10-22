@@ -6,19 +6,24 @@ import { useAppData } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Plus, Loader2, Mail, Trash2, LayoutGrid, List, Info, AlertTriangle, CalendarDays } from "lucide-react";
+import { Users, Plus, Loader2, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskForm } from "@/components/tasks/TaskForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { WeekRecapButton } from "@/components/tasks/WeekRecapButton";
+import { TaskFilterBar, useTaskFilters, type ViewMode } from "@/components/tasks/TaskFilters";
+import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
+import { TaskCardList } from "@/components/tasks/TaskCardList";
+import { TeamMembers } from "@/components/teamwork/TeamMembers";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,17 +54,23 @@ export default function TeamworkPage() {
     deleteTask,
     isLoadingTasks,
     fetchTasks,
-    isTaskDone
+    isTaskDone,
+    taskStatuses
   } = useAppData();
 
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
-  const [isInviting, setIsInviting] = useState(false);
   const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
-  const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'calendar'>('kanban');
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
+
+  const filters = useTaskFilters(tasks);
+  const { filteredTasks, showArchived } = filters;
 
   // Load workspace-specific tasks when selection changes
   useEffect(() => {
@@ -67,6 +78,15 @@ export default function TeamworkPage() {
       fetchTasks(currentWorkspace.id);
     }
   }, [currentWorkspace, fetchTasks]);
+
+  // Filters belong to one board: start clean when switching workspace.
+  const { clearFilters, setShowArchived } = filters;
+  useEffect(() => {
+    clearFilters();
+    setShowArchived(false);
+    setViewingTask(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWorkspace?.id]);
 
   const handleCreateWorkspace = async () => {
     if (!newWorkspaceName.trim()) return;
@@ -76,13 +96,6 @@ export default function TeamworkPage() {
     setIsCreatingWorkspace(false);
   };
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setIsInviting(true);
-    await inviteToWorkspace(inviteEmail.trim());
-    setInviteEmail("");
-    setIsInviting(false);
-  };
 
   const handleDeleteWorkspace = async () => {
     if (!currentWorkspace) return;
@@ -97,12 +110,48 @@ export default function TeamworkPage() {
   };
 
   const handleSaveTask = async (data: TaskData) => {
-    if (editingTask) {
-      await updateTask(editingTask.id, data);
-    } else {
-      await addTask(data, currentWorkspace?.id);
+    setIsSubmitting(true);
+    try {
+      if (editingTask) {
+        await updateTask(editingTask.id, data);
+      } else {
+        await addTask(data, currentWorkspace?.id);
+      }
+      setIsFormOpen(false);
+    } catch (error) {
+      toast({ title: "Couldn't save the task", description: (error as Error).message || "Please try again.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsFormOpen(false);
+  };
+
+  const handleArchiveToggle = async (task: Task) => {
+    try {
+      await updateTask(task.id, { archived: !task.archived });
+      toast({ title: task.archived ? "Task restored" : "Task archived", description: task.title });
+    } catch {
+      toast({ title: "Couldn't update the task", variant: "destructive" });
+    }
+  };
+
+  const renderBoard = () => {
+    if (viewMode === 'calendar') {
+      return <CalendarView tasks={filteredTasks} onTaskClick={setViewingTask} />;
+    }
+    if (viewMode === 'list') {
+      const props = { tasks: filteredTasks, onEdit: openFormModal, onDelete: deleteTask, onView: setViewingTask, onArchiveToggle: handleArchiveToggle, grouped: !showArchived };
+      return isMobile ? <TaskCardList {...props} /> : <TaskList {...props} />;
+    }
+    return (
+      <KanbanBoard
+        tasks={filteredTasks}
+        onEditTask={openFormModal}
+        onDeleteTask={deleteTask}
+        onViewTask={setViewingTask}
+        onArchiveToggle={handleArchiveToggle}
+        showArchived={showArchived}
+      />
+    );
   };
 
   return (
@@ -191,51 +240,15 @@ export default function TeamworkPage() {
           </Card>
 
           {currentWorkspace && (
-            <Card className="animate-in fade-in slide-in-from-top-2">
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-                <CardDescription>Members of {currentWorkspace.name}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  {workspaceMembers.map(member => (
-                    <div key={member.uid} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 group transition-colors">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">{member.displayName || member.email.split('@')[0]}</span>
-                        <span className="text-xs text-muted-foreground">{member.email}</span>
-                      </div>
-                      {currentWorkspace.ownerId === user?.uid && member.uid !== user?.uid && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 text-destructive transition-opacity"
-                          onClick={() => removeFromWorkspace(member.uid)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-4 border-t space-y-2">
-                  <Label className="text-xs uppercase text-muted-foreground">Invite Member</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="User email" 
-                      value={inviteEmail} 
-                      onChange={e => setInviteEmail(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleInvite();
-                      }}
-                    />
-                    <Button size="icon" onClick={handleInvite} disabled={isInviting || !inviteEmail.trim()}>
-                      {isInviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TeamMembers
+              workspaceName={currentWorkspace.name}
+              members={workspaceMembers}
+              currentUid={user?.uid}
+              ownerId={currentWorkspace.ownerId}
+              isOwner={currentWorkspace.ownerId === user?.uid}
+              onInvite={inviteToWorkspace}
+              onRemove={removeFromWorkspace}
+            />
           )}
         </div>
 
@@ -256,14 +269,7 @@ export default function TeamworkPage() {
           ) : (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-xl font-bold truncate max-w-[200px] sm:max-w-none">{currentWorkspace.name} Tasks</h2>
-                  <ToggleGroup type="single" value={viewMode} onValueChange={v => v && setViewMode(v as any)}>
-                    <ToggleGroupItem value="kanban" aria-label="Kanban View"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
-                    <ToggleGroupItem value="list" aria-label="List View"><List className="h-4 w-4" /></ToggleGroupItem>
-                    <ToggleGroupItem value="calendar" aria-label="Calendar View"><CalendarDays className="h-4 w-4" /></ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
+                <h2 className="text-xl font-bold truncate max-w-full">{currentWorkspace.name}</h2>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <WeekRecapButton
                     tasks={tasks}
@@ -273,39 +279,48 @@ export default function TeamworkPage() {
                     className="w-full sm:w-auto"
                   />
                   <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
-                    <Plus className="mr-2 h-4 w-4" /> New Team Task
+                    <Plus className="mr-2 h-4 w-4" /> New team task
                   </Button>
                 </div>
               </div>
 
-              {isLoadingTasks ? (
+              <TaskFilterBar
+                filters={filters}
+                statuses={taskStatuses}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                members={workspaceMembers}
+                currentUid={user?.uid}
+              />
+
+              {isLoadingTasks && tasks.length === 0 ? (
                 <div className="h-[400px] flex items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
+              ) : tasks.length === 0 && !showArchived ? (
+                <Card className="border-dashed bg-muted/20">
+                  <CardContent className="py-12 text-center space-y-3">
+                    <p className="font-medium">No team tasks yet</p>
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                      Add the first task and assign it to someone. Everyone in {currentWorkspace.name} sees the same board.
+                    </p>
+                    <Button onClick={() => openFormModal()}>
+                      <Plus className="mr-2 h-4 w-4" /> New team task
+                    </Button>
+                  </CardContent>
+                </Card>
               ) : (
                 <div className="min-h-[500px]">
-                  {viewMode === 'kanban' && (
-                    <KanbanBoard 
-                      tasks={tasks} 
-                      onEditTask={openFormModal} 
-                      onDeleteTask={deleteTask} 
-                      onViewTask={openFormModal} 
-                      onArchiveToggle={(t) => updateTask(t.id, { archived: !t.archived })}
-                      showArchived={false}
-                    />
-                  )}
-                  {viewMode === 'list' && (
-                    <TaskList 
-                      tasks={tasks} 
-                      onEdit={openFormModal} 
-                      onDelete={deleteTask} 
-                      onView={openFormModal} 
-                      onArchiveToggle={(t) => updateTask(t.id, { archived: !t.archived })}
-                      hideChannel={true}
-                    />
-                  )}
-                  {viewMode === 'calendar' && (
-                    <CalendarView tasks={tasks} onTaskClick={openFormModal} />
+                  {renderBoard()}
+                  {filteredTasks.length === 0 && (
+                    <Card className="mt-4">
+                      <CardContent className="pt-6 text-center text-muted-foreground space-y-3">
+                        <p>{showArchived ? "No archived tasks match." : "No tasks match your filters."}</p>
+                        {filters.isFiltering && (
+                          <Button variant="outline" size="sm" onClick={filters.clearFilters}>Clear filters</Button>
+                        )}
+                      </CardContent>
+                    </Card>
                   )}
                 </div>
               )}
@@ -317,19 +332,30 @@ export default function TeamworkPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingTask ? "Edit Team Task" : "Add Team Task"}</DialogTitle>
+            <DialogTitle>{editingTask ? "Edit team task" : "New team task"}</DialogTitle>
             <DialogDescription>
               {editingTask ? "Update the details of this collaborative task." : "Create a new task for the entire team to see."}
             </DialogDescription>
           </DialogHeader>
-          <TaskForm 
-            taskToEdit={editingTask} 
-            onSave={handleSaveTask} 
-            onCancel={() => setIsFormOpen(false)} 
-            isSubmitting={false}
-          />
+          <ScrollArea className="max-h-[70vh] p-1 pr-4">
+            <TaskForm
+              taskToEdit={editingTask}
+              onSave={handleSaveTask}
+              onCancel={() => setIsFormOpen(false)}
+              isSubmitting={isSubmitting}
+            />
+          </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {viewingTask && (
+        <TaskDetailModal
+          task={tasks.find(t => t.id === viewingTask.id) || viewingTask}
+          isOpen={!!viewingTask}
+          onClose={() => setViewingTask(null)}
+          onArchiveToggle={handleArchiveToggle}
+        />
+      )}
     </div>
   );
 }
