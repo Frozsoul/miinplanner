@@ -44,8 +44,9 @@ export function WeekRecapButton({ tasks, isDone, boardName, members, className }
 
   return (
     <>
-      <Button variant="outline" className={className} onClick={() => setOpen(true)}>
-        <ClipboardCopy className="mr-2 h-4 w-4" /> Week recap
+      <Button variant="outline" className={className} onClick={() => setOpen(true)} aria-label="Week recap" title="Week recap">
+        <ClipboardCopy className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Week recap</span>
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-2xl">

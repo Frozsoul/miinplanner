@@ -6,9 +6,8 @@ import { useAppData } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Users, Plus, Loader2, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
@@ -22,6 +21,7 @@ import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskCardList } from "@/components/tasks/TaskCardList";
 import { TeamMembers } from "@/components/teamwork/TeamMembers";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -62,6 +62,7 @@ export default function TeamworkPage() {
   const isMobile = useIsMobile();
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+  const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
   const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -94,6 +95,7 @@ export default function TeamworkPage() {
     await addWorkspace(newWorkspaceName.trim());
     setNewWorkspaceName("");
     setIsCreatingWorkspace(false);
+    setIsNewWorkspaceOpen(false);
   };
 
 
@@ -155,21 +157,18 @@ export default function TeamworkPage() {
   };
 
   return (
-    <div className="px-4 sm:px-6 md:py-6 space-y-6">
+    <div className="px-4 sm:px-6 md:py-6 space-y-4 sm:space-y-6">
       <PageHeader 
         title="Teamwork" 
         description="Collaborate with your team on shared projects and tasks."
         icon={Users}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Workspace Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Workspace picker and members: two compact rows, so phones get to the board quickly. */}
+        <div className="lg:col-span-1 space-y-3 sm:space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Your Workspaces</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-3">
               <div className="flex gap-2">
                 <Select 
                   value={currentWorkspace?.id || "none"} 
@@ -187,7 +186,7 @@ export default function TeamworkPage() {
                         ))
                       ) : (
                         <SelectItem value="none" disabled className="text-muted-foreground italic">
-                          No workspaces yet. Create one below!
+                          No workspaces yet. Use + to create one.
                         </SelectItem>
                       )}
                     </SelectGroup>
@@ -218,24 +217,33 @@ export default function TeamworkPage() {
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
+
+                <Popover open={isNewWorkspaceOpen} onOpenChange={setIsNewWorkspaceOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon" className="shrink-0" aria-label="New workspace" title="New workspace">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-72 space-y-2">
+                    <p className="text-sm font-medium">New workspace</p>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="e.g., Marketing team"
+                        value={newWorkspaceName}
+                        autoFocus
+                        onChange={e => setNewWorkspaceName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleCreateWorkspace();
+                        }}
+                      />
+                      <Button size="icon" onClick={handleCreateWorkspace} disabled={isCreatingWorkspace || !newWorkspaceName.trim()} aria-label="Create workspace">
+                        {isCreatingWorkspace ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               
-              <div className="pt-4 border-t space-y-2">
-                <Label className="text-xs uppercase text-muted-foreground">Create New Workspace</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="e.g., Marketing Team" 
-                    value={newWorkspaceName} 
-                    onChange={e => setNewWorkspaceName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCreateWorkspace();
-                    }}
-                  />
-                  <Button size="icon" onClick={handleCreateWorkspace} disabled={isCreatingWorkspace || !newWorkspaceName.trim()}>
-                    {isCreatingWorkspace ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -262,24 +270,24 @@ export default function TeamworkPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Start Collaborating</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">Create or select a workspace on the left to start working with your team on shared tasks.</p>
+                  <p className="text-muted-foreground max-w-sm mx-auto">Pick a workspace, or create one with the + button, to work on shared tasks with your team.</p>
                 </div>
               </div>
             </Card>
           ) : (
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-xl font-bold truncate max-w-full">{currentWorkspace.name}</h2>
-                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-lg sm:text-xl font-bold truncate min-w-0">{currentWorkspace.name}</h2>
+                <div className="flex gap-2 shrink-0">
                   <WeekRecapButton
                     tasks={tasks}
                     isDone={isTaskDone}
                     boardName={currentWorkspace.name}
                     members={workspaceMembers}
-                    className="w-full sm:w-auto"
+                    className="w-10 px-0 sm:w-auto sm:px-4"
                   />
-                  <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
-                    <Plus className="mr-2 h-4 w-4" /> New team task
+                  <Button onClick={() => openFormModal()}>
+                    <Plus className="mr-1.5 h-4 w-4" /> <span className="sm:hidden">Task</span><span className="hidden sm:inline">New team task</span>
                   </Button>
                 </div>
               </div>

@@ -196,35 +196,36 @@ export default function TasksPage() {
   return (
     <>
       <div className="px-4 sm:px-6 md:py-6 h-full flex flex-col">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-headline font-bold flex items-center gap-2">
-              <ListChecks className="h-7 w-7 text-primary"/> Task Manager
+            <h1 className="text-2xl sm:text-3xl font-headline font-bold flex items-center gap-2">
+              <ListChecks className="h-6 w-6 sm:h-7 sm:w-7 text-primary"/> Task Manager
             </h1>
-            <MotivationalQuote context="tasks" />
+            <div className="hidden sm:block"><MotivationalQuote context="tasks" /></div>
           </div>
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto self-end sm:self-center">
-               <Button variant="outline" asChild>
-                  <Link href="/settings/workflow">
-                      <Library className="mr-2 h-4 w-4" />
-                      Manage Spaces
+          {/* Phones: one row of icon buttons plus Add task. Labels show from the sm breakpoint. */}
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:self-center">
+               <Button variant="outline" size="icon" className="sm:w-auto sm:px-4" asChild>
+                  <Link href="/settings/workflow" aria-label="Manage spaces" title="Manage spaces">
+                      <Library className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Manage spaces</span>
                   </Link>
                </Button>
-               <Button variant="outline" asChild>
-                  <Link href="/settings/reminders">
-                      <Bell className="mr-2 h-4 w-4" />
-                      Reminders
+               <Button variant="outline" size="icon" className="sm:w-auto sm:px-4" asChild>
+                  <Link href="/settings/reminders" aria-label="Reminders" title="Reminders">
+                      <Bell className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Reminders</span>
                   </Link>
                </Button>
-               <WeekRecapButton tasks={tasks} isDone={isTaskDone} boardName="My board" />
-               <Button variant="outline" asChild>
-                  <Link href="/planner">
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Plan with AI
+               <WeekRecapButton tasks={tasks} isDone={isTaskDone} boardName="My board" className="w-10 px-0 sm:w-auto sm:px-4" />
+               <Button variant="outline" size="icon" className="sm:w-auto sm:px-4" asChild>
+                  <Link href="/planner" aria-label="Plan with AI" title="Plan with AI">
+                      <Sparkles className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Plan with AI</span>
                   </Link>
                </Button>
-              <Button onClick={() => openFormModal()} className="w-full sm:w-auto">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add New Task
+              <Button onClick={() => openFormModal()} className="ml-auto sm:ml-0">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add task
               </Button>
           </div>
         </div>
@@ -232,7 +233,7 @@ export default function TasksPage() {
         <RemindersBanner />
 
         <TaskFilterBar
-          className="mb-6"
+          className="mb-4"
           filters={filters}
           statuses={taskStatuses}
           viewMode={viewMode}
