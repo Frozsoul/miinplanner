@@ -31,6 +31,7 @@ Concise, direct, plain English. No em dashes. No filler. Sentence case for headi
 - `users/{uid}`: profile, `taskStatuses`, `doneStatus`, `companionId`, daily AI usage counters (`chatbotMessageCount`, `marketingPlanCount`, and `last...Date` fields).
 - `users/{uid}/taskSpaces/{id}`: saved boards (task snapshots).
 - `workspaces/{id}`: `ownerId`, `memberUids`, `taskStatuses`, `doneStatus`.
+- `workspaces/{id}/links/{linkId}`: pinned team links (`title`, `url`, `addedBy`, `createdAt`). `workspaces/{id}/hub/notes`: the team note (`text`, `updatedBy`, `updatedByName`, `updatedAt`, `version`). Any member can edit both. Service: `src/services/team-hub-service.ts`.
 - `aiUsage/{uid}`: server-only daily AI counters (`date` in UTC, `plan`, `chat`, `insights`, `checkin`), written by `src/ai/guard.ts` with firebase-admin. No client access.
 - `emailDigests/{uid}`: server-only daily email settings (`enabled`, `sendAt` local "HH:MM", `timeZone`, `unsubToken`, `lastSeenAt`, `lastSentDate`). `digestRuns/{utcDate}`: daily send counter. Both written with firebase-admin, no client access. Sender: `src/app/api/digest/run`.
 
