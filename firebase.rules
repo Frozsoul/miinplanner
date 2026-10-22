@@ -47,6 +47,32 @@ service cloud.firestore {
       
       // Only the workspace owner can manage its settings or members
       allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+
+      // Team hub: pinned links. Any member can read, add and remove them.
+      match /links/{linkId} {
+        allow read, delete: if isWorkspaceMember(workspaceId);
+        allow create: if isWorkspaceMember(workspaceId)
+          && request.resource.data.keys().hasOnly(['title', 'url', 'addedBy', 'createdAt'])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 100
+          && request.resource.data.url is string
+          && request.resource.data.url.size() <= 2048
+          && request.resource.data.url.matches('https?://.+')
+          && request.resource.data.addedBy == request.auth.uid;
+      }
+
+      // Team hub: the shared team note (one doc, id "notes"). Any member can read and edit it.
+      match /hub/{docId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow create, update: if isWorkspaceMember(workspaceId)
+          && docId == 'notes'
+          && request.resource.data.keys().hasOnly(['text', 'updatedBy', 'updatedByName', 'updatedAt', 'version'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 10000
+          && request.resource.data.version is int
+          && request.resource.data.updatedBy == request.auth.uid;
+      }
     }
 
     // Tasks: Collaborative rules

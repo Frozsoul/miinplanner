@@ -24,7 +24,7 @@ Ship a good free product first; keep the option to charge later. No Vietnamese v
 ## Now: personal and team boards (from Minh, 22 Oct 2026)
 Two boards, one "me". Boards stay separate (personal is private, the team board is shared, each has its own statuses). What is about the board exists on both. What is about you (Up next, companion, reminders) looks across both: your personal tasks plus team tasks assigned to you, read in place, never copied.
 - [x] 1. Team board catch-up: search and filters (plus Assignee: Me, members, Unassigned), archived view, task detail view, phone card list, empty board, compact members row with Invite popup and confirm before removing. PR #29
-- [ ] 2. Team hub: pinned links (title, URL, icon; remove asks first) as chips under the board title, and one shared team note ("how we work": rules, brand voice, approvals) with "Edited by X". Any member can edit; likely needs a Firestore rules update.
+- [x] 2. Team hub: pinned links (title, URL, icon; remove asks first) as chips under the board title, and one shared team note ("how we work": rules, brand voice, approvals) with "Edited by X". Any member can edit; likely needs a Firestore rules update. PR #32
 - [ ] 3. Up next and the companion count team tasks assigned to you (read only, labelled with the team name).
 - [ ] 4. Pushed dates should count (see below), on both boards.
 - [ ] 5. Who's on what this week (EDGE.md candidate 3).
@@ -54,6 +54,7 @@ Two boards, one "me". Boards stay separate (personal is private, the team board 
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Team hub (step 2 above): pinned links as chips under the team board title (icon by site, remove asks first, up to 20) and one shared team note with "Edited by X", live for all members. Saving checks nobody else saved meanwhile, so no one's words get overwritten. Data in `workspaces/{id}/links` and `workspaces/{id}/hub/notes`; rules let any member edit. Needs the new `firebase.rules` published. PR #32
 - [x] Slim filter toolbar on both boards (from Minh, 22 Oct 2026: filters are a secondary tool, the old filter card took too much space, especially on phones). One row: search, one Filter button (all filters and archived in one panel, with a count), Mine on team boards, view switch; active filters show as removable chips. Phone headers use icon buttons; the Teamwork workspace picker is one row with + for a new workspace. PR #31
 - [x] New boards start with three statuses: To Do, In Progress, Done (from Minh, 22 Oct 2026). Applies to new users and new team workspaces (which no longer copy the creator's personal list). Existing boards untouched; the old five-status list stays only as the fallback for old accounts that never saved one. PR #30
 - [x] Team board catch-up (step 1 above). Filters are one shared component (`src/components/tasks/TaskFilters.tsx`) for both boards; fixed the filter rows toggling twice when clicking the label. TypeScript baseline now 6. PR #29

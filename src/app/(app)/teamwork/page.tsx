@@ -20,6 +20,7 @@ import { TaskFilterBar, useTaskFilters, type ViewMode } from "@/components/tasks
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskCardList } from "@/components/tasks/TaskCardList";
 import { TeamMembers } from "@/components/teamwork/TeamMembers";
+import { TeamHub } from "@/components/teamwork/TeamHub";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -291,6 +292,21 @@ export default function TeamworkPage() {
                   </Button>
                 </div>
               </div>
+
+              {user && (
+                <TeamHub
+                  workspaceId={currentWorkspace.id}
+                  workspaceName={currentWorkspace.name}
+                  currentUser={{
+                    uid: user.uid,
+                    name: workspaceMembers.find(m => m.uid === user.uid)?.displayName || user.displayName || user.email?.split("@")[0] || "A teammate",
+                  }}
+                  nameOf={uid => {
+                    const m = workspaceMembers.find(x => x.uid === uid);
+                    return m ? (m.displayName || m.email.split("@")[0]) : undefined;
+                  }}
+                />
+              )}
 
               <TaskFilterBar
                 filters={filters}
