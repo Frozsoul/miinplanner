@@ -1,7 +1,7 @@
 /**
  * Daily email digest runner: POST /api/digest/run
  *
- * Called every 15 minutes by Cloud Scheduler with `Authorization: Bearer <DIGEST_CRON_SECRET>`.
+ * Called every 30 minutes by Cloud Scheduler with `Authorization: Bearer <DIGEST_CRON_SECRET>`.
  * Sends each user their digest once a day, at their chosen local time (default 7:30), only
  * on days they have something due today or recently overdue. Rules: `src/lib/email-digest.ts`.
  *
