@@ -8,7 +8,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
+import { DEFAULT_TASK_STATUSES, NEW_BOARD_STATUSES } from '@/lib/constants';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -58,7 +58,7 @@ export const createUserProfile = async (userData: UserProfile): Promise<void> =>
     const dataToSet = {
         ...userData,
         createdAt: serverTimestamp(),
-        taskStatuses: DEFAULT_TASK_STATUSES,
+        taskStatuses: NEW_BOARD_STATUSES,
         plan: 'free',
         insightGenerationCount: 0,
         lastInsightGenerationDate: '',
