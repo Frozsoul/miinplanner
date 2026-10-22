@@ -32,6 +32,7 @@ import { FEEDBACK_MAILTO } from "@/lib/feedback";
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from 'react';
 import { AppDataProvider } from '@/contexts/app-data-context';
+import { DigestSync } from '@/components/DigestSync';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -74,6 +75,7 @@ export default function AppLayout({
 
   return (
     <AppDataProvider>
+      <DigestSync />
       <SidebarProvider>
         <div className="flex min-h-screen w-full bg-background">
           <Sidebar

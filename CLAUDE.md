@@ -32,6 +32,7 @@ Concise, direct, plain English. No em dashes. No filler. Sentence case for headi
 - `users/{uid}/taskSpaces/{id}`: saved boards (task snapshots).
 - `workspaces/{id}`: `ownerId`, `memberUids`, `taskStatuses`, `doneStatus`.
 - `aiUsage/{uid}`: server-only daily AI counters (`date` in UTC, `plan`, `chat`, `insights`, `checkin`), written by `src/ai/guard.ts` with firebase-admin. No client access.
+- `emailDigests/{uid}`: server-only daily email settings (`enabled`, `sendAt` local "HH:MM", `timeZone`, `unsubToken`, `lastSeenAt`, `lastSentDate`). `digestRuns/{utcDate}`: daily send counter. Both written with firebase-admin, no client access. Sender: `src/app/api/digest/run`.
 
 ## AI server actions
 Every exported action in `src/ai/flows` takes a Firebase ID token first and wraps the model call in `runGuarded` from `src/ai/guard.ts`. It returns `{ ok, data }` or `{ ok: false, code, message }` because Next.js hides thrown messages in production.

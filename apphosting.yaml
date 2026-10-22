@@ -44,3 +44,14 @@ env:
     value: "G-KVR78N13KK"
   - variable: GOOGLE_API_KEY
     secret: miinplannergenerative
+  # Daily email digest (src/app/api/digest). Create both secrets BEFORE merging, or the rollout fails:
+  #   firebase apphosting:secrets:set BREVO_API_KEY
+  #   firebase apphosting:secrets:set DIGEST_CRON_SECRET
+  - variable: BREVO_API_KEY
+    secret: BREVO_API_KEY
+    availability:
+      - RUNTIME
+  - variable: DIGEST_CRON_SECRET
+    secret: DIGEST_CRON_SECRET
+    availability:
+      - RUNTIME
