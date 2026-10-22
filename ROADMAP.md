@@ -25,7 +25,7 @@ Ship a good free product first; keep the option to charge later. No Vietnamese v
 Two boards, one "me". Boards stay separate (personal is private, the team board is shared, each has its own statuses). What is about the board exists on both. What is about you (Up next, companion, reminders) looks across both: your personal tasks plus team tasks assigned to you, read in place, never copied.
 - [x] 1. Team board catch-up: search and filters (plus Assignee: Me, members, Unassigned), archived view, task detail view, phone card list, empty board, compact members row with Invite popup and confirm before removing. PR #29
 - [x] 2. Team hub: pinned links (title, URL, icon; remove asks first) as chips under the board title, and one shared team note ("how we work": rules, brand voice, approvals) with "Edited by X". Any member can edit; likely needs a Firestore rules update. PR #32
-- [ ] 3. Up next and the companion count team tasks assigned to you (read only, labelled with the team name).
+- Parked (Minh, 22 Oct 2026): Up next and the companion counting team tasks assigned to you. Boards stay fully separate for now; mixing them in one place would make people think everything is blended. The daily email still lists assigned team tasks, labelled with the team name.
 - [ ] 4. Pushed dates should count (see below), on both boards.
 - [ ] 5. Who's on what this week (EDGE.md candidate 3).
 - [ ] Maybe later: "Show my team tasks" switch on the personal calendar, off by default.
