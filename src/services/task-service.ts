@@ -53,6 +53,9 @@ export const taskFromFirestore = (snapshot: QueryDocumentSnapshot<DocumentData>)
     userId: data.userId,
     workspaceId: data.workspaceId || undefined,
     assignedTo: data.assignedTo || undefined,
+    slipCount: typeof data.slipCount === 'number' ? data.slipCount : undefined,
+    lastSlipAt: toIsoString(data.lastSlipAt),
+    firstDueDate: toIsoString(data.firstDueDate),
   };
 };
 

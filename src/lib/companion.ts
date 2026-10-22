@@ -1,5 +1,6 @@
 import type { Task } from "@/types";
 import { dueBucket, finishedTime } from "@/lib/task-buckets";
+import { slippedRecently } from "@/lib/slips";
 
 /**
  * The companion: a personality that keeps you company on your board. Its mood follows a
@@ -65,6 +66,8 @@ export interface Momentum {
   activeDays: number;
   overdue: number;
   dueToday: number;
+  /** Open tasks whose due date was pushed later in the last 7 days. */
+  slipsWeek: number;
   parts: { delivery: number; consistency: number; today: number };
 }
 
@@ -77,8 +80,9 @@ function localDay(t: number): string {
 
 /**
  * Momentum score, out of 100:
- * - Delivery (50): tasks finished in the last 7 days against what is overdue.
- *   Finishing 3 with nothing overdue is full marks.
+ * - Delivery (50): tasks finished in the last 7 days against what is overdue or was pushed.
+ *   Finishing 3 with nothing overdue is full marks. A task pushed later this week counts as
+ *   half an overdue task (src/lib/slips.ts), so moving dates can't hide slipping work.
  * - Consistency (30): days in the last 7 with at least one task finished. 4 days is full marks.
  * - Today (20): something finished today, or 10 when nothing is overdue.
  */
@@ -95,18 +99,19 @@ export function computeMomentum(tasks: Task[], isDone: (t: Task) => boolean, now
   const activeDays = new Set(finishedTimes.map(localDay)).size;
   const overdue = open.filter(t => dueBucket(t, now) === "overdue").length;
   const dueToday = open.filter(t => dueBucket(t, now) === "today").length;
+  const slipsWeek = slippedRecently(tasks, isDone, now).length;
 
-  const target = Math.max(3, finishedWeek + overdue);
+  const target = Math.max(3, finishedWeek + overdue + slipsWeek / 2);
   const delivery = Math.round((50 * finishedWeek) / target);
   const consistency = Math.round((30 * Math.min(activeDays, 4)) / 4);
   const todayPts = finishedToday > 0 ? 20 : overdue === 0 ? 10 : 0;
   const parts = { delivery, consistency, today: todayPts };
 
   if (finished.length === 0) {
-    return { score: null, mood: "hello", finishedWeek, finishedToday, activeDays, overdue, dueToday, parts };
+    return { score: null, mood: "hello", finishedWeek, finishedToday, activeDays, overdue, dueToday, slipsWeek, parts };
   }
   const score = Math.max(0, Math.min(100, delivery + consistency + todayPts));
-  return { score, mood: moodFor(score), finishedWeek, finishedToday, activeDays, overdue, dueToday, parts };
+  return { score, mood: moodFor(score), finishedWeek, finishedToday, activeDays, overdue, dueToday, slipsWeek, parts };
 }
 
 export function moodFor(score: number): Mood {
@@ -170,13 +175,27 @@ function pick<T>(items: T[], seed: string): T {
   return items[h % items.length];
 }
 
+/** Used instead of the mood line when work was pushed this week and the mood would sound too rosy. {slips} is the count. */
+const SLIP_LINES: Record<CompanionId, string[]> = {
+  mia: ["{week} done, nice! But {slips} got pushed to later this week. Fine if planned, {name}, just don't let them pile up.", "You moved {slips} to later, {name}. No stress, let's make sure they actually happen."],
+  kai: ["{week} done. {slips} pushed. Pushed isn't done, {name}.", "{slips} moved to later this week. Finish them on the new date. No second push."],
+  theo: ["{week} done this week, and {slips} moved to later. Worth asking: was the plan too full, or did priorities change?", "Moving dates is honest planning once. {slips} pushed this week, {name}. Keep the new dates realistic."],
+  pip: ["{week} wins! Buuut {slips} got bumped to later 👀 Let's not make it a habit, {name}.", "Sneaky {slips} pushed to later! I see you, {name}. Let's crush them on the new date."],
+};
+
 /** The day's greeting for this companion and mood. Stable for the day, changes with the mood. */
 export function greeting(companion: CompanionId, m: Momentum, firstName: string, now: Date = new Date()): string {
-  const line = pick(GREETINGS[companion][m.mood], `${localDay(now.getTime())}-${m.mood}`);
+  const seed = `${localDay(now.getTime())}-${m.mood}`;
+  // A rosy line would hide pushed work, so name it instead.
+  const rosy = m.mood === "okay" || m.mood === "happy" || m.mood === "love";
+  const line = rosy && m.slipsWeek > 0
+    ? pick(SLIP_LINES[companion], `${seed}-slip`)
+    : pick(GREETINGS[companion][m.mood], seed);
   return line
     .replace(/\{name\}/g, firstName || "friend")
     .replace(/\{overdue\}/g, String(m.overdue))
-    .replace(/\{week\}/g, String(m.finishedWeek));
+    .replace(/\{week\}/g, String(m.finishedWeek))
+    .replace(/\{slips\}/g, m.slipsWeek === 1 ? "1 task" : `${m.slipsWeek} tasks`);
 }
 
 export function firstNameOf(displayName?: string | null, email?: string | null): string {

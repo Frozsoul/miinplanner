@@ -23,6 +23,10 @@ export interface Task {
   userId: string;
   workspaceId?: string; // Associated workspace
   assignedTo?: string; // UID of assigned user
+  // Pushed dates (src/lib/slips.ts): how often the due date was pushed later after it was already due.
+  slipCount?: number;
+  lastSlipAt?: string; // ISO time of the last slip
+  firstDueDate?: string; // the due date before the first slip
 }
 
 export type TaskData = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'completed'> & { completed?: boolean };

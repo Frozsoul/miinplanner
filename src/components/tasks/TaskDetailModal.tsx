@@ -122,6 +122,16 @@ export function TaskDetailModal({ task, isOpen, onClose, onArchiveToggle }: Task
             </div>
           </div>
 
+          {(task.slipCount || 0) > 0 && (
+            <div>
+              <h4 className="font-semibold mb-1">Pushed:</h4>
+              <span className="text-muted-foreground">
+                {task.slipCount} {task.slipCount === 1 ? "time" : "times"} after it was due
+                {task.firstDueDate ? ` (first due ${formatDateSafe(task.firstDueDate, "PPP")})` : ""}
+              </span>
+            </div>
+          )}
+
           {task.tags && task.tags.length > 0 && (
             <div>
               <h4 className="font-semibold mb-1">Tags:</h4>

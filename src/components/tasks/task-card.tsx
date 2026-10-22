@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Megaphone, User } from "lucide-react";
+import { MoreHorizontal, Edit3, Trash2, Eye, Tag, Archive, ArchiveRestore, Megaphone, User, Redo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PRIORITY_STRIPE } from "@/lib/task-colors";
 import { useSortable } from "@dnd-kit/sortable";
@@ -27,7 +27,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggle, isOverlay = false }: TaskCardProps) {
-    const { workspaceMembers } = useAppData();
+    const { workspaceMembers, isTaskDone } = useAppData();
     const { 
         attributes, 
         listeners, 
@@ -112,6 +112,12 @@ export function TaskCard({ task, index, onEdit, onDelete, onView, onArchiveToggl
         </CardHeader>
         <CardContent className="px-4 pb-4 text-xs text-muted-foreground space-y-2">
             <InlineDatePicker task={task} />
+            {(task.slipCount || 0) >= 2 && !task.archived && !isTaskDone(task) && (
+              <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400" title="Moved to a later date after it was already due">
+                <Redo2 className="h-3.5 w-3.5" />
+                <span>Pushed {task.slipCount} times. Do it, hand it off, or archive it?</span>
+              </div>
+            )}
             {task.channel && !isTeamTask && (
               <div className="flex items-center gap-1.5">
                 <Megaphone className="h-3.5 w-3.5" />
