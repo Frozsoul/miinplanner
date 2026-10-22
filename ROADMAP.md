@@ -21,6 +21,15 @@ The Kanban, list and calendar views give every task the same weight, so they don
 ## Paid option (parked, from Minh 15 Oct 2026)
 Ship a good free product first; keep the option to charge later. No Vietnamese version. A greyed-out "Pro" card sits in Settings > Plan & Billing (no button, no sign-up). First idea if it happens: a small one-time price (around $3) for premium themes. The planner itself stays free. Plan doc: https://claude.ai/code/artifact/1f7e2265-cf8c-40fc-912c-38adf5c9a2ea
 
+## Now: personal and team boards (from Minh, 22 Oct 2026)
+Two boards, one "me". Boards stay separate (personal is private, the team board is shared, each has its own statuses). What is about the board exists on both. What is about you (Up next, companion, reminders) looks across both: your personal tasks plus team tasks assigned to you, read in place, never copied.
+- [x] 1. Team board catch-up: search and filters (plus Assignee: Me, members, Unassigned), archived view, task detail view, phone card list, empty board, compact members row with Invite popup and confirm before removing. PR #29
+- [ ] 2. Team hub: pinned links (title, URL, icon; remove asks first) as chips under the board title, and one shared team note ("how we work": rules, brand voice, approvals) with "Edited by X". Any member can edit; likely needs a Firestore rules update.
+- [ ] 3. Up next and the companion count team tasks assigned to you (read only, labelled with the team name).
+- [ ] 4. Pushed dates should count (see below), on both boards.
+- [ ] 5. Who's on what this week (EDGE.md candidate 3).
+- [ ] Maybe later: "Show my team tasks" switch on the personal calendar, off by default.
+
 ## Next: make the calendar, teamwork and insights genuinely good
 - [x] Minh picked edge 1, Monday team recap (PR #27).
 - [ ] Pushed dates should count (from Minh, 21 Oct 2026, think before building): moving an overdue or due-soon task to a later day is invisible to the companion and stats, so the score stays "loving it" while work slips. Idea: keep the first due date and a slip count; a move counts as a slip when the task is overdue, due today or tomorrow, with a toast "Counted as a slip. It was a date fix" to undo; slips cost a little score; flag overloaded days in Up next and the calendar. Overlaps EDGE.md candidate 4.
@@ -38,13 +47,14 @@ Ship a good free product first; keep the option to charge later. No Vietnamese v
 - [ ] Daily email: one-click "Mark done" links (needs a signed token per task and a confirm page, since mail scanners open links).
 - [ ] **Pin the `miinplanner` database.** Add `firebase.json` (and `.firebaserc`) so `firebase deploy --only firestore:rules` targets the `miinplanner` database, not `(default)`. Share one database ID constant between `src/lib/firebase.ts` and `src/lib/firebase-admin.ts`. Note the named database in CLAUDE.md.
 - [ ] Delete stub routes: `/chatbot`, `/calendar`, `/reminders`, `/prioritization`, and `src/ai/flows/prioritize-tasks-flow.ts`, `generate-content-ideas.ts`.
-- [ ] Fix the remaining 9 TypeScript errors and remove `ignoreBuildErrors`.
+- [ ] Fix the remaining 6 TypeScript errors and remove `ignoreBuildErrors`.
 - [ ] Replace the Firebase Studio README.
 - [ ] Show remaining AI uses from the server count (`aiUsage/{uid}`, via a small server action) instead of the client-written counters on `users/{uid}`, which a user can edit. Server limits reset at midnight UTC; the UI uses local time.
 - [ ] Turn on App Check (reCAPTCHA Enterprise) for extra protection against scripted signups calling the AI actions.
 - [ ] Teamwork: after inviting or removing a member, `currentWorkspace` keeps the old `memberUids`, so the member list can go stale until reload. Refresh `currentWorkspace` from `fetchWorkspaces`.
 
 ## Done
+- [x] Team board catch-up (step 1 above). Filters are one shared component (`src/components/tasks/TaskFilters.tsx`) for both boards; fixed the filter rows toggling twice when clicking the label. TypeScript baseline now 6. PR #29
 - [x] Daily email reminder (from Minh, 21 Oct 2026; the calendar feed's alerts don't fire on Android): Brevo email from planner@miindigital.com at 7:30am local by default (6, 7, 7:30, 8 or 9am in Settings > Reminders), only on days with something due today or overdue in the last 14 days, plus high and urgent tasks due tomorrow. On for everyone, with one-click unsubscribe; stops for people who haven't opened the app in 30 days; verified emails only; daily cap under Brevo's free 300. Cloud Scheduler calls `/api/digest/run` every 15 minutes. Rules in `src/lib/email-digest.ts`. PR #28
 - [x] `EDGE.md`: 4 candidate edges on the calendar, teamwork and AI insights (Monday team recap, channel gaps, who's on what, stuck work), each with who it helps, the job, why a chat can't, smallest test and how we'd know. PR #26
 - [x] Dashboard retired: the app opens on the Task Manager (old /dashboard links redirect). "Up next" sits above every view: the 3 open tasks to do first (overdue, today, next 7 days) with one-click finish and a count summary. Empty boards show a welcome with Add a task, Paste a plan and Browse playbooks. Unused dashboard components removed; TypeScript baseline now 8. PR #20
