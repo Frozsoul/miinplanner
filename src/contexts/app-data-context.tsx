@@ -13,7 +13,7 @@ import { generateInsights as aiGenerateInsights } from '@/ai/flows/generate-insi
 import { useToast } from '@/hooks/use-toast';
 import { celebrate } from '@/lib/celebrate';
 import { trackFirstTask } from '@/lib/analytics';
-import { DEFAULT_TASK_STATUSES } from '@/lib/constants';
+import { DEFAULT_TASK_STATUSES, NEW_BOARD_STATUSES } from '@/lib/constants';
 
 interface AppDataContextType {
   isLoadingAppData: boolean;
@@ -179,8 +179,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
   const addWorkspace = async (name: string) => {
     if (!user?.uid) return;
-    const initialStatuses = userProfile?.taskStatuses || DEFAULT_TASK_STATUSES;
-    const newWs = await createWorkspace(user.uid, name, initialStatuses);
+    // Every new team board starts with the same three statuses; the team edits its own list in Settings.
+    const newWs = await createWorkspace(user.uid, name, NEW_BOARD_STATUSES);
     setWorkspaces(prev => [...prev, newWs]);
     setCurrentWorkspace(newWs);
     toast({ title: "Workspace created", description: `You are now in ${name}.` });

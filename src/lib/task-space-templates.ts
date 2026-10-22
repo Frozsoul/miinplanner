@@ -1,3 +1,4 @@
+import { NEW_BOARD_STATUSES } from "@/lib/constants";
 import type { TaskData, TaskPriority, TaskStatus } from "@/types";
 
 /**
@@ -26,7 +27,7 @@ export interface MarketingTemplate {
   tasks: TemplateTask[];
 }
 
-export const TEMPLATE_STATUSES: TaskStatus[] = ["To Do", "In Progress", "Done"];
+export const TEMPLATE_STATUSES: TaskStatus[] = NEW_BOARD_STATUSES;
 
 const t = (
   dayOffset: number,
